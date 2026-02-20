@@ -20,6 +20,8 @@ public static class CliParser
         string? sourceGpPath = null;
         string? diagnosticsOutPath = null;
         var diagnosticsAsJson = false;
+        var planOnly = false;
+        var strict = false;
 
         for (var i = 1; i < args.Length; i++)
         {
@@ -99,6 +101,14 @@ public static class CliParser
                     diagnosticsAsJson = ParseBoolOption(value, true);
                     break;
 
+                case "--plan-only":
+                    planOnly = ParseBoolOption(value, true);
+                    break;
+
+                case "--strict":
+                    strict = ParseBoolOption(value, true);
+                    break;
+
                 case "--help":
                 case "-h":
                     throw new OperationCanceledException("help");
@@ -120,7 +130,9 @@ public static class CliParser
             PatchFromJson = patchFromJson,
             SourceGpPath = string.IsNullOrWhiteSpace(sourceGpPath) ? null : Path.GetFullPath(sourceGpPath),
             DiagnosticsOutPath = string.IsNullOrWhiteSpace(diagnosticsOutPath) ? null : Path.GetFullPath(diagnosticsOutPath),
-            DiagnosticsAsJson = diagnosticsAsJson
+            DiagnosticsAsJson = diagnosticsAsJson,
+            PlanOnly = planOnly,
+            Strict = strict
         };
     }
 

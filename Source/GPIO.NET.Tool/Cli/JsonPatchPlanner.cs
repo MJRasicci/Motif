@@ -5,17 +5,20 @@ using GPIO.NET.Models.Patching;
 
 internal static class JsonPatchPlanner
 {
-    public static GpPatchDocument BuildPatch(GuitarProScore source, GuitarProScore edited)
+    public static JsonPatchPlanResult BuildPatch(GuitarProScore source, GuitarProScore edited)
     {
         var appendNotes = new List<AppendNotesPatch>();
+        var insertBeats = new List<InsertBeatPatch>();
         var updateArticulations = new List<UpdateNoteArticulationPatch>();
         var updatePitches = new List<UpdateNotePitchPatch>();
+        var unsupported = new List<string>();
 
         foreach (var editedTrack in edited.Tracks)
         {
             var sourceTrack = source.Tracks.FirstOrDefault(t => t.Id == editedTrack.Id);
             if (sourceTrack is null)
             {
+                unsupported.Add($"Track {editedTrack.Id} does not exist in source (track creation patch not auto-planned yet).");
                 continue;
             }
 
@@ -25,59 +28,95 @@ internal static class JsonPatchPlanner
                 var srcMeasure = sourceTrack.Measures[mi];
                 var edMeasure = editedTrack.Measures[mi];
 
-                var commonBeatCount = Math.Min(srcMeasure.Beats.Count, edMeasure.Beats.Count);
-                for (var bi = 0; bi < commonBeatCount; bi++)
+                var srcById = srcMeasure.Beats.Where(b => b.Id > 0).GroupBy(b => b.Id).ToDictionary(g => g.Key, g => g.First());
+
+                for (var bi = 0; bi < edMeasure.Beats.Count; bi++)
                 {
-                    var srcBeat = srcMeasure.Beats[bi];
                     var edBeat = edMeasure.Beats[bi];
 
-                    foreach (var edNote in edBeat.Notes)
+                    if (edBeat.Id > 0 && srcById.TryGetValue(edBeat.Id, out var srcBeat))
                     {
-                        var srcNote = srcBeat.Notes.FirstOrDefault(n => n.Id == edNote.Id);
-                        if (srcNote is null)
+                        foreach (var edNote in edBeat.Notes)
                         {
-                            continue;
-                        }
-
-                        if (srcNote.MidiPitch != edNote.MidiPitch && edNote.MidiPitch.HasValue)
-                        {
-                            updatePitches.Add(new UpdateNotePitchPatch
+                            var srcNote = srcBeat.Notes.FirstOrDefault(n => n.Id == edNote.Id);
+                            if (srcNote is null)
                             {
-                                NoteId = edNote.Id,
-                                MidiPitch = edNote.MidiPitch.Value
-                            });
+                                unsupported.Add($"Track {editedTrack.Id} measure {mi} beat {edBeat.Id}: note insertion inside existing beat is not auto-planned yet.");
+                                continue;
+                            }
+
+                            if (srcNote.MidiPitch != edNote.MidiPitch && edNote.MidiPitch.HasValue)
+                            {
+                                updatePitches.Add(new UpdateNotePitchPatch
+                                {
+                                    NoteId = edNote.Id,
+                                    MidiPitch = edNote.MidiPitch.Value
+                                });
+                            }
+
+                            var patch = BuildArticulationPatch(srcNote, edNote);
+                            if (patch is not null)
+                            {
+                                updateArticulations.Add(patch);
+                            }
                         }
 
-                        var patch = BuildArticulationPatch(srcNote, edNote);
-                        if (patch is not null)
-                        {
-                            updateArticulations.Add(patch);
-                        }
+                        continue;
                     }
-                }
 
-                // append-only for extra beats (safe for first patch pass)
-                for (var bi = srcMeasure.Beats.Count; bi < edMeasure.Beats.Count; bi++)
-                {
-                    var beat = edMeasure.Beats[bi];
-                    appendNotes.Add(new AppendNotesPatch
+                    // New beat (id <= 0 or unknown): insert within existing range, append at end.
+                    var midiPitches = edBeat.Notes.Where(n => n.MidiPitch.HasValue).Select(n => n.MidiPitch!.Value).ToArray();
+                    var op = new InsertBeatPatch
                     {
                         TrackId = editedTrack.Id,
                         MasterBarIndex = mi,
                         VoiceIndex = 0,
-                        RhythmNoteValue = ToRawNoteValue(beat.Duration),
-                        AugmentationDots = GuessAugmentationDots(beat.Duration),
-                        MidiPitches = beat.Notes.Where(n => n.MidiPitch.HasValue).Select(n => n.MidiPitch!.Value).ToArray()
-                    });
+                        BeatInsertIndex = bi,
+                        RhythmNoteValue = ToRawNoteValue(edBeat.Duration),
+                        AugmentationDots = GuessAugmentationDots(edBeat.Duration),
+                        MidiPitches = midiPitches
+                    };
+
+                    if (bi < srcMeasure.Beats.Count)
+                    {
+                        insertBeats.Add(op);
+                    }
+                    else
+                    {
+                        appendNotes.Add(new AppendNotesPatch
+                        {
+                            TrackId = op.TrackId,
+                            MasterBarIndex = op.MasterBarIndex,
+                            VoiceIndex = op.VoiceIndex,
+                            RhythmNoteValue = op.RhythmNoteValue,
+                            AugmentationDots = op.AugmentationDots,
+                            MidiPitches = op.MidiPitches
+                        });
+                    }
                 }
+
+                if (edMeasure.Beats.Count < srcMeasure.Beats.Count)
+                {
+                    unsupported.Add($"Track {editedTrack.Id} measure {mi}: beat deletions are not auto-planned yet.");
+                }
+            }
+
+            if (editedTrack.Measures.Count > sourceTrack.Measures.Count)
+            {
+                unsupported.Add($"Track {editedTrack.Id}: appended measures are not auto-planned yet.");
             }
         }
 
-        return new GpPatchDocument
+        return new JsonPatchPlanResult
         {
-            AppendNotes = appendNotes,
-            UpdateNoteArticulations = updateArticulations,
-            UpdateNotePitches = updatePitches
+            Patch = new GpPatchDocument
+            {
+                AppendNotes = appendNotes,
+                InsertBeats = insertBeats,
+                UpdateNoteArticulations = updateArticulations,
+                UpdateNotePitches = updatePitches
+            },
+            UnsupportedChanges = unsupported
         };
     }
 
@@ -117,9 +156,12 @@ internal static class JsonPatchPlanner
     }
 
     private static int GuessAugmentationDots(decimal duration)
-    {
-        // tiny heuristic for common dotted values
-        if (duration == 0.375m || duration == 0.75m || duration == 0.1875m) return 1;
-        return 0;
-    }
+        => duration is 0.375m or 0.75m or 0.1875m ? 1 : 0;
+}
+
+internal sealed class JsonPatchPlanResult
+{
+    public required GpPatchDocument Patch { get; init; }
+
+    public IReadOnlyList<string> UnsupportedChanges { get; init; } = Array.Empty<string>();
 }

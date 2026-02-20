@@ -15,7 +15,7 @@ try
         return 2;
     }
 
-    var outputPath = options.OutputPath ?? BuildDefaultOutputPath(options.InputPath, options.Format, options.FromJson);
+    var outputPath = options.OutputPath ?? BuildDefaultOutputPath(options.InputPath, options.Format, options.FromJson, options.PlanOnly);
 
     if (options.FromJson)
     {
@@ -39,10 +39,24 @@ try
 
             var reader = new GuitarProReader();
             var sourceScore = await reader.ReadAsync(options.SourceGpPath).ConfigureAwait(false);
-            var patchDoc = JsonPatchPlanner.BuildPatch(sourceScore, editedScore);
+            var plan = JsonPatchPlanner.BuildPatch(sourceScore, editedScore);
+
+            if (options.Strict && plan.UnsupportedChanges.Count > 0)
+            {
+                throw new InvalidOperationException($"Strict mode failed: {plan.UnsupportedChanges.Count} unsupported changes detected.");
+            }
+
+            if (options.PlanOnly)
+            {
+                var planJson = JsonSerializer.Serialize(plan, new JsonSerializerOptions { WriteIndented = true });
+                EnsureOutputDirectory(outputPath);
+                await File.WriteAllTextAsync(outputPath, planJson).ConfigureAwait(false);
+                Console.WriteLine($"Patch plan written: {outputPath}");
+                return 0;
+            }
 
             var patcher = new GuitarProPatcher();
-            var patchResult = await patcher.PatchAsync(options.SourceGpPath, outputPath, patchDoc).ConfigureAwait(false);
+            var patchResult = await patcher.PatchAsync(options.SourceGpPath, outputPath, plan.Patch).ConfigureAwait(false);
 
             Console.WriteLine($"Patched GP archive written: {outputPath}");
             Console.WriteLine($"Patch operations logged: {patchResult.Diagnostics.Entries.Count}");
@@ -52,12 +66,18 @@ try
                 EnsureOutputDirectory(options.DiagnosticsOutPath);
                 if (options.DiagnosticsAsJson)
                 {
-                    var jsonDiagnostics = JsonSerializer.Serialize(patchResult.Diagnostics.Entries, new JsonSerializerOptions { WriteIndented = true });
+                    var jsonDiagnostics = JsonSerializer.Serialize(new
+                    {
+                        plan.UnsupportedChanges,
+                        patchDiagnostics = patchResult.Diagnostics.Entries
+                    }, new JsonSerializerOptions { WriteIndented = true });
                     await File.WriteAllTextAsync(options.DiagnosticsOutPath, jsonDiagnostics).ConfigureAwait(false);
                 }
                 else
                 {
-                    var lines = patchResult.Diagnostics.Entries.Select(d => $"[{d.Operation}] {d.Message}").ToArray();
+                    var lines = plan.UnsupportedChanges.Select(u => $"[planner] {u}")
+                        .Concat(patchResult.Diagnostics.Entries.Select(d => $"[{d.Operation}] {d.Message}"))
+                        .ToArray();
                     await File.WriteAllLinesAsync(options.DiagnosticsOutPath, lines).ConfigureAwait(false);
                 }
 
@@ -165,13 +185,13 @@ catch (Exception ex)
     return 1;
 }
 
-static string BuildDefaultOutputPath(string inputPath, OutputFormat format, bool fromJson)
+static string BuildDefaultOutputPath(string inputPath, OutputFormat format, bool fromJson, bool planOnly)
 {
     if (fromJson)
     {
         var directory = Path.GetDirectoryName(inputPath) ?? Environment.CurrentDirectory;
         var baseName = Path.GetFileNameWithoutExtension(inputPath);
-        return Path.Combine(directory, baseName + ".gp");
+        return Path.Combine(directory, baseName + (planOnly ? ".patch-plan.json" : ".gp"));
     }
 
     var extension = format switch
@@ -209,6 +229,8 @@ static void PrintHelp()
     Console.WriteLine("Write modes:");
     Console.WriteLine("  --from-json                input is mapped JSON and output is .gp archive (full write)");
     Console.WriteLine("  --from-json --patch-from-json --source-gp <file.gp>   patch existing GP using edited mapped JSON");
+    Console.WriteLine("  --plan-only                generate patch plan JSON without applying patch");
+    Console.WriteLine("  --strict                   fail if planner detects unsupported edits");
     Console.WriteLine("  (use --format json with --from-json)");
     Console.WriteLine("  --diagnostics-out <path>   optional diagnostics output file for write/patch mode");
     Console.WriteLine("  --diagnostics-json         writes diagnostics output as JSON");

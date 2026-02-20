@@ -23,4 +23,8 @@ public sealed class CliOptions
     public string? DiagnosticsOutPath { get; init; }
 
     public bool DiagnosticsAsJson { get; init; }
+
+    public bool PlanOnly { get; init; }
+
+    public bool Strict { get; init; }
 }
