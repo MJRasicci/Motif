@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Source/">
+    <Project Path="Source/GPIO.NET/GPIO.NET.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/GPIO.NET.UnitTests/GPIO.NET.UnitTests.csproj" />
+  </Folder>
+</Solution>
