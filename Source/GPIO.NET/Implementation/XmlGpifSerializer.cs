@@ -92,6 +92,7 @@ public sealed class XmlGpifSerializer : IGpifSerializer
     {
         var el = new XElement("Note", new XAttribute("id", n.Id));
         if (n.Articulation.Accent.HasValue) el.Add(new XElement("Accent", n.Articulation.Accent.Value));
+        if (n.Articulation.AntiAccent) el.Add(new XElement("AntiAccent"));
         if (n.Articulation.InstrumentArticulation.HasValue) el.Add(new XElement("InstrumentArticulation", n.Articulation.InstrumentArticulation.Value));
         if (n.Articulation.LetRing) el.Add(new XElement("LetRing"));
         if (n.Articulation.TieOrigin || n.Articulation.TieDestination)

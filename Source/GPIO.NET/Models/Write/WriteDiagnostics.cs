@@ -2,15 +2,26 @@ namespace GPIO.NET.Models.Write;
 
 public sealed class WriteDiagnostics
 {
-    private readonly List<string> warnings = [];
+    private readonly List<WriteDiagnosticEntry> entries = [];
 
-    public IReadOnlyList<string> Warnings => warnings;
+    public IReadOnlyList<WriteDiagnosticEntry> Entries => entries;
 
-    public void Warn(string message)
+    public IReadOnlyList<WriteDiagnosticEntry> Warnings
+        => entries.Where(e => e.Severity == WriteDiagnosticSeverity.Warning).ToArray();
+
+    public void Warn(string code, string category, string message)
     {
-        if (!string.IsNullOrWhiteSpace(message))
+        if (string.IsNullOrWhiteSpace(message))
         {
-            warnings.Add(message);
+            return;
         }
+
+        entries.Add(new WriteDiagnosticEntry
+        {
+            Code = code,
+            Category = category,
+            Message = message,
+            Severity = WriteDiagnosticSeverity.Warning
+        });
     }
 }

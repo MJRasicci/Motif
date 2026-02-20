@@ -53,4 +53,5 @@ Common options:
 
 Writer mode (mapped JSON -> .gp):
 - `--from-json --format json`
-- `--diagnostics-out <path>` to capture writer warnings
+- `--diagnostics-out <path>` to capture writer diagnostics
+- `--diagnostics-json` to write diagnostics as JSON

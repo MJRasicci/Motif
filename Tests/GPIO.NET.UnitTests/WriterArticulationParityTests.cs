@@ -1,0 +1,83 @@
+namespace GPIO.NET.UnitTests;
+
+using FluentAssertions;
+using GPIO.NET.Models;
+
+public class WriterArticulationParityTests
+{
+    [Fact]
+    public async Task Writer_round_trip_preserves_core_articulation_fields()
+    {
+        var score = new GuitarProScore
+        {
+            Tracks =
+            [
+                new TrackModel
+                {
+                    Id = 0,
+                    Name = "Guitar",
+                    Measures =
+                    [
+                        new MeasureModel
+                        {
+                            Index = 0,
+                            TimeSignature = "4/4",
+                            Beats =
+                            [
+                                new BeatModel
+                                {
+                                    Id = 1,
+                                    Duration = 0.25m,
+                                    Notes =
+                                    [
+                                        new NoteModel
+                                        {
+                                            Id = 1,
+                                            MidiPitch = 64,
+                                            Articulation = new NoteArticulationModel
+                                            {
+                                                LetRing = true,
+                                                AntiAccent = true,
+                                                PalmMuted = true,
+                                                HopoOrigin = true,
+                                                Slides = [SlideType.Shift, SlideType.OutUp],
+                                                Harmonic = new HarmonicModel { Enabled = true, Type = 2, Fret = 12m },
+                                                Bend = new BendModel { Enabled = true, OriginValue = 0m, DestinationValue = 2m }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var outFile = Path.Combine(Path.GetTempPath(), $"gpio-articulation-{Guid.NewGuid():N}.gp");
+        try
+        {
+            var writer = new GPIO.NET.GuitarProWriter();
+            await writer.WriteAsync(score, outFile, TestContext.Current.CancellationToken);
+
+            var reader = new GPIO.NET.GuitarProReader();
+            var readBack = await reader.ReadAsync(outFile, cancellationToken: TestContext.Current.CancellationToken);
+
+            var note = readBack.Tracks[0].Measures[0].Beats[0].Notes[0];
+            note.Articulation.LetRing.Should().BeTrue();
+            note.Articulation.AntiAccent.Should().BeTrue();
+            note.Articulation.PalmMuted.Should().BeTrue();
+            note.Articulation.HopoOrigin.Should().BeTrue();
+            note.Articulation.Slides.Should().Contain([SlideType.Shift, SlideType.OutUp]);
+            note.Articulation.Harmonic.Should().NotBeNull();
+            note.Articulation.Bend.Should().NotBeNull();
+        }
+        finally
+        {
+            if (File.Exists(outFile))
+            {
+                File.Delete(outFile);
+            }
+        }
+    }
+}

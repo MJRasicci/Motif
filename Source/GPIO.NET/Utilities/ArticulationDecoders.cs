@@ -27,6 +27,33 @@ internal static class ArticulationDecoders
         return slides;
     }
 
+    public static int? EncodeSlides(IReadOnlyList<SlideType> slides)
+    {
+        if (slides.Count == 0)
+        {
+            return null;
+        }
+
+        var flags = 0;
+        foreach (var slide in slides)
+        {
+            flags |= slide switch
+            {
+                SlideType.Shift => 1,
+                SlideType.Legato => 2,
+                SlideType.OutDown => 4,
+                SlideType.OutUp => 8,
+                SlideType.IntoFromBelow => 16,
+                SlideType.IntoFromAbove => 32,
+                SlideType.Unknown64 => 64,
+                SlideType.Unknown128 => 128,
+                _ => 0
+            };
+        }
+
+        return flags == 0 ? null : flags;
+    }
+
     public static BendModel? DecodeBend(GpifNoteArticulation a)
     {
         if (!a.BendEnabled && a.BendOriginValue is null && a.BendDestinationValue is null && a.BendMiddleValue is null)

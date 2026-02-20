@@ -86,7 +86,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                                     LeftHandTapped = note.Articulation.LeftHandTapped,
                                     HopoOrigin = note.Articulation.HopoOrigin,
                                     HopoDestination = note.Articulation.HopoDestination,
-                                    SlideFlags = note.Articulation.SlideFlags,
+                                    SlideFlags = note.Articulation.SlideFlags ?? ArticulationDecoders.EncodeSlides(note.Articulation.Slides),
                                     BendEnabled = note.Articulation.Bend?.Enabled ?? false,
                                     BendOriginOffset = note.Articulation.Bend?.OriginOffset,
                                     BendOriginValue = note.Articulation.Bend?.OriginValue,
@@ -233,7 +233,10 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
             }
         }
 
-        diagnostics.Warn($"Duration {duration} was approximated to quarter note in writer.");
+        diagnostics.Warn(
+            code: "RHYTHM_APPROXIMATED",
+            category: "Rhythm",
+            message: $"Duration {duration} was approximated to quarter note in writer.");
         return new GpifRhythm { Id = id, NoteValue = "Quarter" };
     }
 

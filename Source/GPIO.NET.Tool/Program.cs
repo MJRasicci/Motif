@@ -48,13 +48,23 @@ try
         {
             foreach (var warning in unmapResult.Diagnostics.Warnings)
             {
-                Console.WriteLine($" - {warning}");
+                Console.WriteLine($" - [{warning.Code}] {warning.Category}: {warning.Message}");
             }
 
             if (!string.IsNullOrWhiteSpace(options.DiagnosticsOutPath))
             {
                 EnsureOutputDirectory(options.DiagnosticsOutPath);
-                await File.WriteAllLinesAsync(options.DiagnosticsOutPath, unmapResult.Diagnostics.Warnings).ConfigureAwait(false);
+                if (options.DiagnosticsAsJson)
+                {
+                    var jsonDiagnostics = JsonSerializer.Serialize(unmapResult.Diagnostics.Entries, new JsonSerializerOptions { WriteIndented = true });
+                    await File.WriteAllTextAsync(options.DiagnosticsOutPath, jsonDiagnostics).ConfigureAwait(false);
+                }
+                else
+                {
+                    var lines = unmapResult.Diagnostics.Entries.Select(d => $"[{d.Severity}] [{d.Code}] {d.Category}: {d.Message}").ToArray();
+                    await File.WriteAllLinesAsync(options.DiagnosticsOutPath, lines).ConfigureAwait(false);
+                }
+
                 Console.WriteLine($"Diagnostics written: {options.DiagnosticsOutPath}");
             }
         }
@@ -162,7 +172,8 @@ static void PrintHelp()
     Console.WriteLine("Write mode:");
     Console.WriteLine("  --from-json                input is mapped JSON and output is .gp archive");
     Console.WriteLine("  (use --format json with --from-json)");
-    Console.WriteLine("  --diagnostics-out <path>   optional warnings output file for write mode");
+    Console.WriteLine("  --diagnostics-out <path>   optional diagnostics output file for write mode");
+    Console.WriteLine("  --diagnostics-json         writes diagnostics output as JSON");
     Console.WriteLine();
     Console.WriteLine("Output:");
     Console.WriteLine("  --out <path>               explicit output file path");

@@ -17,4 +17,6 @@ public sealed class CliOptions
     public bool FromJson { get; init; }
 
     public string? DiagnosticsOutPath { get; init; }
+
+    public bool DiagnosticsAsJson { get; init; }
 }
