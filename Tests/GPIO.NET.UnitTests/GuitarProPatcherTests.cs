@@ -20,7 +20,7 @@ public class GuitarProPatcherTests
             var before = await reader.ReadAsync(source, cancellationToken: TestContext.Current.CancellationToken);
 
             var patcher = new GuitarProPatcher();
-            await patcher.PatchAsync(
+            var result = await patcher.PatchAsync(
                 source,
                 output,
                 new GpPatchDocument
@@ -38,6 +38,9 @@ public class GuitarProPatcherTests
                     ]
                 },
                 TestContext.Current.CancellationToken);
+
+            result.Diagnostics.Entries.Should().NotBeEmpty();
+            result.Diagnostics.Entries.Any(e => e.Operation == "append-notes").Should().BeTrue();
 
             File.Exists(output).Should().BeTrue();
 

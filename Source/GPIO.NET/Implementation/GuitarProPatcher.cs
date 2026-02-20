@@ -7,9 +7,11 @@ using System.Xml.Linq;
 
 public sealed class GuitarProPatcher : IGuitarProPatcher
 {
-    public async ValueTask PatchAsync(string sourceGpPath, string outputGpPath, GpPatchDocument patch, CancellationToken cancellationToken = default)
+    public async ValueTask<PatchResult> PatchAsync(string sourceGpPath, string outputGpPath, GpPatchDocument patch, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(patch);
+
+        var diagnostics = new PatchDiagnostics();
 
         if (!File.Exists(sourceGpPath))
         {
@@ -31,7 +33,7 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
             gpif = await XDocument.LoadAsync(scoreStream, LoadOptions.None, cancellationToken).ConfigureAwait(false);
         }
 
-        ApplyPatch(gpif, patch);
+        ApplyPatch(gpif, patch, diagnostics);
 
         if (File.Exists(outputGpPath))
         {
@@ -54,9 +56,11 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
                 await inStream.CopyToAsync(outStream, cancellationToken).ConfigureAwait(false);
             }
         }
+
+        return new PatchResult { Diagnostics = diagnostics };
     }
 
-    private static void ApplyPatch(XDocument gpif, GpPatchDocument patch)
+    private static void ApplyPatch(XDocument gpif, GpPatchDocument patch, PatchDiagnostics diagnostics)
     {
         var root = gpif.Root ?? throw new InvalidDataException("Invalid GPIF document.");
 
@@ -114,6 +118,7 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
             }
 
             masterBar.SetElementValue("Bars", JoinRefs(barRefs));
+            diagnostics.Add("append-bar", $"MasterBar {op.MasterBarIndex}, Track {op.TrackId}: created Bar {newBarId} with Voices [{JoinRefs(newVoiceIds)}]");
         }
 
         foreach (var op in patch.AppendVoices)
@@ -128,6 +133,7 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
 
             voiceRefs.Add(newVoiceId);
             barEl.SetElementValue("Voices", JoinRefs(voiceRefs));
+            diagnostics.Add("append-voice", $"Track {op.TrackId}, MasterBar {op.MasterBarIndex}: appended Voice {newVoiceId}");
         }
 
         foreach (var op in patch.AppendNotes)
@@ -138,6 +144,7 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
             var beatRefs = SplitRefs(voiceEl.Element("Beats")?.Value);
             beatRefs.Add(built.BeatId);
             voiceEl.SetElementValue("Beats", JoinRefs(beatRefs));
+            diagnostics.Add("append-notes", $"Track {op.TrackId}, MasterBar {op.MasterBarIndex}, VoiceIndex {op.VoiceIndex}: appended Beat {built.BeatId} / Rhythm {built.RhythmId}");
         }
 
         foreach (var op in patch.InsertBeats)
@@ -149,6 +156,7 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
             var index = Math.Clamp(op.BeatInsertIndex, 0, beatRefs.Count);
             beatRefs.Insert(index, built.BeatId);
             voiceEl.SetElementValue("Beats", JoinRefs(beatRefs));
+            diagnostics.Add("insert-beat", $"Track {op.TrackId}, MasterBar {op.MasterBarIndex}, VoiceIndex {op.VoiceIndex}: inserted Beat {built.BeatId} at {index}");
         }
 
         foreach (var op in patch.UpdateNoteArticulations)
@@ -170,6 +178,8 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
             {
                 UpsertPropertyFlags(noteEl, "Slide", op.SlideFlags.Value);
             }
+
+            diagnostics.Add("update-note-articulation", $"Updated Note {op.NoteId}");
         }
     }
 
