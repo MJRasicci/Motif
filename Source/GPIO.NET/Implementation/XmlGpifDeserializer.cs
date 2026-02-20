@@ -64,10 +64,19 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
             .ToDictionary(v => v.Id);
 
         var rhythms = (root.Element("Rhythms")?.Elements("Rhythm") ?? Enumerable.Empty<XElement>())
-            .Select(r => new GpifRhythm
+            .Select(r =>
             {
-                Id = ParseInt(r.Attribute("id")?.Value),
-                NoteValue = r.Element("NoteValue")?.Value ?? string.Empty
+                var primaryTuplet = r.Element("PrimaryTuplet");
+                var secondaryTuplet = r.Element("SecondaryTuplet");
+
+                return new GpifRhythm
+                {
+                    Id = ParseInt(r.Attribute("id")?.Value),
+                    NoteValue = r.Element("NoteValue")?.Value ?? string.Empty,
+                    AugmentationDots = r.Elements("AugmentationDot").Count(),
+                    PrimaryTuplet = ParseTuplet(primaryTuplet),
+                    SecondaryTuplet = ParseTuplet(secondaryTuplet)
+                };
             })
             .ToDictionary(r => r.Id);
 
@@ -172,4 +181,25 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
 
     private static int? TryParseNullableInt(string? value)
         => int.TryParse(value, out var parsed) ? parsed : null;
+
+    private static TupletRatio? ParseTuplet(XElement? tuplet)
+    {
+        if (tuplet is null)
+        {
+            return null;
+        }
+
+        var numerator = ParseInt(tuplet.Element("Num")?.Value);
+        var denominator = ParseInt(tuplet.Element("Den")?.Value);
+        if (numerator <= 0 || denominator <= 0)
+        {
+            return null;
+        }
+
+        return new TupletRatio
+        {
+            Numerator = numerator,
+            Denominator = denominator
+        };
+    }
 }

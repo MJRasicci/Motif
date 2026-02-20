@@ -71,6 +71,10 @@ public sealed class NoteModel
 
     public int? MidiPitch { get; init; }
 
+    public decimal Duration { get; set; }
+
+    public bool TieExtendedFromPrevious { get; set; }
+
     public NoteArticulationModel Articulation { get; init; } = new();
 }
 

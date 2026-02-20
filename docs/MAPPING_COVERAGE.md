@@ -27,9 +27,9 @@ Status legend:
 
 ## Rhythm model
 - ✅ Base note values (whole/half/quarter/eighth/16/32/64)
-- ⛔ Tuplets
-- ⛔ Augmentation dot multipliers
-- ⛔ Tie duration merging across beats/bars
+- ✅ Tuplets (primary/secondary ratio support)
+- ✅ Augmentation dot multipliers
+- ✅ Tie duration merging across beats/bars (pitch-based stitch)
 
 ## Note articulation/effect coverage
 - ✅ Let ring

@@ -119,4 +119,17 @@ public sealed class GpifRhythm
     public int Id { get; init; }
 
     public string NoteValue { get; init; } = string.Empty;
+
+    public int AugmentationDots { get; init; }
+
+    public TupletRatio? PrimaryTuplet { get; init; }
+
+    public TupletRatio? SecondaryTuplet { get; init; }
+}
+
+public sealed class TupletRatio
+{
+    public int Numerator { get; init; }
+
+    public int Denominator { get; init; }
 }

@@ -14,11 +14,17 @@ public sealed class DefaultScoreMapper : IScoreMapper
 
         var tracks = source.Tracks
             .OrderBy(t => t.Id)
-            .Select((track, trackOrdinal) => new TrackModel
+            .Select((track, trackOrdinal) =>
             {
-                Id = track.Id,
-                Name = track.Name,
-                Measures = MapMeasures(source, trackOrdinal)
+                var measures = MapMeasures(source, trackOrdinal);
+                ApplyTieDurationStitching(measures);
+
+                return new TrackModel
+                {
+                    Id = track.Id,
+                    Name = track.Name,
+                    Measures = measures
+                };
             })
             .ToArray();
 
@@ -67,6 +73,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
                             {
                                 Id = n.Id,
                                 MidiPitch = n.MidiPitch,
+                                Duration = duration,
                                 Articulation = new NoteArticulationModel
                                 {
                                     LetRing = n.Articulation.LetRing,
@@ -231,7 +238,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
             return 0m;
         }
 
-        return rhythm.NoteValue switch
+        var baseDuration = rhythm.NoteValue switch
         {
             "Whole" => 1m,
             "Half" => 1m / 2m,
@@ -242,5 +249,61 @@ public sealed class DefaultScoreMapper : IScoreMapper
             "64th" => 1m / 64m,
             _ => 0m
         };
+
+        if (baseDuration <= 0m)
+        {
+            return 0m;
+        }
+
+        var dotFactor = 1m;
+        var add = 1m;
+        for (var i = 0; i < rhythm.AugmentationDots; i++)
+        {
+            add /= 2m;
+            dotFactor += add;
+        }
+
+        var duration = baseDuration * dotFactor;
+        duration *= TupletFactor(rhythm.PrimaryTuplet);
+        duration *= TupletFactor(rhythm.SecondaryTuplet);
+        return duration;
+    }
+
+    private static decimal TupletFactor(TupletRatio? tuplet)
+    {
+        if (tuplet is null || tuplet.Numerator <= 0 || tuplet.Denominator <= 0)
+        {
+            return 1m;
+        }
+
+        return ((decimal)tuplet.Denominator) / tuplet.Numerator;
+    }
+
+    private static void ApplyTieDurationStitching(List<MeasureModel> measures)
+    {
+        var carryByPitch = new Dictionary<int, NoteModel>();
+
+        foreach (var note in measures
+                     .SelectMany(m => m.Beats)
+                     .SelectMany(b => b.Notes)
+                     .Where(n => n.MidiPitch.HasValue))
+        {
+            var pitch = note.MidiPitch!.Value;
+
+            if (note.Articulation.TieDestination && carryByPitch.TryGetValue(pitch, out var previous))
+            {
+                previous.Duration += note.Duration;
+                note.TieExtendedFromPrevious = true;
+            }
+
+            if (note.Articulation.TieOrigin)
+            {
+                carryByPitch[pitch] = note;
+            }
+            else if (!note.Articulation.TieDestination)
+            {
+                carryByPitch.Remove(pitch);
+            }
+        }
     }
 }
