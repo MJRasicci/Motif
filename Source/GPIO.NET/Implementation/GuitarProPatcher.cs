@@ -73,79 +73,137 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
 
         foreach (var op in patch.AppendNotes)
         {
-            var trackOrderIndex = trackList.FindIndex(t => ParseInt(t.Attribute("id")?.Value) == op.TrackId);
-            if (trackOrderIndex < 0)
-            {
-                throw new InvalidOperationException($"Track id {op.TrackId} not found.");
-            }
-
-            if (op.MasterBarIndex < 0 || op.MasterBarIndex >= masterBarList.Count)
-            {
-                throw new InvalidOperationException($"Master bar index {op.MasterBarIndex} out of range.");
-            }
-
-            var masterBar = masterBarList[op.MasterBarIndex];
-            var barRefs = SplitRefs(masterBar.Element("Bars")?.Value);
-            if (trackOrderIndex >= barRefs.Count)
-            {
-                throw new InvalidOperationException($"Master bar {op.MasterBarIndex} has no bar for track order index {trackOrderIndex}.");
-            }
-
-            var barId = barRefs[trackOrderIndex];
-            var barEl = barsEl.Elements("Bar").FirstOrDefault(b => ParseInt(b.Attribute("id")?.Value) == barId)
-                        ?? throw new InvalidOperationException($"Bar id {barId} not found.");
-
-            var voiceRefs = SplitRefs(barEl.Element("Voices")?.Value);
-            if (op.VoiceIndex < 0 || op.VoiceIndex >= voiceRefs.Count)
-            {
-                throw new InvalidOperationException($"Voice index {op.VoiceIndex} not available for bar {barId}.");
-            }
-
-            var voiceId = voiceRefs[op.VoiceIndex];
-            var voiceEl = voicesEl.Elements("Voice").FirstOrDefault(v => ParseInt(v.Attribute("id")?.Value) == voiceId)
-                          ?? throw new InvalidOperationException($"Voice id {voiceId} not found.");
-
-            var nextRhythmId = NextId(rhythmsEl, "Rhythm");
-            var nextBeatId = NextId(beatsEl, "Beat");
-            var nextNoteId = NextId(notesEl, "Note");
-
-            rhythmsEl.Add(BuildRhythm(nextRhythmId, op));
-
-            var noteIds = new List<int>();
-            foreach (var midi in op.MidiPitches)
-            {
-                notesEl.Add(BuildNote(nextNoteId, midi));
-                noteIds.Add(nextNoteId);
-                nextNoteId++;
-            }
-
-            beatsEl.Add(new XElement("Beat",
-                new XAttribute("id", nextBeatId),
-                new XElement("Rhythm", new XAttribute("ref", nextRhythmId)),
-                new XElement("Notes", JoinRefs(noteIds))));
+            var voiceEl = ResolveVoiceElement(op.TrackId, op.MasterBarIndex, op.VoiceIndex, trackList, masterBarList, barsEl, voicesEl);
+            var built = BuildBeatWithDependencies(op.RhythmNoteValue, op.AugmentationDots, op.TupletNumerator, op.TupletDenominator, op.MidiPitches, rhythmsEl, beatsEl, notesEl);
 
             var beatRefs = SplitRefs(voiceEl.Element("Beats")?.Value);
-            beatRefs.Add(nextBeatId);
+            beatRefs.Add(built.BeatId);
             voiceEl.SetElementValue("Beats", JoinRefs(beatRefs));
+        }
+
+        foreach (var op in patch.InsertBeats)
+        {
+            var voiceEl = ResolveVoiceElement(op.TrackId, op.MasterBarIndex, op.VoiceIndex, trackList, masterBarList, barsEl, voicesEl);
+            var built = BuildBeatWithDependencies(op.RhythmNoteValue, op.AugmentationDots, op.TupletNumerator, op.TupletDenominator, op.MidiPitches, rhythmsEl, beatsEl, notesEl);
+
+            var beatRefs = SplitRefs(voiceEl.Element("Beats")?.Value);
+            var index = Math.Clamp(op.BeatInsertIndex, 0, beatRefs.Count);
+            beatRefs.Insert(index, built.BeatId);
+            voiceEl.SetElementValue("Beats", JoinRefs(beatRefs));
+        }
+
+        foreach (var op in patch.UpdateNoteArticulations)
+        {
+            var noteEl = notesEl.Elements("Note").FirstOrDefault(n => ParseInt(n.Attribute("id")?.Value) == op.NoteId)
+                         ?? throw new InvalidOperationException($"Note id {op.NoteId} not found.");
+
+            if (op.LetRing.HasValue)
+            {
+                SetToggleElement(noteEl, "LetRing", op.LetRing.Value);
+            }
+
+            UpsertPropertyBool(noteEl, "PalmMuted", op.PalmMuted);
+            UpsertPropertyBool(noteEl, "Muted", op.Muted);
+            UpsertPropertyBool(noteEl, "HopoOrigin", op.HopoOrigin);
+            UpsertPropertyBool(noteEl, "HopoDestination", op.HopoDestination);
+
+            if (op.SlideFlags.HasValue)
+            {
+                UpsertPropertyFlags(noteEl, "Slide", op.SlideFlags.Value);
+            }
         }
     }
 
-    private static XElement BuildRhythm(int id, AppendNotesPatch op)
+    private static XElement ResolveVoiceElement(
+        int trackId,
+        int masterBarIndex,
+        int voiceIndex,
+        IReadOnlyList<XElement> trackList,
+        IReadOnlyList<XElement> masterBarList,
+        XElement barsEl,
+        XElement voicesEl)
+    {
+        var trackOrderIndex = trackList.ToList().FindIndex(t => ParseInt(t.Attribute("id")?.Value) == trackId);
+        if (trackOrderIndex < 0)
+        {
+            throw new InvalidOperationException($"Track id {trackId} not found.");
+        }
+
+        if (masterBarIndex < 0 || masterBarIndex >= masterBarList.Count)
+        {
+            throw new InvalidOperationException($"Master bar index {masterBarIndex} out of range.");
+        }
+
+        var masterBar = masterBarList[masterBarIndex];
+        var barRefs = SplitRefs(masterBar.Element("Bars")?.Value);
+        if (trackOrderIndex >= barRefs.Count)
+        {
+            throw new InvalidOperationException($"Master bar {masterBarIndex} has no bar for track order index {trackOrderIndex}.");
+        }
+
+        var barId = barRefs[trackOrderIndex];
+        var barEl = barsEl.Elements("Bar").FirstOrDefault(b => ParseInt(b.Attribute("id")?.Value) == barId)
+                    ?? throw new InvalidOperationException($"Bar id {barId} not found.");
+
+        var voiceRefs = SplitRefs(barEl.Element("Voices")?.Value);
+        if (voiceIndex < 0 || voiceIndex >= voiceRefs.Count)
+        {
+            throw new InvalidOperationException($"Voice index {voiceIndex} not available for bar {barId}.");
+        }
+
+        var voiceId = voiceRefs[voiceIndex];
+        return voicesEl.Elements("Voice").FirstOrDefault(v => ParseInt(v.Attribute("id")?.Value) == voiceId)
+               ?? throw new InvalidOperationException($"Voice id {voiceId} not found.");
+    }
+
+    private static (int BeatId, int RhythmId, IReadOnlyList<int> NoteIds) BuildBeatWithDependencies(
+        string rhythmNoteValue,
+        int augmentationDots,
+        int? tupletNumerator,
+        int? tupletDenominator,
+        IReadOnlyList<int> midiPitches,
+        XElement rhythmsEl,
+        XElement beatsEl,
+        XElement notesEl)
+    {
+        var nextRhythmId = NextId(rhythmsEl, "Rhythm");
+        var nextBeatId = NextId(beatsEl, "Beat");
+        var nextNoteId = NextId(notesEl, "Note");
+
+        rhythmsEl.Add(BuildRhythm(nextRhythmId, rhythmNoteValue, augmentationDots, tupletNumerator, tupletDenominator));
+
+        var noteIds = new List<int>();
+        foreach (var midi in midiPitches)
+        {
+            notesEl.Add(BuildNote(nextNoteId, midi));
+            noteIds.Add(nextNoteId);
+            nextNoteId++;
+        }
+
+        beatsEl.Add(new XElement("Beat",
+            new XAttribute("id", nextBeatId),
+            new XElement("Rhythm", new XAttribute("ref", nextRhythmId)),
+            new XElement("Notes", JoinRefs(noteIds))));
+
+        return (nextBeatId, nextRhythmId, noteIds);
+    }
+
+    private static XElement BuildRhythm(int id, string noteValue, int dots, int? tupletNumerator, int? tupletDenominator)
     {
         var rhythm = new XElement("Rhythm",
             new XAttribute("id", id),
-            new XElement("NoteValue", op.RhythmNoteValue));
+            new XElement("NoteValue", noteValue));
 
-        for (var i = 0; i < op.AugmentationDots; i++)
+        for (var i = 0; i < dots; i++)
         {
             rhythm.Add(new XElement("AugmentationDot"));
         }
 
-        if (op.TupletNumerator is > 0 && op.TupletDenominator is > 0)
+        if (tupletNumerator is > 0 && tupletDenominator is > 0)
         {
             rhythm.Add(new XElement("PrimaryTuplet",
-                new XElement("Num", op.TupletNumerator.Value),
-                new XElement("Den", op.TupletDenominator.Value)));
+                new XElement("Num", tupletNumerator.Value),
+                new XElement("Den", tupletDenominator.Value)));
         }
 
         return rhythm;
@@ -163,6 +221,74 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
                         new XElement("Step", step),
                         new XElement("Accidental", accidental),
                         new XElement("Octave", octave)))));
+    }
+
+    private static void SetToggleElement(XElement parent, string elementName, bool enabled)
+    {
+        var existing = parent.Element(elementName);
+        if (enabled)
+        {
+            if (existing is null)
+            {
+                parent.Add(new XElement(elementName));
+            }
+        }
+        else
+        {
+            existing?.Remove();
+        }
+    }
+
+    private static void UpsertPropertyBool(XElement noteEl, string propertyName, bool? enabled)
+    {
+        if (!enabled.HasValue)
+        {
+            return;
+        }
+
+        var props = GetOrCreateProperties(noteEl);
+        var prop = props.Elements("Property").FirstOrDefault(p => string.Equals((string?)p.Attribute("name"), propertyName, StringComparison.OrdinalIgnoreCase));
+
+        if (enabled.Value)
+        {
+            if (prop is null)
+            {
+                prop = new XElement("Property", new XAttribute("name", propertyName));
+                props.Add(prop);
+            }
+
+            prop.SetElementValue("Enable", null);
+            prop.Add(new XElement("Enable"));
+        }
+        else
+        {
+            prop?.Remove();
+        }
+    }
+
+    private static void UpsertPropertyFlags(XElement noteEl, string propertyName, int flags)
+    {
+        var props = GetOrCreateProperties(noteEl);
+        var prop = props.Elements("Property").FirstOrDefault(p => string.Equals((string?)p.Attribute("name"), propertyName, StringComparison.OrdinalIgnoreCase));
+        if (prop is null)
+        {
+            prop = new XElement("Property", new XAttribute("name", propertyName));
+            props.Add(prop);
+        }
+
+        prop.SetElementValue("Flags", flags);
+    }
+
+    private static XElement GetOrCreateProperties(XElement noteEl)
+    {
+        var props = noteEl.Element("Properties");
+        if (props is null)
+        {
+            props = new XElement("Properties");
+            noteEl.Add(props);
+        }
+
+        return props;
     }
 
     private static int NextId(XElement container, string elementName)
