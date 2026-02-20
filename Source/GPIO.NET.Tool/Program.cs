@@ -1,6 +1,9 @@
 using GPIO.NET;
+using GPIO.NET.Implementation;
+using GPIO.NET.Models;
 using GPIO.NET.Tool.Cli;
 using System.IO.Compression;
+using System.Text.Json;
 
 try
 {
@@ -12,7 +15,52 @@ try
         return 2;
     }
 
-    var outputPath = options.OutputPath ?? BuildDefaultOutputPath(options.InputPath, options.Format);
+    var outputPath = options.OutputPath ?? BuildDefaultOutputPath(options.InputPath, options.Format, options.FromJson);
+
+    if (options.FromJson)
+    {
+        if (options.Format != OutputFormat.Json)
+        {
+            throw new InvalidOperationException("--from-json currently supports --format json only (mapped json -> .gp).");
+        }
+
+        var json = await File.ReadAllTextAsync(options.InputPath).ConfigureAwait(false);
+        var score = JsonSerializer.Deserialize<GuitarProScore>(json, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        }) ?? throw new InvalidDataException("Unable to deserialize mapped score JSON.");
+
+        var unmapper = new DefaultScoreUnmapper();
+        var unmapResult = await unmapper.UnmapAsync(score).ConfigureAwait(false);
+
+        await using var gpifBuffer = new MemoryStream();
+        var serializer = new XmlGpifSerializer();
+        await serializer.SerializeAsync(unmapResult.RawDocument, gpifBuffer).ConfigureAwait(false);
+        gpifBuffer.Position = 0;
+
+        var archiveWriter = new ZipGpArchiveWriter();
+        await archiveWriter.WriteArchiveAsync(gpifBuffer, outputPath).ConfigureAwait(false);
+
+        Console.WriteLine($"GP archive written: {outputPath}");
+        Console.WriteLine($"Warnings: {unmapResult.Diagnostics.Warnings.Count}");
+
+        if (unmapResult.Diagnostics.Warnings.Count > 0)
+        {
+            foreach (var warning in unmapResult.Diagnostics.Warnings)
+            {
+                Console.WriteLine($" - {warning}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.DiagnosticsOutPath))
+            {
+                EnsureOutputDirectory(options.DiagnosticsOutPath);
+                await File.WriteAllLinesAsync(options.DiagnosticsOutPath, unmapResult.Diagnostics.Warnings).ConfigureAwait(false);
+                Console.WriteLine($"Diagnostics written: {options.DiagnosticsOutPath}");
+            }
+        }
+
+        return 0;
+    }
 
     switch (options.Format)
     {
@@ -20,13 +68,13 @@ try
         {
             var reader = new GuitarProReader();
             var score = await reader.ReadAsync(options.InputPath).ConfigureAwait(false);
-            var json = score.ToJson(
+            var mappedJson = score.ToJson(
                 indented: options.JsonIndented,
                 ignoreNullValues: options.JsonIgnoreNull,
                 ignoreDefaultValues: options.JsonIgnoreDefaults);
 
             EnsureOutputDirectory(outputPath);
-            await File.WriteAllTextAsync(outputPath, json).ConfigureAwait(false);
+            await File.WriteAllTextAsync(outputPath, mappedJson).ConfigureAwait(false);
 
             Console.WriteLine($"Mapped JSON written: {outputPath}");
             Console.WriteLine($"Title: {score.Title}");
@@ -70,8 +118,15 @@ catch (Exception ex)
     return 1;
 }
 
-static string BuildDefaultOutputPath(string inputPath, OutputFormat format)
+static string BuildDefaultOutputPath(string inputPath, OutputFormat format, bool fromJson)
 {
+    if (fromJson)
+    {
+        var directory = Path.GetDirectoryName(inputPath) ?? Environment.CurrentDirectory;
+        var baseName = Path.GetFileNameWithoutExtension(inputPath);
+        return Path.Combine(directory, baseName + ".gp");
+    }
+
     var extension = format switch
     {
         OutputFormat.Json => ".mapped.json",
@@ -80,9 +135,9 @@ static string BuildDefaultOutputPath(string inputPath, OutputFormat format)
         _ => ".out"
     };
 
-    var directory = Path.GetDirectoryName(inputPath) ?? Environment.CurrentDirectory;
-    var baseName = Path.GetFileNameWithoutExtension(inputPath);
-    return Path.Combine(directory, baseName + extension);
+    var outDirectory = Path.GetDirectoryName(inputPath) ?? Environment.CurrentDirectory;
+    var outBaseName = Path.GetFileNameWithoutExtension(inputPath);
+    return Path.Combine(outDirectory, outBaseName + extension);
 }
 
 static void EnsureOutputDirectory(string outputPath)
@@ -97,12 +152,17 @@ static void EnsureOutputDirectory(string outputPath)
 static void PrintHelp()
 {
     Console.WriteLine("Usage:");
-    Console.WriteLine("  dotnet run --project Source/GPIO.NET.Tool -- <input.gp> [output-path] [options]");
+    Console.WriteLine("  dotnet run --project Source/GPIO.NET.Tool -- <input> [output-path] [options]");
     Console.WriteLine();
-    Console.WriteLine("Formats:");
-    Console.WriteLine("  --format json   (default) mapped domain model JSON");
-    Console.WriteLine("  --format gpif              extracted Content/score.gpif XML");
+    Console.WriteLine("Read/convert modes (default):");
+    Console.WriteLine("  --format json   (default) mapped domain model JSON from .gp input");
+    Console.WriteLine("  --format gpif              extracted Content/score.gpif XML from .gp input");
     Console.WriteLine("  --format midi              planned; currently not implemented");
+    Console.WriteLine();
+    Console.WriteLine("Write mode:");
+    Console.WriteLine("  --from-json                input is mapped JSON and output is .gp archive");
+    Console.WriteLine("  (use --format json with --from-json)");
+    Console.WriteLine("  --diagnostics-out <path>   optional warnings output file for write mode");
     Console.WriteLine();
     Console.WriteLine("Output:");
     Console.WriteLine("  --out <path>               explicit output file path");

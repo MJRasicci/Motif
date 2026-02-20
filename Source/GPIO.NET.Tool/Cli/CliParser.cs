@@ -15,6 +15,8 @@ public static class CliParser
         var jsonIndented = true;
         var jsonIgnoreNull = false;
         var jsonIgnoreDefaults = false;
+        var fromJson = false;
+        string? diagnosticsOutPath = null;
 
         for (var i = 1; i < args.Length; i++)
         {
@@ -64,6 +66,19 @@ public static class CliParser
                     jsonIgnoreDefaults = ParseBoolOption(value, true);
                     break;
 
+                case "--from-json":
+                    fromJson = ParseBoolOption(value, true);
+                    break;
+
+                case "--diagnostics-out":
+                    if (string.IsNullOrWhiteSpace(value) && i + 1 < args.Length)
+                    {
+                        value = args[++i];
+                    }
+
+                    diagnosticsOutPath = value;
+                    break;
+
                 case "--help":
                 case "-h":
                     throw new OperationCanceledException("help");
@@ -80,7 +95,9 @@ public static class CliParser
             Format = format,
             JsonIndented = jsonIndented,
             JsonIgnoreNull = jsonIgnoreNull,
-            JsonIgnoreDefaults = jsonIgnoreDefaults
+            JsonIgnoreDefaults = jsonIgnoreDefaults,
+            FromJson = fromJson,
+            DiagnosticsOutPath = string.IsNullOrWhiteSpace(diagnosticsOutPath) ? null : Path.GetFullPath(diagnosticsOutPath)
         };
     }
 

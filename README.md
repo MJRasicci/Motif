@@ -50,3 +50,7 @@ Common options:
 - `--json-indent[=true|false]`
 - `--json-ignore-null[=true|false]`
 - `--json-ignore-default[=true|false]`
+
+Writer mode (mapped JSON -> .gp):
+- `--from-json --format json`
+- `--diagnostics-out <path>` to capture writer warnings

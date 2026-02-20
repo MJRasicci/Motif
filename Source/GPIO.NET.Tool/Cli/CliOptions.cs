@@ -13,4 +13,8 @@ public sealed class CliOptions
     public bool JsonIgnoreNull { get; init; }
 
     public bool JsonIgnoreDefaults { get; init; }
+
+    public bool FromJson { get; init; }
+
+    public string? DiagnosticsOutPath { get; init; }
 }
