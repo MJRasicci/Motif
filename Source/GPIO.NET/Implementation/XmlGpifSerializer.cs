@@ -30,14 +30,54 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         await writer.FlushAsync();
     }
 
-    private static XElement BuildScore(ScoreInfo s) => new("Score",
-        new XElement("Title", s.Title),
-        new XElement("Artist", s.Artist),
-        new XElement("Album", s.Album));
+    private static XElement BuildScore(ScoreInfo s)
+    {
+        var el = new XElement("Score",
+            new XElement("Title", s.Title),
+            new XElement("Artist", s.Artist),
+            new XElement("Album", s.Album));
 
-    private static XElement BuildTrack(GpifTrack t) => new("Track",
-        new XAttribute("id", t.Id),
-        new XElement("Name", t.Name));
+        AddTextElement(el, "SubTitle", s.SubTitle);
+        AddTextElement(el, "Words", s.Words);
+        AddTextElement(el, "Music", s.Music);
+        AddTextElement(el, "WordsAndMusic", s.WordsAndMusic);
+        AddTextElement(el, "Copyright", s.Copyright);
+        AddTextElement(el, "Tabber", s.Tabber);
+        AddTextElement(el, "Instructions", s.Instructions);
+        AddTextElement(el, "Notices", s.Notices);
+        AddTextElement(el, "FirstPageHeader", s.FirstPageHeader);
+        AddTextElement(el, "FirstPageFooter", s.FirstPageFooter);
+        AddTextElement(el, "PageHeader", s.PageHeader);
+        AddTextElement(el, "PageFooter", s.PageFooter);
+        AddTextElement(el, "ScoreSystemsDefaultLayout", s.ScoreSystemsDefaultLayout);
+        AddTextElement(el, "ScoreSystemsLayout", s.ScoreSystemsLayout);
+        AddTextElement(el, "ScoreZoomPolicy", s.ScoreZoomPolicy);
+        AddTextElement(el, "ScoreZoom", s.ScoreZoom);
+        AddTextElement(el, "MultiVoice", s.MultiVoice);
+
+        return el;
+    }
+
+    private static XElement BuildTrack(GpifTrack t)
+    {
+        var el = new XElement("Track",
+            new XAttribute("id", t.Id),
+            new XElement("Name", t.Name));
+
+        AddTextElement(el, "ShortName", t.ShortName);
+        AddTextElement(el, "Color", t.Color);
+        AddTextElement(el, "SystemsDefautLayout", t.SystemsDefaultLayout);
+        AddTextElement(el, "SystemsLayout", t.SystemsLayout);
+        if (t.AutoBrush) el.Add(new XElement("AutoBrush"));
+        if (t.PalmMute.HasValue) el.Add(new XElement("PalmMute", t.PalmMute.Value));
+        if (t.AutoAccentuation.HasValue) el.Add(new XElement("AutoAccentuation", t.AutoAccentuation.Value));
+        AddTextElement(el, "PlayingStyle", t.PlayingStyle);
+        if (t.UseOneChannelPerString) el.Add(new XElement("UseOneChannelPerString"));
+        if (t.IconId.HasValue) el.Add(new XElement("IconId", t.IconId.Value));
+        if (t.ForcedSound.HasValue) el.Add(new XElement("ForcedSound", t.ForcedSound.Value));
+
+        return el;
+    }
 
     private static XElement BuildMasterBar(GpifMasterBar m)
     {
@@ -132,6 +172,16 @@ public sealed class XmlGpifSerializer : IGpifSerializer
 
         if (props.HasElements) el.Add(props);
         return el;
+    }
+
+    private static void AddTextElement(XElement parent, string name, string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        parent.Add(new XElement(name, value));
     }
 
     private static void AddBoolProperty(XElement parent, string name, bool value)

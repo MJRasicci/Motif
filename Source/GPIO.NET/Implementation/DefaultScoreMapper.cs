@@ -35,6 +35,20 @@ public sealed class DefaultScoreMapper : IScoreMapper
                 {
                     Id = track.Id,
                     Name = track.Name,
+                    Metadata = new TrackMetadata
+                    {
+                        ShortName = track.ShortName,
+                        Color = track.Color,
+                        SystemsDefaultLayout = track.SystemsDefaultLayout,
+                        SystemsLayout = track.SystemsLayout,
+                        PalmMute = track.PalmMute,
+                        AutoAccentuation = track.AutoAccentuation,
+                        AutoBrush = track.AutoBrush,
+                        PlayingStyle = track.PlayingStyle,
+                        UseOneChannelPerString = track.UseOneChannelPerString,
+                        IconId = track.IconId,
+                        ForcedSound = track.ForcedSound
+                    },
                     Measures = measures
                 };
             })
@@ -45,6 +59,26 @@ public sealed class DefaultScoreMapper : IScoreMapper
             Title = source.Score.Title,
             Artist = source.Score.Artist,
             Album = source.Score.Album,
+            Metadata = new ScoreMetadata
+            {
+                SubTitle = source.Score.SubTitle,
+                Words = source.Score.Words,
+                Music = source.Score.Music,
+                WordsAndMusic = source.Score.WordsAndMusic,
+                Copyright = source.Score.Copyright,
+                Tabber = source.Score.Tabber,
+                Instructions = source.Score.Instructions,
+                Notices = source.Score.Notices,
+                FirstPageHeader = source.Score.FirstPageHeader,
+                FirstPageFooter = source.Score.FirstPageFooter,
+                PageHeader = source.Score.PageHeader,
+                PageFooter = source.Score.PageFooter,
+                ScoreSystemsDefaultLayout = source.Score.ScoreSystemsDefaultLayout,
+                ScoreSystemsLayout = source.Score.ScoreSystemsLayout,
+                ScoreZoomPolicy = source.Score.ScoreZoomPolicy,
+                ScoreZoom = source.Score.ScoreZoom,
+                MultiVoice = source.Score.MultiVoice
+            },
             Tracks = tracks,
             PlaybackMasterBarSequence = navigationResolver.BuildPlaybackSequence(source.MasterBars)
         };

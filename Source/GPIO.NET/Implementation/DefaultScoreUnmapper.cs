@@ -18,7 +18,22 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
 
         var tracks = score.Tracks
             .OrderBy(t => t.Id)
-            .Select(t => new GpifTrack { Id = t.Id, Name = t.Name })
+            .Select(t => new GpifTrack
+            {
+                Id = t.Id,
+                Name = t.Name,
+                ShortName = t.Metadata.ShortName,
+                Color = t.Metadata.Color,
+                SystemsDefaultLayout = t.Metadata.SystemsDefaultLayout,
+                SystemsLayout = t.Metadata.SystemsLayout,
+                PalmMute = t.Metadata.PalmMute,
+                AutoAccentuation = t.Metadata.AutoAccentuation,
+                AutoBrush = t.Metadata.AutoBrush,
+                PlayingStyle = t.Metadata.PlayingStyle,
+                UseOneChannelPerString = t.Metadata.UseOneChannelPerString,
+                IconId = t.Metadata.IconId,
+                ForcedSound = t.Metadata.ForcedSound
+            })
             .ToArray();
 
         var barId = 1;
@@ -167,7 +182,29 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
 
         var doc = new GpifDocument
         {
-            Score = new ScoreInfo { Title = score.Title, Artist = score.Artist, Album = score.Album },
+            Score = new ScoreInfo
+            {
+                Title = score.Title,
+                SubTitle = score.Metadata.SubTitle,
+                Artist = score.Artist,
+                Album = score.Album,
+                Words = score.Metadata.Words,
+                Music = score.Metadata.Music,
+                WordsAndMusic = score.Metadata.WordsAndMusic,
+                Copyright = score.Metadata.Copyright,
+                Tabber = score.Metadata.Tabber,
+                Instructions = score.Metadata.Instructions,
+                Notices = score.Metadata.Notices,
+                FirstPageHeader = score.Metadata.FirstPageHeader,
+                FirstPageFooter = score.Metadata.FirstPageFooter,
+                PageHeader = score.Metadata.PageHeader,
+                PageFooter = score.Metadata.PageFooter,
+                ScoreSystemsDefaultLayout = score.Metadata.ScoreSystemsDefaultLayout,
+                ScoreSystemsLayout = score.Metadata.ScoreSystemsLayout,
+                ScoreZoomPolicy = score.Metadata.ScoreZoomPolicy,
+                ScoreZoom = score.Metadata.ScoreZoom,
+                MultiVoice = score.Metadata.MultiVoice
+            },
             Tracks = tracks,
             MasterBars = masterBars,
             BarsById = bars,

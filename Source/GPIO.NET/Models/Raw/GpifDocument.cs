@@ -26,9 +26,43 @@ public sealed class ScoreInfo
 {
     public string Title { get; init; } = string.Empty;
 
+    public string SubTitle { get; init; } = string.Empty;
+
     public string Artist { get; init; } = string.Empty;
 
     public string Album { get; init; } = string.Empty;
+
+    public string Words { get; init; } = string.Empty;
+
+    public string Music { get; init; } = string.Empty;
+
+    public string WordsAndMusic { get; init; } = string.Empty;
+
+    public string Copyright { get; init; } = string.Empty;
+
+    public string Tabber { get; init; } = string.Empty;
+
+    public string Instructions { get; init; } = string.Empty;
+
+    public string Notices { get; init; } = string.Empty;
+
+    public string FirstPageHeader { get; init; } = string.Empty;
+
+    public string FirstPageFooter { get; init; } = string.Empty;
+
+    public string PageHeader { get; init; } = string.Empty;
+
+    public string PageFooter { get; init; } = string.Empty;
+
+    public string ScoreSystemsDefaultLayout { get; init; } = string.Empty;
+
+    public string ScoreSystemsLayout { get; init; } = string.Empty;
+
+    public string ScoreZoomPolicy { get; init; } = string.Empty;
+
+    public string ScoreZoom { get; init; } = string.Empty;
+
+    public string MultiVoice { get; init; } = string.Empty;
 }
 
 public sealed class GpifTrack
@@ -36,6 +70,28 @@ public sealed class GpifTrack
     public int Id { get; init; }
 
     public string Name { get; init; } = string.Empty;
+
+    public string ShortName { get; init; } = string.Empty;
+
+    public string Color { get; init; } = string.Empty;
+
+    public string SystemsDefaultLayout { get; init; } = string.Empty;
+
+    public string SystemsLayout { get; init; } = string.Empty;
+
+    public decimal? PalmMute { get; init; }
+
+    public decimal? AutoAccentuation { get; init; }
+
+    public bool AutoBrush { get; init; }
+
+    public string PlayingStyle { get; init; } = string.Empty;
+
+    public bool UseOneChannelPerString { get; init; }
+
+    public int? IconId { get; init; }
+
+    public int? ForcedSound { get; init; }
 }
 
 public sealed class GpifMasterBar

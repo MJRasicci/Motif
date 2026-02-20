@@ -15,11 +15,23 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
 
         var score = root.Element("Score");
 
-        var tracks = root.Element("Tracks")?.Elements("Track")
+        var tracksContainer = root.Elements("Tracks").FirstOrDefault(t => t.Elements("Track").Any());
+        var tracks = tracksContainer?.Elements("Track")
             .Select(t => new GpifTrack
             {
                 Id = ParseInt(t.Attribute("id")?.Value),
-                Name = t.Element("Name")?.Value ?? string.Empty
+                Name = t.Element("Name")?.Value ?? string.Empty,
+                ShortName = t.Element("ShortName")?.Value ?? string.Empty,
+                Color = t.Element("Color")?.Value ?? string.Empty,
+                SystemsDefaultLayout = t.Element("SystemsDefautLayout")?.Value ?? string.Empty,
+                SystemsLayout = t.Element("SystemsLayout")?.Value ?? string.Empty,
+                PalmMute = TryParseNullableDecimal(t.Element("PalmMute")?.Value),
+                AutoAccentuation = TryParseNullableDecimal(t.Element("AutoAccentuation")?.Value),
+                AutoBrush = t.Element("AutoBrush") is not null,
+                PlayingStyle = t.Element("PlayingStyle")?.Value ?? string.Empty,
+                UseOneChannelPerString = t.Element("UseOneChannelPerString") is not null,
+                IconId = TryParseNullableInt(t.Element("IconId")?.Value),
+                ForcedSound = TryParseNullableInt(t.Element("ForcedSound")?.Value)
             })
             .ToArray() ?? Array.Empty<GpifTrack>();
 
@@ -108,8 +120,25 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
             Score = new ScoreInfo
             {
                 Title = score?.Element("Title")?.Value ?? string.Empty,
+                SubTitle = score?.Element("SubTitle")?.Value ?? string.Empty,
                 Artist = score?.Element("Artist")?.Value ?? string.Empty,
-                Album = score?.Element("Album")?.Value ?? string.Empty
+                Album = score?.Element("Album")?.Value ?? string.Empty,
+                Words = score?.Element("Words")?.Value ?? string.Empty,
+                Music = score?.Element("Music")?.Value ?? string.Empty,
+                WordsAndMusic = score?.Element("WordsAndMusic")?.Value ?? string.Empty,
+                Copyright = score?.Element("Copyright")?.Value ?? string.Empty,
+                Tabber = score?.Element("Tabber")?.Value ?? string.Empty,
+                Instructions = score?.Element("Instructions")?.Value ?? string.Empty,
+                Notices = score?.Element("Notices")?.Value ?? string.Empty,
+                FirstPageHeader = score?.Element("FirstPageHeader")?.Value ?? string.Empty,
+                FirstPageFooter = score?.Element("FirstPageFooter")?.Value ?? string.Empty,
+                PageHeader = score?.Element("PageHeader")?.Value ?? string.Empty,
+                PageFooter = score?.Element("PageFooter")?.Value ?? string.Empty,
+                ScoreSystemsDefaultLayout = score?.Element("ScoreSystemsDefaultLayout")?.Value ?? string.Empty,
+                ScoreSystemsLayout = score?.Element("ScoreSystemsLayout")?.Value ?? string.Empty,
+                ScoreZoomPolicy = score?.Element("ScoreZoomPolicy")?.Value ?? string.Empty,
+                ScoreZoom = score?.Element("ScoreZoom")?.Value ?? string.Empty,
+                MultiVoice = score?.Element("MultiVoice")?.Value ?? string.Empty
             },
             Tracks = tracks,
             MasterBars = masterBars,
