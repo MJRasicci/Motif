@@ -146,4 +146,97 @@ public class GuitarProPatcherTests
             if (File.Exists(output)) File.Delete(output);
         }
     }
+
+    [Fact]
+    public async Task Patcher_can_append_new_voice_to_existing_bar()
+    {
+        var source = Path.Combine(AppContext.BaseDirectory, "Fixtures", "sample.gp");
+        var output = Path.Combine(Path.GetTempPath(), $"gpio-patched-voice-{Guid.NewGuid():N}.gp");
+
+        try
+        {
+            var patcher = new GuitarProPatcher();
+            await patcher.PatchAsync(
+                source,
+                output,
+                new GpPatchDocument
+                {
+                    AppendVoices =
+                    [
+                        new AppendVoicePatch
+                        {
+                            TrackId = 0,
+                            MasterBarIndex = 0
+                        }
+                    ],
+                    AppendNotes =
+                    [
+                        new AppendNotesPatch
+                        {
+                            TrackId = 0,
+                            MasterBarIndex = 0,
+                            VoiceIndex = 1,
+                            RhythmNoteValue = "Quarter",
+                            MidiPitches = [67]
+                        }
+                    ]
+                },
+                TestContext.Current.CancellationToken);
+
+            using var zip = System.IO.Compression.ZipFile.OpenRead(output);
+            var entry = zip.GetEntry("Content/score.gpif");
+            entry.Should().NotBeNull();
+            using var stream = entry!.Open();
+            var doc = await System.Xml.Linq.XDocument.LoadAsync(stream, System.Xml.Linq.LoadOptions.None, TestContext.Current.CancellationToken);
+
+            var masterBar = doc.Root!.Element("MasterBars")!.Elements("MasterBar").First();
+            var barId = int.Parse(masterBar.Element("Bars")!.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries).First());
+            var bar = doc.Root!.Element("Bars")!.Elements("Bar").First(b => (int)b.Attribute("id")! == barId);
+            var voices = bar.Element("Voices")!.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            voices.Length.Should().BeGreaterThan(1);
+        }
+        finally
+        {
+            if (File.Exists(output)) File.Delete(output);
+        }
+    }
+
+    [Fact]
+    public async Task Patcher_can_append_bar_slot_for_track_in_master_bar()
+    {
+        var source = Path.Combine(AppContext.BaseDirectory, "Fixtures", "sample.gp");
+        var output = Path.Combine(Path.GetTempPath(), $"gpio-patched-bar-{Guid.NewGuid():N}.gp");
+
+        try
+        {
+            var patcher = new GuitarProPatcher();
+            await patcher.PatchAsync(
+                source,
+                output,
+                new GpPatchDocument
+                {
+                    AppendBars =
+                    [
+                        new AppendBarPatch
+                        {
+                            TrackId = 0,
+                            MasterBarIndex = 0,
+                            NewBarVoiceCount = 2
+                        }
+                    ]
+                },
+                TestContext.Current.CancellationToken);
+
+            File.Exists(output).Should().BeTrue();
+            // smoke-level compatibility check
+            var reader = new GPIO.NET.GuitarProReader();
+            var readBack = await reader.ReadAsync(output, cancellationToken: TestContext.Current.CancellationToken);
+            readBack.Tracks.Should().NotBeEmpty();
+        }
+        finally
+        {
+            if (File.Exists(output)) File.Delete(output);
+        }
+    }
 }

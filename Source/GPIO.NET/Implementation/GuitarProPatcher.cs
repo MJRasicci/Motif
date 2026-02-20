@@ -71,6 +71,65 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
         var trackList = tracksEl.Elements("Track").ToList();
         var masterBarList = masterBarsEl.Elements("MasterBar").ToList();
 
+        foreach (var op in patch.AppendBars)
+        {
+            if (op.MasterBarIndex < 0 || op.MasterBarIndex >= masterBarList.Count)
+            {
+                throw new InvalidOperationException($"Master bar index {op.MasterBarIndex} out of range.");
+            }
+
+            var trackOrderIndex = trackList.FindIndex(t => ParseInt(t.Attribute("id")?.Value) == op.TrackId);
+            if (trackOrderIndex < 0)
+            {
+                throw new InvalidOperationException($"Track id {op.TrackId} not found.");
+            }
+
+            var masterBar = masterBarList[op.MasterBarIndex];
+            var barRefs = SplitRefs(masterBar.Element("Bars")?.Value);
+
+            var newBarId = NextId(barsEl, "Bar");
+            var newVoiceIds = new List<int>();
+            var voiceCount = Math.Max(1, op.NewBarVoiceCount);
+            for (var i = 0; i < voiceCount; i++)
+            {
+                var voiceId = NextId(voicesEl, "Voice");
+                voicesEl.Add(new XElement("Voice", new XAttribute("id", voiceId), new XElement("Beats", string.Empty)));
+                newVoiceIds.Add(voiceId);
+            }
+
+            barsEl.Add(new XElement("Bar",
+                new XAttribute("id", newBarId),
+                new XElement("Voices", JoinRefs(newVoiceIds))));
+
+            if (trackOrderIndex <= barRefs.Count)
+            {
+                if (trackOrderIndex == barRefs.Count)
+                {
+                    barRefs.Add(newBarId);
+                }
+                else
+                {
+                    barRefs[trackOrderIndex] = newBarId;
+                }
+            }
+
+            masterBar.SetElementValue("Bars", JoinRefs(barRefs));
+        }
+
+        foreach (var op in patch.AppendVoices)
+        {
+            var barEl = ResolveBarElement(op.TrackId, op.MasterBarIndex, trackList, masterBarList, barsEl);
+            var voiceRefs = SplitRefs(barEl.Element("Voices")?.Value);
+
+            var newVoiceId = NextId(voicesEl, "Voice");
+            voicesEl.Add(new XElement("Voice",
+                new XAttribute("id", newVoiceId),
+                new XElement("Beats", JoinRefs(op.InitialBeatIds))));
+
+            voiceRefs.Add(newVoiceId);
+            barEl.SetElementValue("Voices", JoinRefs(voiceRefs));
+        }
+
         foreach (var op in patch.AppendNotes)
         {
             var voiceEl = ResolveVoiceElement(op.TrackId, op.MasterBarIndex, op.VoiceIndex, trackList, masterBarList, barsEl, voicesEl);
@@ -114,14 +173,12 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
         }
     }
 
-    private static XElement ResolveVoiceElement(
+    private static XElement ResolveBarElement(
         int trackId,
         int masterBarIndex,
-        int voiceIndex,
         IReadOnlyList<XElement> trackList,
         IReadOnlyList<XElement> masterBarList,
-        XElement barsEl,
-        XElement voicesEl)
+        XElement barsEl)
     {
         var trackOrderIndex = trackList.ToList().FindIndex(t => ParseInt(t.Attribute("id")?.Value) == trackId);
         if (trackOrderIndex < 0)
@@ -142,13 +199,25 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
         }
 
         var barId = barRefs[trackOrderIndex];
-        var barEl = barsEl.Elements("Bar").FirstOrDefault(b => ParseInt(b.Attribute("id")?.Value) == barId)
-                    ?? throw new InvalidOperationException($"Bar id {barId} not found.");
+        return barsEl.Elements("Bar").FirstOrDefault(b => ParseInt(b.Attribute("id")?.Value) == barId)
+               ?? throw new InvalidOperationException($"Bar id {barId} not found.");
+    }
+
+    private static XElement ResolveVoiceElement(
+        int trackId,
+        int masterBarIndex,
+        int voiceIndex,
+        IReadOnlyList<XElement> trackList,
+        IReadOnlyList<XElement> masterBarList,
+        XElement barsEl,
+        XElement voicesEl)
+    {
+        var barEl = ResolveBarElement(trackId, masterBarIndex, trackList, masterBarList, barsEl);
 
         var voiceRefs = SplitRefs(barEl.Element("Voices")?.Value);
         if (voiceIndex < 0 || voiceIndex >= voiceRefs.Count)
         {
-            throw new InvalidOperationException($"Voice index {voiceIndex} not available for bar {barId}.");
+            throw new InvalidOperationException($"Voice index {voiceIndex} not available for bar {ParseInt(barEl.Attribute("id")?.Value)}.");
         }
 
         var voiceId = voiceRefs[voiceIndex];

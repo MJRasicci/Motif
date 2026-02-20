@@ -7,6 +7,10 @@ public sealed class GpPatchDocument
     public IReadOnlyList<InsertBeatPatch> InsertBeats { get; init; } = Array.Empty<InsertBeatPatch>();
 
     public IReadOnlyList<UpdateNoteArticulationPatch> UpdateNoteArticulations { get; init; } = Array.Empty<UpdateNoteArticulationPatch>();
+
+    public IReadOnlyList<AppendBarPatch> AppendBars { get; init; } = Array.Empty<AppendBarPatch>();
+
+    public IReadOnlyList<AppendVoicePatch> AppendVoices { get; init; } = Array.Empty<AppendVoicePatch>();
 }
 
 public sealed class AppendNotesPatch
@@ -64,4 +68,22 @@ public sealed class UpdateNoteArticulationPatch
     public bool? HopoDestination { get; init; }
 
     public int? SlideFlags { get; init; }
+}
+
+public sealed class AppendBarPatch
+{
+    public int MasterBarIndex { get; init; }
+
+    public int TrackId { get; init; }
+
+    public int NewBarVoiceCount { get; init; } = 1;
+}
+
+public sealed class AppendVoicePatch
+{
+    public int TrackId { get; init; }
+
+    public int MasterBarIndex { get; init; }
+
+    public IReadOnlyList<int> InitialBeatIds { get; init; } = Array.Empty<int>();
 }
