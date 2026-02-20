@@ -145,6 +145,28 @@ public sealed class GpifNoteArticulation
     public bool HopoDestination { get; init; }
 
     public int? SlideFlags { get; init; }
+
+    public bool BendEnabled { get; init; }
+
+    public decimal? BendOriginOffset { get; init; }
+
+    public decimal? BendOriginValue { get; init; }
+
+    public decimal? BendMiddleOffset1 { get; init; }
+
+    public decimal? BendMiddleOffset2 { get; init; }
+
+    public decimal? BendMiddleValue { get; init; }
+
+    public decimal? BendDestinationOffset { get; init; }
+
+    public decimal? BendDestinationValue { get; init; }
+
+    public bool HarmonicEnabled { get; init; }
+
+    public int? HarmonicType { get; init; }
+
+    public decimal? HarmonicFret { get; init; }
 }
 
 public sealed class GpifRhythm

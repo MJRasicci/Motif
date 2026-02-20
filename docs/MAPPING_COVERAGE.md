@@ -38,11 +38,11 @@ Status legend:
 - ✅ Trill
 - ✅ Accent / anti-accent
 - ✅ Instrument articulation value
-- ⛔ Harmonics
-- 🟡 Slide mapping (raw slide flags captured; semantic decoding pending)
+- 🟡 Harmonics (enabled/type/fret mapped)
+- 🟡 Slide mapping (flags decoded to slide enum; GP naming validation still in progress)
 - 🟡 Hammer-on / pull-off semantics (Hopo origin/destination captured)
 - 🟡 Palm mute / dead-note toggles (property flags captured; deeper semantics pending)
-- ⛔ Bend/whammy mapping to domain events
+- 🟡 Bend/whammy mapping to domain model (curve points mapped)
 - ⛔ Grace note detail
 - ⛔ Fingering detail
 

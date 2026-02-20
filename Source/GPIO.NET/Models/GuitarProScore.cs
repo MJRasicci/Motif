@@ -109,4 +109,52 @@ public sealed class NoteArticulationModel
     public bool HopoDestination { get; init; }
 
     public int? SlideFlags { get; init; }
+
+    public IReadOnlyList<SlideType> Slides { get; init; } = Array.Empty<SlideType>();
+
+    public HarmonicModel? Harmonic { get; init; }
+
+    public BendModel? Bend { get; init; }
+}
+
+[Flags]
+public enum SlideType
+{
+    None = 0,
+    Shift = 1,
+    Legato = 2,
+    OutDown = 4,
+    OutUp = 8,
+    IntoFromBelow = 16,
+    IntoFromAbove = 32,
+    Unknown64 = 64,
+    Unknown128 = 128
+}
+
+public sealed class HarmonicModel
+{
+    public int? Type { get; init; }
+
+    public decimal? Fret { get; init; }
+
+    public bool Enabled { get; init; }
+}
+
+public sealed class BendModel
+{
+    public bool Enabled { get; init; }
+
+    public decimal? OriginOffset { get; init; }
+
+    public decimal? OriginValue { get; init; }
+
+    public decimal? MiddleOffset1 { get; init; }
+
+    public decimal? MiddleOffset2 { get; init; }
+
+    public decimal? MiddleValue { get; init; }
+
+    public decimal? DestinationOffset { get; init; }
+
+    public decimal? DestinationValue { get; init; }
 }

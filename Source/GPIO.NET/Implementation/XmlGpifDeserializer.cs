@@ -191,6 +191,25 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
         int? GetPropertyFlags(string name)
             => properties.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))?.Flags;
 
+        int? GetPropertyInt(string name)
+            => properties.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))?.Number;
+
+        decimal? GetPropertyDecimal(string name)
+        {
+            var prop = properties.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (prop is null)
+            {
+                return null;
+            }
+
+            if (prop.Float.HasValue)
+            {
+                return prop.Float;
+            }
+
+            return prop.Number;
+        }
+
         return new GpifNoteArticulation
         {
             LetRing = note.Element("LetRing") is not null,
@@ -207,7 +226,18 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
             LeftHandTapped = HasEnabledProperty("LeftHandTapped"),
             HopoOrigin = HasEnabledProperty("HopoOrigin"),
             HopoDestination = HasEnabledProperty("HopoDestination"),
-            SlideFlags = GetPropertyFlags("Slide")
+            SlideFlags = GetPropertyFlags("Slide"),
+            BendEnabled = HasEnabledProperty("Bended"),
+            BendOriginOffset = GetPropertyDecimal("BendOriginOffset"),
+            BendOriginValue = GetPropertyDecimal("BendOriginValue"),
+            BendMiddleOffset1 = GetPropertyDecimal("BendMiddleOffset1"),
+            BendMiddleOffset2 = GetPropertyDecimal("BendMiddleOffset2"),
+            BendMiddleValue = GetPropertyDecimal("BendMiddleValue"),
+            BendDestinationOffset = GetPropertyDecimal("BendDestinationOffset"),
+            BendDestinationValue = GetPropertyDecimal("BendDestinationValue"),
+            HarmonicEnabled = HasEnabledProperty("Harmonic"),
+            HarmonicType = GetPropertyInt("HarmonicType"),
+            HarmonicFret = GetPropertyDecimal("HarmonicFret")
         };
     }
 

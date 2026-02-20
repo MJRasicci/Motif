@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Fixtures\sample.gp" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\*.gp" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -90,7 +90,10 @@ public sealed class DefaultScoreMapper : IScoreMapper
                                     LeftHandTapped = n.Articulation.LeftHandTapped,
                                     HopoOrigin = n.Articulation.HopoOrigin,
                                     HopoDestination = n.Articulation.HopoDestination,
-                                    SlideFlags = n.Articulation.SlideFlags
+                                    SlideFlags = n.Articulation.SlideFlags,
+                                    Slides = ArticulationDecoders.DecodeSlides(n.Articulation.SlideFlags),
+                                    Bend = ArticulationDecoders.DecodeBend(n.Articulation),
+                                    Harmonic = ArticulationDecoders.DecodeHarmonic(n.Articulation)
                                 }
                             })
                             .ToArray();
