@@ -35,8 +35,18 @@ This repo is the new canonical home for the finalized library. Historical experi
 
 ## Tooling
 
-A small companion CLI exists for quick local validation and JSON output:
+A small companion CLI exists for quick local conversion/output:
 
 - Project: `Source/GPIO.NET.Tool`
-- Usage: `dotnet run --project Source/GPIO.NET.Tool -- <input.gp> [output.json]`
-- Default output path (if omitted): `<input>.mapped.json`
+- Usage: `dotnet run --project Source/GPIO.NET.Tool -- <input.gp> [output-path] [options]`
+- Default output path (if omitted) depends on format:
+  - `json` -> `<input>.mapped.json`
+  - `gpif` -> `<input>.score.gpif`
+  - `midi` -> `<input>.mid` (planned, not yet implemented)
+
+Common options:
+- `--format json|gpif|midi`
+- `--out <path>`
+- `--json-indent[=true|false]`
+- `--json-ignore-null[=true|false]`
+- `--json-ignore-default[=true|false]`
