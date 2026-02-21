@@ -92,6 +92,36 @@ public sealed class GpifTrack
     public int? IconId { get; init; }
 
     public int? ForcedSound { get; init; }
+
+    public int[] TuningPitches { get; init; } = Array.Empty<int>();
+
+    public string TuningInstrument { get; init; } = string.Empty;
+
+    public string TuningLabel { get; init; } = string.Empty;
+
+    public bool? TuningLabelVisible { get; init; }
+
+    public IReadOnlyDictionary<string, string> Properties { get; init; } = new Dictionary<string, string>();
+
+    public string InstrumentSetXml { get; init; } = string.Empty;
+
+    public string StavesXml { get; init; } = string.Empty;
+
+    public string SoundsXml { get; init; } = string.Empty;
+
+    public string RseXml { get; init; } = string.Empty;
+
+    public string PlaybackStateXml { get; init; } = string.Empty;
+
+    public string AudioEngineStateXml { get; init; } = string.Empty;
+
+    public string MidiConnectionXml { get; init; } = string.Empty;
+
+    public string LyricsXml { get; init; } = string.Empty;
+
+    public string AutomationsXml { get; init; } = string.Empty;
+
+    public string TransposeXml { get; init; } = string.Empty;
 }
 
 public sealed class GpifMasterBar

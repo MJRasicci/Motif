@@ -47,7 +47,22 @@ public sealed class DefaultScoreMapper : IScoreMapper
                         PlayingStyle = track.PlayingStyle,
                         UseOneChannelPerString = track.UseOneChannelPerString,
                         IconId = track.IconId,
-                        ForcedSound = track.ForcedSound
+                        ForcedSound = track.ForcedSound,
+                        TuningPitches = track.TuningPitches,
+                        TuningInstrument = track.TuningInstrument,
+                        TuningLabel = track.TuningLabel,
+                        TuningLabelVisible = track.TuningLabelVisible,
+                        Properties = track.Properties,
+                        InstrumentSetXml = track.InstrumentSetXml,
+                        StavesXml = track.StavesXml,
+                        SoundsXml = track.SoundsXml,
+                        RseXml = track.RseXml,
+                        PlaybackStateXml = track.PlaybackStateXml,
+                        AudioEngineStateXml = track.AudioEngineStateXml,
+                        MidiConnectionXml = track.MidiConnectionXml,
+                        LyricsXml = track.LyricsXml,
+                        AutomationsXml = track.AutomationsXml,
+                        TransposeXml = track.TransposeXml
                     },
                     Measures = measures
                 };

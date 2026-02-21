@@ -17,21 +17,51 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
 
         var tracksContainer = root.Elements("Tracks").FirstOrDefault(t => t.Elements("Track").Any());
         var tracks = tracksContainer?.Elements("Track")
-            .Select(t => new GpifTrack
+            .Select(t =>
             {
-                Id = ParseInt(t.Attribute("id")?.Value),
-                Name = t.Element("Name")?.Value ?? string.Empty,
-                ShortName = t.Element("ShortName")?.Value ?? string.Empty,
-                Color = t.Element("Color")?.Value ?? string.Empty,
-                SystemsDefaultLayout = t.Element("SystemsDefautLayout")?.Value ?? string.Empty,
-                SystemsLayout = t.Element("SystemsLayout")?.Value ?? string.Empty,
-                PalmMute = TryParseNullableDecimal(t.Element("PalmMute")?.Value),
-                AutoAccentuation = TryParseNullableDecimal(t.Element("AutoAccentuation")?.Value),
-                AutoBrush = t.Element("AutoBrush") is not null,
-                PlayingStyle = t.Element("PlayingStyle")?.Value ?? string.Empty,
-                UseOneChannelPerString = t.Element("UseOneChannelPerString") is not null,
-                IconId = TryParseNullableInt(t.Element("IconId")?.Value),
-                ForcedSound = TryParseNullableInt(t.Element("ForcedSound")?.Value)
+                var properties = (t.Element("Properties")?.Elements("Property") ?? Enumerable.Empty<XElement>())
+                    .Where(p => p.Attribute("name") is not null)
+                    .ToDictionary(
+                        p => p.Attribute("name")!.Value,
+                        p => p.Value?.Trim() ?? string.Empty,
+                        StringComparer.OrdinalIgnoreCase);
+
+                properties.TryGetValue("Tuning", out var tuningPitchesRaw);
+                properties.TryGetValue("Instrument", out var tuningInstrument);
+                properties.TryGetValue("Label", out var tuningLabel);
+                properties.TryGetValue("LabelVisible", out var tuningLabelVisibleRaw);
+
+                return new GpifTrack
+                {
+                    Id = ParseInt(t.Attribute("id")?.Value),
+                    Name = t.Element("Name")?.Value ?? string.Empty,
+                    ShortName = t.Element("ShortName")?.Value ?? string.Empty,
+                    Color = t.Element("Color")?.Value ?? string.Empty,
+                    SystemsDefaultLayout = t.Element("SystemsDefautLayout")?.Value ?? string.Empty,
+                    SystemsLayout = t.Element("SystemsLayout")?.Value ?? string.Empty,
+                    PalmMute = TryParseNullableDecimal(t.Element("PalmMute")?.Value),
+                    AutoAccentuation = TryParseNullableDecimal(t.Element("AutoAccentuation")?.Value),
+                    AutoBrush = t.Element("AutoBrush") is not null,
+                    PlayingStyle = t.Element("PlayingStyle")?.Value ?? string.Empty,
+                    UseOneChannelPerString = t.Element("UseOneChannelPerString") is not null,
+                    IconId = TryParseNullableInt(t.Element("IconId")?.Value),
+                    ForcedSound = TryParseNullableInt(t.Element("ForcedSound")?.Value),
+                    TuningPitches = SplitInts(tuningPitchesRaw),
+                    TuningInstrument = tuningInstrument ?? string.Empty,
+                    TuningLabel = tuningLabel ?? string.Empty,
+                    TuningLabelVisible = TryParseNullableBool(tuningLabelVisibleRaw),
+                    Properties = properties,
+                    InstrumentSetXml = t.Element("InstrumentSet")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                    StavesXml = t.Element("Staves")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                    SoundsXml = t.Element("Sounds")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                    RseXml = t.Element("RSE")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                    PlaybackStateXml = t.Element("PlaybackState")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                    AudioEngineStateXml = t.Element("AudioEngineState")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                    MidiConnectionXml = t.Element("MidiConnection")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                    LyricsXml = t.Element("Lyrics")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                    AutomationsXml = t.Element("Automations")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                    TransposeXml = t.Element("Transpose")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty
+                };
             })
             .ToArray() ?? Array.Empty<GpifTrack>();
 
@@ -275,6 +305,17 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
 
     private static decimal? TryParseNullableDecimal(string? value)
         => decimal.TryParse(value, out var parsed) ? parsed : null;
+
+    private static bool? TryParseNullableBool(string? value)
+        => bool.TryParse(value, out var parsed) ? parsed : null;
+
+    private static int[] SplitInts(string? value)
+        => string.IsNullOrWhiteSpace(value)
+            ? Array.Empty<int>()
+            : value.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(v => int.TryParse(v, out var i) ? i : int.MinValue)
+                .Where(i => i != int.MinValue)
+                .ToArray();
 
     private static TupletRatio? ParseTuplet(XElement? tuplet)
     {

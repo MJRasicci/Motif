@@ -76,6 +76,29 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         if (t.IconId.HasValue) el.Add(new XElement("IconId", t.IconId.Value));
         if (t.ForcedSound.HasValue) el.Add(new XElement("ForcedSound", t.ForcedSound.Value));
 
+        if (t.TuningPitches.Length > 0)
+        {
+            var props = new XElement("Properties",
+                new XElement("Property",
+                    new XAttribute("name", "Tuning"),
+                    new XElement("Pitches", string.Join(' ', t.TuningPitches)),
+                    new XElement("Instrument", t.TuningInstrument ?? string.Empty),
+                    new XElement("Label", t.TuningLabel ?? string.Empty),
+                    t.TuningLabelVisible.HasValue ? new XElement("LabelVisible", t.TuningLabelVisible.Value.ToString().ToLowerInvariant()) : null));
+            el.Add(props);
+        }
+
+        AddRawElementXml(el, t.InstrumentSetXml);
+        AddRawElementXml(el, t.StavesXml);
+        AddRawElementXml(el, t.SoundsXml);
+        AddRawElementXml(el, t.RseXml);
+        AddRawElementXml(el, t.PlaybackStateXml);
+        AddRawElementXml(el, t.AudioEngineStateXml);
+        AddRawElementXml(el, t.MidiConnectionXml);
+        AddRawElementXml(el, t.LyricsXml);
+        AddRawElementXml(el, t.AutomationsXml);
+        AddRawElementXml(el, t.TransposeXml);
+
         return el;
     }
 
@@ -182,6 +205,23 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         }
 
         parent.Add(new XElement(name, value));
+    }
+
+    private static void AddRawElementXml(XElement parent, string xml)
+    {
+        if (string.IsNullOrWhiteSpace(xml))
+        {
+            return;
+        }
+
+        try
+        {
+            parent.Add(XElement.Parse(xml));
+        }
+        catch
+        {
+            // ignore malformed passthrough chunks
+        }
     }
 
     private static void AddBoolProperty(XElement parent, string name, bool value)

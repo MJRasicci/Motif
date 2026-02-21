@@ -20,6 +20,7 @@ public class MetadataMappingTests
         score.Tracks.Should().NotBeEmpty();
         score.Tracks.Any(t => !string.IsNullOrWhiteSpace(t.Metadata.ShortName)).Should().BeTrue();
         score.Tracks.Any(t => !string.IsNullOrWhiteSpace(t.Metadata.Color)).Should().BeTrue();
+        score.Tracks.Any(t => t.Metadata.TuningPitches.Length > 0).Should().BeTrue();
     }
 
     [Fact]
@@ -57,7 +58,11 @@ public class MetadataMappingTests
                         PlayingStyle = "StringedPick",
                         UseOneChannelPerString = true,
                         IconId = 1,
-                        ForcedSound = -1
+                        ForcedSound = -1,
+                        TuningPitches = [40,45,50,55,59,64],
+                        TuningInstrument = "Guitar",
+                        TuningLabel = "Std",
+                        TuningLabelVisible = true
                     },
                     Measures =
                     [
@@ -100,6 +105,10 @@ public class MetadataMappingTests
             track.Metadata.UseOneChannelPerString.Should().BeTrue();
             track.Metadata.IconId.Should().Be(1);
             track.Metadata.ForcedSound.Should().Be(-1);
+            track.Metadata.TuningPitches.Should().Equal(40,45,50,55,59,64);
+            track.Metadata.TuningInstrument.Should().Be("Guitar");
+            track.Metadata.TuningLabel.Should().Be("Std");
+            track.Metadata.TuningLabelVisible.Should().BeTrue();
         }
         finally
         {

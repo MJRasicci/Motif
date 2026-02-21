@@ -32,7 +32,22 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                 PlayingStyle = t.Metadata.PlayingStyle,
                 UseOneChannelPerString = t.Metadata.UseOneChannelPerString,
                 IconId = t.Metadata.IconId,
-                ForcedSound = t.Metadata.ForcedSound
+                ForcedSound = t.Metadata.ForcedSound,
+                TuningPitches = t.Metadata.TuningPitches,
+                TuningInstrument = t.Metadata.TuningInstrument,
+                TuningLabel = t.Metadata.TuningLabel,
+                TuningLabelVisible = t.Metadata.TuningLabelVisible,
+                Properties = t.Metadata.Properties,
+                InstrumentSetXml = t.Metadata.InstrumentSetXml,
+                StavesXml = t.Metadata.StavesXml,
+                SoundsXml = t.Metadata.SoundsXml,
+                RseXml = t.Metadata.RseXml,
+                PlaybackStateXml = t.Metadata.PlaybackStateXml,
+                AudioEngineStateXml = t.Metadata.AudioEngineStateXml,
+                MidiConnectionXml = t.Metadata.MidiConnectionXml,
+                LyricsXml = t.Metadata.LyricsXml,
+                AutomationsXml = t.Metadata.AutomationsXml,
+                TransposeXml = t.Metadata.TransposeXml
             })
             .ToArray();
 
