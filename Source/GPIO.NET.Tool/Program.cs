@@ -25,10 +25,8 @@ try
         }
 
         var json = await File.ReadAllTextAsync(options.InputPath).ConfigureAwait(false);
-        var editedScore = JsonSerializer.Deserialize<GuitarProScore>(json, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        }) ?? throw new InvalidDataException("Unable to deserialize mapped score JSON.");
+        var editedScore = JsonSerializer.Deserialize(json, CliJsonContext.Default.GuitarProScore)
+            ?? throw new InvalidDataException("Unable to deserialize mapped score JSON.");
 
         if (options.PatchFromJson)
         {
@@ -48,7 +46,7 @@ try
 
             if (options.PlanOnly)
             {
-                var planJson = JsonSerializer.Serialize(plan, new JsonSerializerOptions { WriteIndented = true });
+                var planJson = JsonSerializer.Serialize(plan, CliJsonContext.Default.JsonPatchPlanResult);
                 EnsureOutputDirectory(outputPath);
                 await File.WriteAllTextAsync(outputPath, planJson).ConfigureAwait(false);
                 Console.WriteLine($"Patch plan written: {outputPath}");
@@ -66,11 +64,13 @@ try
                 EnsureOutputDirectory(options.DiagnosticsOutPath);
                 if (options.DiagnosticsAsJson)
                 {
-                    var jsonDiagnostics = JsonSerializer.Serialize(new
-                    {
-                        plan.UnsupportedChanges,
-                        patchDiagnostics = patchResult.Diagnostics.Entries
-                    }, new JsonSerializerOptions { WriteIndented = true });
+                    var jsonDiagnostics = JsonSerializer.Serialize(
+                        new PatchDiagnosticsOutput
+                        {
+                            UnsupportedChanges = plan.UnsupportedChanges,
+                            PatchDiagnostics = patchResult.Diagnostics.Entries
+                        },
+                        CliJsonContext.Default.PatchDiagnosticsOutput);
                     await File.WriteAllTextAsync(options.DiagnosticsOutPath, jsonDiagnostics).ConfigureAwait(false);
                 }
                 else
@@ -113,7 +113,7 @@ try
                 EnsureOutputDirectory(options.DiagnosticsOutPath);
                 if (options.DiagnosticsAsJson)
                 {
-                    var jsonDiagnostics = JsonSerializer.Serialize(unmapResult.Diagnostics.Entries, new JsonSerializerOptions { WriteIndented = true });
+                    var jsonDiagnostics = JsonSerializer.Serialize(unmapResult.Diagnostics.Entries.ToArray(), CliJsonContext.Default.WriteDiagnosticEntryArray);
                     await File.WriteAllTextAsync(options.DiagnosticsOutPath, jsonDiagnostics).ConfigureAwait(false);
                 }
                 else

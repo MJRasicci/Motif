@@ -208,10 +208,3 @@ internal static class JsonPatchPlanner
     private static int GuessAugmentationDots(decimal duration)
         => duration is 0.375m or 0.75m or 0.1875m ? 1 : 0;
 }
-
-internal sealed class JsonPatchPlanResult
-{
-    public required GpPatchDocument Patch { get; init; }
-
-    public IReadOnlyList<string> UnsupportedChanges { get; init; } = Array.Empty<string>();
-}
