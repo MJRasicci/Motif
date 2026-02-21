@@ -180,6 +180,8 @@ public sealed class DefaultScoreMapper : IScoreMapper
                 if (voiceRefs.Count > 0 && source.VoicesById.TryGetValue(voiceRefs[0], out var voice))
                 {
                     var beatRefs = ReferenceListParser.SplitRefs(voice.BeatsReferenceList);
+                    var voiceProps = voice.Properties.ToDictionary(kv => kv.Key, kv => kv.Value);
+                    var voiceDirTags = voice.DirectionTags.ToArray();
                     decimal offset = 0;
                     foreach (var beatId in beatRefs)
                     {
@@ -229,6 +231,8 @@ public sealed class DefaultScoreMapper : IScoreMapper
                         beats.Add(new BeatModel
                         {
                             Id = beat.Id,
+                            VoiceProperties = voiceProps,
+                            VoiceDirectionTags = voiceDirTags,
                             Offset = offset,
                             Duration = duration,
                             Notes = notes,
@@ -254,6 +258,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
                 SectionText = masterBar.SectionText,
                 Jump = masterBar.Jump,
                 Target = masterBar.Target,
+                DirectionProperties = masterBar.DirectionProperties,
                 KeyAccidentalCount = masterBar.KeyAccidentalCount,
                 KeyMode = masterBar.KeyMode,
                 KeyTransposeAs = masterBar.KeyTransposeAs,

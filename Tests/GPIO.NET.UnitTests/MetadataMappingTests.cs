@@ -148,11 +148,12 @@ public class MetadataMappingTests
                             KeyAccidentalCount = 1,
                             KeyMode = "Major",
                             KeyTransposeAs = "C",
+                            DirectionProperties = new Dictionary<string,string> { ["Jump"] = "DaCapo", ["Target"] = "Segno", ["Fine"] = "1" },
                             Fermatas = [ new FermataMetadata { Type = "Short", Offset = "Middle", Length = 1.2m } ],
                             XProperties = new Dictionary<string,int> { ["1124204545"] = 2 },
                             Clef = "G2",
                             BarProperties = new Dictionary<string,string> { ["BarDisplay"] = "Both" },
-                            Beats = [ new BeatModel { Id = 1, Duration = 0.25m } ]
+                            Beats = [ new BeatModel { Id = 1, Duration = 0.25m, VoiceProperties = new Dictionary<string,string>{{"PartedSlur","true"}}, VoiceDirectionTags = new[]{"Coda"} } ]
                         }
                     ]
                 }
@@ -217,6 +218,11 @@ public class MetadataMappingTests
             measure.XProperties.Should().ContainKey("1124204545");
             measure.Clef.Should().Be("G2");
             measure.BarProperties.Should().ContainKey("BarDisplay");
+            measure.DirectionProperties.Should().ContainKey("Fine");
+            measure.Jump.Should().Be("DaCapo");
+            measure.Target.Should().Be("Segno");
+            measure.Beats[0].VoiceProperties.Should().ContainKey("PartedSlur");
+            measure.Beats[0].VoiceDirectionTags.Should().Contain("Coda");
         }
         finally
         {

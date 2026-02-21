@@ -122,6 +122,8 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                 var currentVoiceId = voiceId++;
 
                 var beatIds = new List<int>();
+                var voiceProperties = measure.Beats.FirstOrDefault()?.VoiceProperties ?? new Dictionary<string,string>();
+                var voiceDirectionTags = measure.Beats.FirstOrDefault()?.VoiceDirectionTags ?? Array.Empty<string>();
                 foreach (var beat in measure.Beats)
                 {
                     var currentBeatId = beatId++;
@@ -186,7 +188,9 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                 voices[currentVoiceId] = new GpifVoice
                 {
                     Id = currentVoiceId,
-                    BeatsReferenceList = ReferenceListFormatter.JoinRefs(beatIds)
+                    BeatsReferenceList = ReferenceListFormatter.JoinRefs(beatIds),
+                    Properties = voiceProperties,
+                    DirectionTags = voiceDirectionTags.ToArray()
                 };
 
                 bars[currentBarId] = new GpifBar
@@ -194,7 +198,8 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                     Id = currentBarId,
                     VoicesReferenceList = currentVoiceId.ToString(CultureInfo.InvariantCulture),
                     Clef = measure.Clef,
-                    Properties = measure.BarProperties
+                    Properties = measure.BarProperties,
+                    XProperties = measure.XProperties
                 };
 
                 measureBarIds.Add(currentBarId);
@@ -213,6 +218,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                         SectionText = measure.SectionText,
                         Jump = measure.Jump,
                         Target = measure.Target,
+                        DirectionProperties = measure.DirectionProperties,
                         KeyAccidentalCount = measure.KeyAccidentalCount,
                         KeyMode = measure.KeyMode,
                         KeyTransposeAs = measure.KeyTransposeAs,
@@ -243,6 +249,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                     SectionText = existing.SectionText,
                     Jump = existing.Jump,
                     Target = existing.Target,
+                    DirectionProperties = existing.DirectionProperties,
                     KeyAccidentalCount = existing.KeyAccidentalCount,
                     KeyMode = existing.KeyMode,
                     KeyTransposeAs = existing.KeyTransposeAs,

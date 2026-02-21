@@ -251,6 +251,8 @@ public sealed class MeasureModel
 
     public string Target { get; init; } = string.Empty;
 
+    public IReadOnlyDictionary<string, string> DirectionProperties { get; init; } = new Dictionary<string, string>();
+
     public int? KeyAccidentalCount { get; init; }
 
     public string KeyMode { get; init; } = string.Empty;
@@ -278,6 +280,10 @@ public sealed class FermataMetadata
 public sealed class BeatModel
 {
     public int Id { get; init; }
+
+    public IReadOnlyDictionary<string, string> VoiceProperties { get; init; } = new Dictionary<string, string>();
+
+    public IReadOnlyList<string> VoiceDirectionTags { get; init; } = Array.Empty<string>();
 
     public decimal Offset { get; init; }
 

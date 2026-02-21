@@ -189,11 +189,20 @@ public sealed class XmlGpifSerializer : IGpifSerializer
             el.Add(new XElement("Section", new XElement("Letter", m.SectionLetter), new XElement("Text", m.SectionText)));
         }
 
-        if (!string.IsNullOrWhiteSpace(m.Jump) || !string.IsNullOrWhiteSpace(m.Target))
+        if (!string.IsNullOrWhiteSpace(m.Jump) || !string.IsNullOrWhiteSpace(m.Target) || m.DirectionProperties.Count > 0)
         {
             var dirs = new XElement("Directions");
             if (!string.IsNullOrWhiteSpace(m.Jump)) dirs.Add(new XElement("Jump", m.Jump));
             if (!string.IsNullOrWhiteSpace(m.Target)) dirs.Add(new XElement("Target", m.Target));
+            foreach (var kv in m.DirectionProperties)
+            {
+                if (string.Equals(kv.Key, "Jump", StringComparison.OrdinalIgnoreCase) || string.Equals(kv.Key, "Target", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                dirs.Add(new XElement(kv.Key, kv.Value));
+            }
             el.Add(dirs);
         }
 
@@ -351,7 +360,21 @@ public sealed class XmlGpifSerializer : IGpifSerializer
 
         return bar;
     }
-    private static XElement BuildVoice(GpifVoice v) => new("Voice", new XAttribute("id", v.Id), new XElement("Beats", v.BeatsReferenceList));
+    private static XElement BuildVoice(GpifVoice v)
+    {
+        var voice = new XElement("Voice", new XAttribute("id", v.Id), new XElement("Beats", v.BeatsReferenceList));
+        if (v.Properties.Count > 0)
+        {
+            voice.Add(new XElement("Properties", v.Properties.Select(kv => new XElement("Property", new XAttribute("name", kv.Key), new XElement("Value", kv.Value)))));
+        }
+
+        if (v.DirectionTags.Length > 0)
+        {
+            voice.Add(new XElement("Directions", v.DirectionTags.Select(tag => new XElement(tag))));
+        }
+
+        return voice;
+    }
     private static XElement BuildRhythm(GpifRhythm r)
     {
         var el = new XElement("Rhythm", new XAttribute("id", r.Id), new XElement("NoteValue", r.NoteValue));

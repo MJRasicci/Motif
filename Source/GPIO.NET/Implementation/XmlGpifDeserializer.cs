@@ -94,6 +94,9 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                     .Where(x => x.Int >= 0)
                     .ToDictionary(x => x.Id, x => x.Int);
 
+                var directionProps = (directions?.Elements() ?? Enumerable.Empty<XElement>())
+                    .ToDictionary(e => e.Name.LocalName, e => e.Value ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+
                 return new GpifMasterBar
                 {
                     Index = index,
@@ -107,6 +110,7 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                     SectionText = section?.Element("Text")?.Value ?? string.Empty,
                     Jump = directions?.Element("Jump")?.Value ?? string.Empty,
                     Target = directions?.Element("Target")?.Value ?? string.Empty,
+                    DirectionProperties = directionProps,
                     KeyAccidentalCount = TryParseNullableInt(key?.Element("AccidentalCount")?.Value),
                     KeyMode = key?.Element("Mode")?.Value ?? string.Empty,
                     KeyTransposeAs = key?.Element("TransposeAs")?.Value ?? string.Empty,
@@ -151,11 +155,16 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                         p => p.Attribute("name")!.Value,
                         p => p.Element("Value")?.Value?.Trim() ?? p.Value?.Trim() ?? string.Empty,
                         StringComparer.OrdinalIgnoreCase);
+                var dirTags = (v.Element("Directions")?.Elements() ?? Enumerable.Empty<XElement>())
+                    .Select(e => e.Name.LocalName)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
                 return new GpifVoice
                 {
                     Id = ParseInt(v.Attribute("id")?.Value),
                     BeatsReferenceList = v.Element("Beats")?.Value ?? string.Empty,
-                    Properties = props
+                    Properties = props,
+                    DirectionTags = dirTags
                 };
             })
             .ToDictionary(v => v.Id);

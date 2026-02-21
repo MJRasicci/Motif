@@ -177,6 +177,8 @@ public sealed class GpifMasterBar
 
     public string Target { get; init; } = string.Empty;
 
+    public IReadOnlyDictionary<string, string> DirectionProperties { get; init; } = new Dictionary<string, string>();
+
     public int? KeyAccidentalCount { get; init; }
 
     public string KeyMode { get; init; } = string.Empty;
@@ -217,6 +219,8 @@ public sealed class GpifVoice
     public string BeatsReferenceList { get; init; } = string.Empty;
 
     public IReadOnlyDictionary<string, string> Properties { get; init; } = new Dictionary<string, string>();
+
+    public string[] DirectionTags { get; init; } = Array.Empty<string>();
 }
 
 public sealed class GpifBeat
