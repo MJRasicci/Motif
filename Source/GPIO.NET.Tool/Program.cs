@@ -21,7 +21,7 @@ try
         Directory.CreateDirectory(outputRoot);
 
         var files = Directory.GetFiles(inputRoot, "*.gp", SearchOption.AllDirectories);
-        var failures = new List<object>();
+        var failures = new List<BatchFailure>();
         var ok = 0;
 
         foreach (var file in files)
@@ -43,7 +43,7 @@ try
             }
             catch (Exception ex)
             {
-                failures.Add(new { file, output = outPath, error = ex.Message });
+                failures.Add(new BatchFailure { File = file, Output = outPath, Error = ex.Message });
                 if (!options.ContinueOnError)
                 {
                     throw;
@@ -57,7 +57,7 @@ try
             Directory.CreateDirectory(Path.GetDirectoryName(failureLog)!);
             await File.WriteAllLinesAsync(
                     failureLog,
-                    failures.Select(f => JsonSerializer.Serialize(f)))
+                    failures.Select(f => JsonSerializer.Serialize(f, CliJsonContext.Default.BatchFailure)))
                 .ConfigureAwait(false);
         }
 

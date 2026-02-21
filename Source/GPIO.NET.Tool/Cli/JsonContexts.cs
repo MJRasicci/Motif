@@ -12,6 +12,8 @@ using System.Text.Json.Serialization;
 [JsonSerializable(typeof(PatchDiagnosticEntry[]))]
 [JsonSerializable(typeof(WriteDiagnosticEntry[]))]
 [JsonSerializable(typeof(PatchDiagnosticsOutput))]
+[JsonSerializable(typeof(BatchFailure))]
+[JsonSerializable(typeof(BatchFailure[]))]
 internal partial class CliJsonContext : JsonSerializerContext
 {
 }
