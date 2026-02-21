@@ -79,6 +79,21 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                 var section = mb.Element("Section");
                 var directions = mb.Element("Directions");
 
+                var key = mb.Element("Key");
+                var fermatas = (mb.Element("Fermatas")?.Elements("Fermata") ?? Enumerable.Empty<XElement>())
+                    .Select(f => new GpifFermata
+                    {
+                        Type = f.Element("Type")?.Value ?? string.Empty,
+                        Offset = f.Element("Offset")?.Value ?? string.Empty,
+                        Length = TryParseNullableDecimal(f.Element("Length")?.Value)
+                    })
+                    .ToArray();
+                var xprops = (mb.Element("XProperties")?.Elements("XProperty") ?? Enumerable.Empty<XElement>())
+                    .Where(x => x.Attribute("id") is not null)
+                    .Select(x => new { Id = x.Attribute("id")!.Value, Int = ParseInt(x.Element("Int")?.Value) })
+                    .Where(x => x.Int >= 0)
+                    .ToDictionary(x => x.Id, x => x.Int);
+
                 return new GpifMasterBar
                 {
                     Index = index,
@@ -91,7 +106,12 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                     SectionLetter = section?.Element("Letter")?.Value ?? string.Empty,
                     SectionText = section?.Element("Text")?.Value ?? string.Empty,
                     Jump = directions?.Element("Jump")?.Value ?? string.Empty,
-                    Target = directions?.Element("Target")?.Value ?? string.Empty
+                    Target = directions?.Element("Target")?.Value ?? string.Empty,
+                    KeyAccidentalCount = TryParseNullableInt(key?.Element("AccidentalCount")?.Value),
+                    KeyMode = key?.Element("Mode")?.Value ?? string.Empty,
+                    KeyTransposeAs = key?.Element("TransposeAs")?.Value ?? string.Empty,
+                    Fermatas = fermatas,
+                    XProperties = xprops
                 };
             })
             .ToArray();

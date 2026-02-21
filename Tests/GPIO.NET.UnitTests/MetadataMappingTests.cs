@@ -145,6 +145,11 @@ public class MetadataMappingTests
                         {
                             Index = 0,
                             TimeSignature = "4/4",
+                            KeyAccidentalCount = 1,
+                            KeyMode = "Major",
+                            KeyTransposeAs = "C",
+                            Fermatas = [ new FermataMetadata { Type = "Short", Offset = "Middle", Length = 1.2m } ],
+                            XProperties = new Dictionary<string,int> { ["1124204545"] = 2 },
                             Beats = [ new BeatModel { Id = 1, Duration = 0.25m } ]
                         }
                     ]
@@ -201,6 +206,13 @@ public class MetadataMappingTests
             readBack.MasterTrack.Automations[0].Type.Should().Be("Tempo");
             readBack.MasterTrack.TempoMap.Should().NotBeEmpty();
             readBack.MasterTrack.TempoMap[0].Bpm.Should().Be(120m);
+
+            var measure = track.Measures[0];
+            measure.KeyAccidentalCount.Should().Be(1);
+            measure.KeyMode.Should().Be("Major");
+            measure.KeyTransposeAs.Should().Be("C");
+            measure.Fermatas.Should().ContainSingle();
+            measure.XProperties.Should().ContainKey("1124204545");
         }
         finally
         {

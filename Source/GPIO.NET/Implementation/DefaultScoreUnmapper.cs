@@ -210,7 +210,17 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                         SectionLetter = measure.SectionLetter,
                         SectionText = measure.SectionText,
                         Jump = measure.Jump,
-                        Target = measure.Target
+                        Target = measure.Target,
+                        KeyAccidentalCount = measure.KeyAccidentalCount,
+                        KeyMode = measure.KeyMode,
+                        KeyTransposeAs = measure.KeyTransposeAs,
+                        Fermatas = measure.Fermatas.Select(f => new GpifFermata
+                        {
+                            Type = f.Type,
+                            Offset = f.Offset,
+                            Length = f.Length
+                        }).ToArray(),
+                        XProperties = measure.XProperties
                     });
                 }
             }
@@ -230,7 +240,12 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                     SectionLetter = existing.SectionLetter,
                     SectionText = existing.SectionText,
                     Jump = existing.Jump,
-                    Target = existing.Target
+                    Target = existing.Target,
+                    KeyAccidentalCount = existing.KeyAccidentalCount,
+                    KeyMode = existing.KeyMode,
+                    KeyTransposeAs = existing.KeyTransposeAs,
+                    Fermatas = existing.Fermatas,
+                    XProperties = existing.XProperties
                 };
             }
         }

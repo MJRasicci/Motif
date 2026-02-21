@@ -176,6 +176,25 @@ public sealed class GpifMasterBar
     public string Jump { get; init; } = string.Empty;
 
     public string Target { get; init; } = string.Empty;
+
+    public int? KeyAccidentalCount { get; init; }
+
+    public string KeyMode { get; init; } = string.Empty;
+
+    public string KeyTransposeAs { get; init; } = string.Empty;
+
+    public IReadOnlyList<GpifFermata> Fermatas { get; init; } = Array.Empty<GpifFermata>();
+
+    public IReadOnlyDictionary<string, int> XProperties { get; init; } = new Dictionary<string, int>();
+}
+
+public sealed class GpifFermata
+{
+    public string Type { get; init; } = string.Empty;
+
+    public string Offset { get; init; } = string.Empty;
+
+    public decimal? Length { get; init; }
 }
 
 public sealed class GpifBar

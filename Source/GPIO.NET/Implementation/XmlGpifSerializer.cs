@@ -197,6 +197,28 @@ public sealed class XmlGpifSerializer : IGpifSerializer
             el.Add(dirs);
         }
 
+        if (m.KeyAccidentalCount.HasValue || !string.IsNullOrWhiteSpace(m.KeyMode) || !string.IsNullOrWhiteSpace(m.KeyTransposeAs))
+        {
+            el.Add(new XElement("Key",
+                m.KeyAccidentalCount.HasValue ? new XElement("AccidentalCount", m.KeyAccidentalCount.Value) : null,
+                !string.IsNullOrWhiteSpace(m.KeyMode) ? new XElement("Mode", m.KeyMode) : null,
+                !string.IsNullOrWhiteSpace(m.KeyTransposeAs) ? new XElement("TransposeAs", m.KeyTransposeAs) : null));
+        }
+
+        if (m.Fermatas.Count > 0)
+        {
+            el.Add(new XElement("Fermatas", m.Fermatas.Select(f => new XElement("Fermata",
+                !string.IsNullOrWhiteSpace(f.Type) ? new XElement("Type", f.Type) : null,
+                !string.IsNullOrWhiteSpace(f.Offset) ? new XElement("Offset", f.Offset) : null,
+                f.Length.HasValue ? new XElement("Length", f.Length.Value) : null))));
+        }
+
+        if (m.XProperties.Count > 0)
+        {
+            el.Add(new XElement("XProperties", m.XProperties.Select(kv =>
+                new XElement("XProperty", new XAttribute("id", kv.Key), new XElement("Int", kv.Value)))));
+        }
+
         return el;
     }
 

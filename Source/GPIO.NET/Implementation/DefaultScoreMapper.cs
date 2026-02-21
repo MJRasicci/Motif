@@ -249,6 +249,16 @@ public sealed class DefaultScoreMapper : IScoreMapper
                 SectionText = masterBar.SectionText,
                 Jump = masterBar.Jump,
                 Target = masterBar.Target,
+                KeyAccidentalCount = masterBar.KeyAccidentalCount,
+                KeyMode = masterBar.KeyMode,
+                KeyTransposeAs = masterBar.KeyTransposeAs,
+                Fermatas = masterBar.Fermatas.Select(f => new FermataMetadata
+                {
+                    Type = f.Type,
+                    Offset = f.Offset,
+                    Length = f.Length
+                }).ToArray(),
+                XProperties = masterBar.XProperties,
                 Beats = beats
             });
         }
