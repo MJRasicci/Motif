@@ -65,9 +65,19 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                 },
                 PlaybackStateXml = t.Metadata.PlaybackStateXml,
                 AudioEngineStateXml = t.Metadata.AudioEngineStateXml,
+                PlaybackState = new GpifPlaybackState { Value = t.Metadata.PlaybackState.Value },
                 MidiConnectionXml = t.Metadata.MidiConnectionXml,
                 LyricsXml = t.Metadata.LyricsXml,
                 AutomationsXml = t.Metadata.AutomationsXml,
+                Automations = t.Metadata.Automations.Select(a => new GpifAutomation
+                {
+                    Type = a.Type,
+                    Linear = a.Linear,
+                    Bar = a.Bar,
+                    Position = a.Position,
+                    Visible = a.Visible,
+                    Value = a.Value
+                }).ToArray(),
                 TransposeXml = t.Metadata.TransposeXml,
                 Staffs = t.Metadata.Staffs.Select(s => new GpifStaff
                 {

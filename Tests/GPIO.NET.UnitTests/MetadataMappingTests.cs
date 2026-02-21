@@ -24,6 +24,8 @@ public class MetadataMappingTests
         score.Tracks.Any(t => t.Metadata.Staffs.Count > 0).Should().BeTrue();
         score.Tracks.Any(t => !string.IsNullOrWhiteSpace(t.Metadata.InstrumentSet.Name)).Should().BeTrue();
         score.Tracks.Any(t => t.Metadata.Sounds.Count > 0).Should().BeTrue();
+        score.Tracks.Any(t => !string.IsNullOrWhiteSpace(t.Metadata.PlaybackState.Value)).Should().BeTrue();
+        score.Tracks.Any(t => t.Metadata.Automations.Count > 0).Should().BeTrue();
     }
 
     [Fact]
@@ -100,7 +102,23 @@ public class MetadataMappingTests
                         {
                             ChannelStripVersion = "E56",
                             ChannelStripParameters = "0.5 0.5"
-                        }
+                        },
+                        PlaybackState = new PlaybackStateMetadata
+                        {
+                            Value = "Default"
+                        },
+                        Automations =
+                        [
+                            new AutomationMetadata
+                            {
+                                Type = "Sound",
+                                Linear = false,
+                                Bar = 0,
+                                Position = 0,
+                                Visible = true,
+                                Value = "Stringed/Acoustic Guitars/Steel Guitar;Steel Mart;Factory"
+                            }
+                        ]
                     },
                     Measures =
                     [
@@ -155,6 +173,9 @@ public class MetadataMappingTests
             track.Metadata.Sounds.Should().ContainSingle();
             track.Metadata.Sounds[0].MidiProgram.Should().Be(25);
             track.Metadata.Rse.ChannelStripVersion.Should().Be("E56");
+            track.Metadata.PlaybackState.Value.Should().Be("Default");
+            track.Metadata.Automations.Should().ContainSingle();
+            track.Metadata.Automations[0].Type.Should().Be("Sound");
         }
         finally
         {

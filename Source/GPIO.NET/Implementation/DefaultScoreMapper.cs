@@ -80,9 +80,19 @@ public sealed class DefaultScoreMapper : IScoreMapper
                         },
                         PlaybackStateXml = track.PlaybackStateXml,
                         AudioEngineStateXml = track.AudioEngineStateXml,
+                        PlaybackState = new PlaybackStateMetadata { Value = track.PlaybackState.Value },
                         MidiConnectionXml = track.MidiConnectionXml,
                         LyricsXml = track.LyricsXml,
                         AutomationsXml = track.AutomationsXml,
+                        Automations = track.Automations.Select(a => new AutomationMetadata
+                        {
+                            Type = a.Type,
+                            Linear = a.Linear,
+                            Bar = a.Bar,
+                            Position = a.Position,
+                            Visible = a.Visible,
+                            Value = a.Value
+                        }).ToArray(),
                         TransposeXml = track.TransposeXml,
                         Staffs = track.Staffs.Select(s => new StaffMetadata
                         {

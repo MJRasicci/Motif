@@ -118,6 +118,10 @@ public sealed class TrackMetadata
 
     public string AudioEngineStateXml { get; init; } = string.Empty;
 
+    public PlaybackStateMetadata PlaybackState { get; init; } = new();
+
+    public IReadOnlyList<AutomationMetadata> Automations { get; init; } = Array.Empty<AutomationMetadata>();
+
     public string MidiConnectionXml { get; init; } = string.Empty;
 
     public string LyricsXml { get; init; } = string.Empty;
@@ -175,6 +179,26 @@ public sealed class RseMetadata
     public string ChannelStripVersion { get; init; } = string.Empty;
 
     public string ChannelStripParameters { get; init; } = string.Empty;
+}
+
+public sealed class PlaybackStateMetadata
+{
+    public string Value { get; init; } = string.Empty;
+}
+
+public sealed class AutomationMetadata
+{
+    public string Type { get; init; } = string.Empty;
+
+    public bool? Linear { get; init; }
+
+    public int? Bar { get; init; }
+
+    public int? Position { get; init; }
+
+    public bool? Visible { get; init; }
+
+    public string Value { get; init; } = string.Empty;
 }
 
 public sealed class MeasureModel

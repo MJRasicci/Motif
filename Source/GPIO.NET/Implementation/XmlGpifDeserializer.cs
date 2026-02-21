@@ -60,9 +60,11 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                     ChannelRse = ParseRse(t.Element("RSE")),
                     PlaybackStateXml = t.Element("PlaybackState")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                     AudioEngineStateXml = t.Element("AudioEngineState")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                    PlaybackState = ParsePlaybackState(t.Element("PlaybackState")),
                     MidiConnectionXml = t.Element("MidiConnection")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                     LyricsXml = t.Element("Lyrics")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                     AutomationsXml = t.Element("Automations")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                    Automations = ParseAutomations(t.Element("Automations")),
                     TransposeXml = t.Element("Transpose")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                     Staffs = ParseStaffs(t.Element("Staves"))
                 };
@@ -349,6 +351,25 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
             ChannelStripVersion = rse?.Element("ChannelStrip")?.Attribute("version")?.Value ?? string.Empty,
             ChannelStripParameters = rse?.Element("ChannelStrip")?.Element("Parameters")?.Value ?? string.Empty
         };
+
+    private static GpifPlaybackState ParsePlaybackState(XElement? playbackState)
+        => new()
+        {
+            Value = playbackState?.Value?.Trim() ?? string.Empty
+        };
+
+    private static GpifAutomation[] ParseAutomations(XElement? automations)
+        => (automations?.Elements("Automation") ?? Enumerable.Empty<XElement>())
+            .Select(a => new GpifAutomation
+            {
+                Type = a.Element("Type")?.Value ?? string.Empty,
+                Linear = TryParseNullableBool(a.Element("Linear")?.Value),
+                Bar = TryParseNullableInt(a.Element("Bar")?.Value),
+                Position = TryParseNullableInt(a.Element("Position")?.Value),
+                Visible = TryParseNullableBool(a.Element("Visible")?.Value),
+                Value = a.Element("Value")?.Value ?? string.Empty
+            })
+            .ToArray();
 
     private static GpifStaff[] ParseStaffs(XElement? staves)
     {

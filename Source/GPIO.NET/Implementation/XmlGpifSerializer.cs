@@ -123,11 +123,27 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         {
             el.Add(BuildRse(t.ChannelRse));
         }
-        AddRawElementXml(el, t.PlaybackStateXml);
+        if (!string.IsNullOrWhiteSpace(t.PlaybackStateXml))
+        {
+            AddRawElementXml(el, t.PlaybackStateXml);
+        }
+        else if (!string.IsNullOrWhiteSpace(t.PlaybackState.Value))
+        {
+            el.Add(new XElement("PlaybackState", t.PlaybackState.Value));
+        }
+
         AddRawElementXml(el, t.AudioEngineStateXml);
         AddRawElementXml(el, t.MidiConnectionXml);
         AddRawElementXml(el, t.LyricsXml);
-        AddRawElementXml(el, t.AutomationsXml);
+
+        if (!string.IsNullOrWhiteSpace(t.AutomationsXml))
+        {
+            AddRawElementXml(el, t.AutomationsXml);
+        }
+        else if (t.Automations.Count > 0)
+        {
+            el.Add(BuildAutomations(t.Automations));
+        }
         AddRawElementXml(el, t.TransposeXml);
 
         return el;
@@ -208,6 +224,24 @@ public sealed class XmlGpifSerializer : IGpifSerializer
             !string.IsNullOrWhiteSpace(rse.ChannelStripVersion) ? new XAttribute("version", rse.ChannelStripVersion) : null,
             !string.IsNullOrWhiteSpace(rse.ChannelStripParameters) ? new XElement("Parameters", rse.ChannelStripParameters) : null);
         return new XElement("RSE", strip);
+    }
+
+    private static XElement BuildAutomations(IReadOnlyList<GpifAutomation> automations)
+    {
+        var root = new XElement("Automations");
+        foreach (var a in automations)
+        {
+            var el = new XElement("Automation");
+            AddTextElement(el, "Type", a.Type);
+            if (a.Linear.HasValue) el.Add(new XElement("Linear", a.Linear.Value.ToString().ToLowerInvariant()));
+            if (a.Bar.HasValue) el.Add(new XElement("Bar", a.Bar.Value));
+            if (a.Position.HasValue) el.Add(new XElement("Position", a.Position.Value));
+            if (a.Visible.HasValue) el.Add(new XElement("Visible", a.Visible.Value.ToString().ToLowerInvariant()));
+            AddTextElement(el, "Value", a.Value);
+            root.Add(el);
+        }
+
+        return root;
     }
 
     private static XElement BuildStaves(IReadOnlyList<GpifStaff> staffs)

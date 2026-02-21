@@ -121,6 +121,10 @@ public sealed class GpifTrack
 
     public string AudioEngineStateXml { get; init; } = string.Empty;
 
+    public GpifPlaybackState PlaybackState { get; init; } = new();
+
+    public IReadOnlyList<GpifAutomation> Automations { get; init; } = Array.Empty<GpifAutomation>();
+
     public string MidiConnectionXml { get; init; } = string.Empty;
 
     public string LyricsXml { get; init; } = string.Empty;
