@@ -43,7 +43,7 @@ try
             }
             catch (Exception ex)
             {
-                failures.Add(new BatchFailure { File = file, Output = outPath, Error = ex.Message });
+                failures.Add(new BatchFailure { File = file, Output = outPath, Error = ex.ToString() });
                 if (!options.ContinueOnError)
                 {
                     throw;
