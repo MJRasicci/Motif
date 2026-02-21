@@ -9,6 +9,67 @@ try
 {
     var options = CliParser.Parse(args);
 
+    if (!string.IsNullOrWhiteSpace(options.BatchInputDir))
+    {
+        if (string.IsNullOrWhiteSpace(options.BatchOutputDir))
+        {
+            throw new InvalidOperationException("Batch mode requires --batch-output-dir.");
+        }
+
+        var inputRoot = options.BatchInputDir;
+        var outputRoot = options.BatchOutputDir;
+        Directory.CreateDirectory(outputRoot);
+
+        var files = Directory.GetFiles(inputRoot, "*.gp", SearchOption.AllDirectories);
+        var failures = new List<object>();
+        var ok = 0;
+
+        foreach (var file in files)
+        {
+            var rel = Path.GetRelativePath(inputRoot, file);
+            var outPath = Path.Combine(outputRoot, Path.ChangeExtension(rel, ".json"));
+            Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
+
+            try
+            {
+                var reader = new GuitarProReader();
+                var score = await reader.ReadAsync(file).ConfigureAwait(false);
+                var mappedJson = score.ToJson(
+                    indented: options.JsonIndented,
+                    ignoreNullValues: options.JsonIgnoreNull,
+                    ignoreDefaultValues: options.JsonIgnoreDefaults);
+                await File.WriteAllTextAsync(outPath, mappedJson).ConfigureAwait(false);
+                ok++;
+            }
+            catch (Exception ex)
+            {
+                failures.Add(new { file, output = outPath, error = ex.Message });
+                if (!options.ContinueOnError)
+                {
+                    throw;
+                }
+            }
+        }
+
+        var failureLog = options.FailureLogPath ?? Path.Combine(outputRoot, "batch-failures.jsonl");
+        if (failures.Count > 0)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(failureLog)!);
+            await File.WriteAllLinesAsync(
+                    failureLog,
+                    failures.Select(f => JsonSerializer.Serialize(f)))
+                .ConfigureAwait(false);
+        }
+
+        Console.WriteLine($"Batch export complete. ok={ok} fail={failures.Count} total={files.Length}");
+        if (failures.Count > 0)
+        {
+            Console.WriteLine($"Failure log: {failureLog}");
+        }
+
+        return failures.Count > 0 ? 10 : 0;
+    }
+
     if (!File.Exists(options.InputPath))
     {
         Console.Error.WriteLine($"Input file not found: {options.InputPath}");
@@ -26,7 +87,7 @@ try
 
         var json = await File.ReadAllTextAsync(options.InputPath).ConfigureAwait(false);
         var editedScore = JsonSerializer.Deserialize(json, CliJsonContext.Default.GuitarProScore)
-            ?? throw new InvalidDataException("Unable to deserialize mapped score JSON.");
+                          ?? throw new InvalidDataException("Unable to deserialize mapped score JSON.");
 
         if (options.PatchFromJson)
         {
@@ -154,7 +215,7 @@ try
         {
             await using var archive = await ZipFile.OpenReadAsync(options.InputPath, CancellationToken.None).ConfigureAwait(false);
             var entry = archive.GetEntry("Content/score.gpif")
-                ?? throw new InvalidDataException("Archive does not contain Content/score.gpif");
+                        ?? throw new InvalidDataException("Archive does not contain Content/score.gpif");
 
             EnsureOutputDirectory(outputPath);
             await using var inStream = await entry.OpenAsync(CancellationToken.None).ConfigureAwait(false);
@@ -234,6 +295,11 @@ static void PrintHelp()
     Console.WriteLine("  (use --format json with --from-json)");
     Console.WriteLine("  --diagnostics-out <path>   optional diagnostics output file for write/patch mode");
     Console.WriteLine("  --diagnostics-json         writes diagnostics output as JSON");
+    Console.WriteLine();
+    Console.WriteLine("Batch export mode:");
+    Console.WriteLine("  --batch-input-dir <dir> --batch-output-dir <dir> --format json");
+    Console.WriteLine("  --continue-on-error[=true|false]   default true");
+    Console.WriteLine("  --failure-log <path>");
     Console.WriteLine();
     Console.WriteLine("Output:");
     Console.WriteLine("  --out <path>               explicit output file path");

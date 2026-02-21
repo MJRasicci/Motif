@@ -27,4 +27,12 @@ public sealed class CliOptions
     public bool PlanOnly { get; init; }
 
     public bool Strict { get; init; }
+
+    public string? BatchInputDir { get; init; }
+
+    public string? BatchOutputDir { get; init; }
+
+    public bool ContinueOnError { get; init; } = true;
+
+    public string? FailureLogPath { get; init; }
 }

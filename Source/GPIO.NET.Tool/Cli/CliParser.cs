@@ -22,6 +22,10 @@ public static class CliParser
         var diagnosticsAsJson = false;
         var planOnly = false;
         var strict = false;
+        string? batchInputDir = null;
+        string? batchOutputDir = null;
+        var continueOnError = true;
+        string? failureLogPath = null;
 
         for (var i = 1; i < args.Length; i++)
         {
@@ -109,6 +113,37 @@ public static class CliParser
                     strict = ParseBoolOption(value, true);
                     break;
 
+                case "--batch-input-dir":
+                    if (string.IsNullOrWhiteSpace(value) && i + 1 < args.Length)
+                    {
+                        value = args[++i];
+                    }
+
+                    batchInputDir = value;
+                    break;
+
+                case "--batch-output-dir":
+                    if (string.IsNullOrWhiteSpace(value) && i + 1 < args.Length)
+                    {
+                        value = args[++i];
+                    }
+
+                    batchOutputDir = value;
+                    break;
+
+                case "--continue-on-error":
+                    continueOnError = ParseBoolOption(value, true);
+                    break;
+
+                case "--failure-log":
+                    if (string.IsNullOrWhiteSpace(value) && i + 1 < args.Length)
+                    {
+                        value = args[++i];
+                    }
+
+                    failureLogPath = value;
+                    break;
+
                 case "--help":
                 case "-h":
                     throw new OperationCanceledException("help");
@@ -132,7 +167,11 @@ public static class CliParser
             DiagnosticsOutPath = string.IsNullOrWhiteSpace(diagnosticsOutPath) ? null : Path.GetFullPath(diagnosticsOutPath),
             DiagnosticsAsJson = diagnosticsAsJson,
             PlanOnly = planOnly,
-            Strict = strict
+            Strict = strict,
+            BatchInputDir = string.IsNullOrWhiteSpace(batchInputDir) ? null : Path.GetFullPath(batchInputDir),
+            BatchOutputDir = string.IsNullOrWhiteSpace(batchOutputDir) ? null : Path.GetFullPath(batchOutputDir),
+            ContinueOnError = continueOnError,
+            FailureLogPath = string.IsNullOrWhiteSpace(failureLogPath) ? null : Path.GetFullPath(failureLogPath)
         };
     }
 
