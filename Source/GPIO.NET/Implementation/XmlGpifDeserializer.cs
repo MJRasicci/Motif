@@ -95,7 +95,8 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                     .ToDictionary(x => x.Id, x => x.Int);
 
                 var directionProps = (directions?.Elements() ?? Enumerable.Empty<XElement>())
-                    .ToDictionary(e => e.Name.LocalName, e => e.Value ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+                    .GroupBy(e => e.Name.LocalName, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.Last().Value ?? string.Empty, StringComparer.OrdinalIgnoreCase);
 
                 return new GpifMasterBar
                 {
