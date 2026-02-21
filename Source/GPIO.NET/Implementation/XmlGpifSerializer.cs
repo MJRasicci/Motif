@@ -334,7 +334,23 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         return root;
     }
 
-    private static XElement BuildBar(GpifBar b) => new("Bar", new XAttribute("id", b.Id), new XElement("Voices", b.VoicesReferenceList));
+    private static XElement BuildBar(GpifBar b)
+    {
+        var bar = new XElement("Bar", new XAttribute("id", b.Id), new XElement("Voices", b.VoicesReferenceList));
+        AddTextElement(bar, "Clef", b.Clef);
+
+        if (b.Properties.Count > 0)
+        {
+            bar.Add(new XElement("Properties", b.Properties.Select(kv => new XElement("Property", new XAttribute("name", kv.Key), new XElement("Value", kv.Value)))));
+        }
+
+        if (b.XProperties.Count > 0)
+        {
+            bar.Add(new XElement("XProperties", b.XProperties.Select(kv => new XElement("XProperty", new XAttribute("id", kv.Key), new XElement("Int", kv.Value)))));
+        }
+
+        return bar;
+    }
     private static XElement BuildVoice(GpifVoice v) => new("Voice", new XAttribute("id", v.Id), new XElement("Beats", v.BeatsReferenceList));
     private static XElement BuildRhythm(GpifRhythm r)
     {

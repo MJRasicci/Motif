@@ -233,6 +233,8 @@ public sealed class MeasureModel
 
     public int SourceBarId { get; init; }
 
+    public string Clef { get; init; } = string.Empty;
+
     public bool RepeatStart { get; init; }
 
     public bool RepeatEnd { get; init; }
@@ -258,6 +260,8 @@ public sealed class MeasureModel
     public IReadOnlyList<FermataMetadata> Fermatas { get; init; } = Array.Empty<FermataMetadata>();
 
     public IReadOnlyDictionary<string, int> XProperties { get; init; } = new Dictionary<string, int>();
+
+    public IReadOnlyDictionary<string, string> BarProperties { get; init; } = new Dictionary<string, string>();
 
     public IReadOnlyList<BeatModel> Beats { get; init; } = Array.Empty<BeatModel>();
 }

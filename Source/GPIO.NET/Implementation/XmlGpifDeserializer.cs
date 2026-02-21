@@ -117,18 +117,46 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
             .ToArray();
 
         var bars = (root.Element("Bars")?.Elements("Bar") ?? Enumerable.Empty<XElement>())
-            .Select(b => new GpifBar
+            .Select(b =>
             {
-                Id = ParseInt(b.Attribute("id")?.Value),
-                VoicesReferenceList = b.Element("Voices")?.Value ?? string.Empty
+                var props = (b.Element("Properties")?.Elements("Property") ?? Enumerable.Empty<XElement>())
+                    .Where(p => p.Attribute("name") is not null)
+                    .ToDictionary(
+                        p => p.Attribute("name")!.Value,
+                        p => p.Element("Value")?.Value?.Trim() ?? p.Value?.Trim() ?? string.Empty,
+                        StringComparer.OrdinalIgnoreCase);
+                var xprops = (b.Element("XProperties")?.Elements("XProperty") ?? Enumerable.Empty<XElement>())
+                    .Where(x => x.Attribute("id") is not null)
+                    .Select(x => new { Id = x.Attribute("id")!.Value, Int = ParseInt(x.Element("Int")?.Value) })
+                    .Where(x => x.Int >= 0)
+                    .ToDictionary(x => x.Id, x => x.Int);
+
+                return new GpifBar
+                {
+                    Id = ParseInt(b.Attribute("id")?.Value),
+                    VoicesReferenceList = b.Element("Voices")?.Value ?? string.Empty,
+                    Clef = b.Element("Clef")?.Value ?? string.Empty,
+                    XProperties = xprops,
+                    Properties = props
+                };
             })
             .ToDictionary(b => b.Id);
 
         var voices = (root.Element("Voices")?.Elements("Voice") ?? Enumerable.Empty<XElement>())
-            .Select(v => new GpifVoice
+            .Select(v =>
             {
-                Id = ParseInt(v.Attribute("id")?.Value),
-                BeatsReferenceList = v.Element("Beats")?.Value ?? string.Empty
+                var props = (v.Element("Properties")?.Elements("Property") ?? Enumerable.Empty<XElement>())
+                    .Where(p => p.Attribute("name") is not null)
+                    .ToDictionary(
+                        p => p.Attribute("name")!.Value,
+                        p => p.Element("Value")?.Value?.Trim() ?? p.Value?.Trim() ?? string.Empty,
+                        StringComparer.OrdinalIgnoreCase);
+                return new GpifVoice
+                {
+                    Id = ParseInt(v.Attribute("id")?.Value),
+                    BeatsReferenceList = v.Element("Beats")?.Value ?? string.Empty,
+                    Properties = props
+                };
             })
             .ToDictionary(v => v.Id);
 

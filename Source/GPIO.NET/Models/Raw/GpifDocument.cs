@@ -202,6 +202,12 @@ public sealed class GpifBar
     public int Id { get; init; }
 
     public string VoicesReferenceList { get; init; } = string.Empty;
+
+    public string Clef { get; init; } = string.Empty;
+
+    public IReadOnlyDictionary<string, int> XProperties { get; init; } = new Dictionary<string, int>();
+
+    public IReadOnlyDictionary<string, string> Properties { get; init; } = new Dictionary<string, string>();
 }
 
 public sealed class GpifVoice
@@ -209,6 +215,8 @@ public sealed class GpifVoice
     public int Id { get; init; }
 
     public string BeatsReferenceList { get; init; } = string.Empty;
+
+    public IReadOnlyDictionary<string, string> Properties { get; init; } = new Dictionary<string, string>();
 }
 
 public sealed class GpifBeat

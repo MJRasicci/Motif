@@ -192,7 +192,9 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                 bars[currentBarId] = new GpifBar
                 {
                     Id = currentBarId,
-                    VoicesReferenceList = currentVoiceId.ToString(CultureInfo.InvariantCulture)
+                    VoicesReferenceList = currentVoiceId.ToString(CultureInfo.InvariantCulture),
+                    Clef = measure.Clef,
+                    Properties = measure.BarProperties
                 };
 
                 measureBarIds.Add(currentBarId);

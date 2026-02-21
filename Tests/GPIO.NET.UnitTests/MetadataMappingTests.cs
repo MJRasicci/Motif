@@ -150,6 +150,8 @@ public class MetadataMappingTests
                             KeyTransposeAs = "C",
                             Fermatas = [ new FermataMetadata { Type = "Short", Offset = "Middle", Length = 1.2m } ],
                             XProperties = new Dictionary<string,int> { ["1124204545"] = 2 },
+                            Clef = "G2",
+                            BarProperties = new Dictionary<string,string> { ["BarDisplay"] = "Both" },
                             Beats = [ new BeatModel { Id = 1, Duration = 0.25m } ]
                         }
                     ]
@@ -213,6 +215,8 @@ public class MetadataMappingTests
             measure.KeyTransposeAs.Should().Be("C");
             measure.Fermatas.Should().ContainSingle();
             measure.XProperties.Should().ContainKey("1124204545");
+            measure.Clef.Should().Be("G2");
+            measure.BarProperties.Should().ContainKey("BarDisplay");
         }
         finally
         {

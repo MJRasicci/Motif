@@ -168,10 +168,14 @@ public sealed class DefaultScoreMapper : IScoreMapper
             var barRefs = ReferenceListParser.SplitRefs(masterBar.BarsReferenceList);
             var beats = new List<BeatModel>();
             var sourceBarId = -1;
+            var clef = string.Empty;
+            var barProperties = new Dictionary<string, string>();
 
             if (trackOrdinal < barRefs.Count && source.BarsById.TryGetValue(barRefs[trackOrdinal], out var bar))
             {
                 sourceBarId = bar.Id;
+                clef = bar.Clef;
+                barProperties = bar.Properties.ToDictionary(kv => kv.Key, kv => kv.Value);
                 var voiceRefs = ReferenceListParser.SplitRefs(bar.VoicesReferenceList);
                 if (voiceRefs.Count > 0 && source.VoicesById.TryGetValue(voiceRefs[0], out var voice))
                 {
@@ -241,6 +245,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
                 Index = masterBar.Index,
                 TimeSignature = masterBar.Time,
                 SourceBarId = sourceBarId,
+                Clef = clef,
                 RepeatStart = masterBar.RepeatStart,
                 RepeatEnd = masterBar.RepeatEnd,
                 RepeatCount = masterBar.RepeatCount,
@@ -259,6 +264,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
                     Length = f.Length
                 }).ToArray(),
                 XProperties = masterBar.XProperties,
+                BarProperties = barProperties,
                 Beats = beats
             });
         }
