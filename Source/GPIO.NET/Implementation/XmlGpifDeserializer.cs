@@ -60,7 +60,8 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                     MidiConnectionXml = t.Element("MidiConnection")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                     LyricsXml = t.Element("Lyrics")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                     AutomationsXml = t.Element("Automations")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
-                    TransposeXml = t.Element("Transpose")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty
+                    TransposeXml = t.Element("Transpose")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                    Staffs = ParseStaffs(t.Element("Staves"))
                 };
             })
             .ToArray() ?? Array.Empty<GpifTrack>();
@@ -316,6 +317,48 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                 .Select(v => int.TryParse(v, out var i) ? i : int.MinValue)
                 .Where(i => i != int.MinValue)
                 .ToArray();
+
+    private static GpifStaff[] ParseStaffs(XElement? staves)
+    {
+        if (staves is null)
+        {
+            return Array.Empty<GpifStaff>();
+        }
+
+        return staves.Elements("Staff")
+            .Select(staff =>
+            {
+                var props = (staff.Element("Properties")?.Elements("Property") ?? Enumerable.Empty<XElement>())
+                    .Where(p => p.Attribute("name") is not null)
+                    .ToDictionary(
+                        p => p.Attribute("name")!.Value,
+                        p => p.Element("Value")?.Value?.Trim() ?? p.Value?.Trim() ?? string.Empty,
+                        StringComparer.OrdinalIgnoreCase);
+
+                props.TryGetValue("Tuning", out var tuningRaw);
+                var tuningPitches = SplitInts(tuningRaw);
+                if (tuningPitches.Length == 0)
+                {
+                    tuningPitches = (staff.Descendants("Pitch") ?? Enumerable.Empty<XElement>())
+                        .Select(p => int.TryParse(p.Value, out var i) ? i : int.MinValue)
+                        .Where(i => i != int.MinValue)
+                        .ToArray();
+                }
+
+                props.TryGetValue("CapoFret", out var capoRaw);
+
+                return new GpifStaff
+                {
+                    Id = TryParseNullableInt(staff.Attribute("id")?.Value),
+                    Cref = staff.Attribute("cref")?.Value ?? string.Empty,
+                    TuningPitches = tuningPitches,
+                    CapoFret = TryParseNullableInt(capoRaw),
+                    Properties = props,
+                    Xml = staff.ToString(SaveOptions.DisableFormatting)
+                };
+            })
+            .ToArray();
+    }
 
     private static TupletRatio? ParseTuplet(XElement? tuplet)
     {

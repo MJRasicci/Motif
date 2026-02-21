@@ -62,7 +62,16 @@ public sealed class DefaultScoreMapper : IScoreMapper
                         MidiConnectionXml = track.MidiConnectionXml,
                         LyricsXml = track.LyricsXml,
                         AutomationsXml = track.AutomationsXml,
-                        TransposeXml = track.TransposeXml
+                        TransposeXml = track.TransposeXml,
+                        Staffs = track.Staffs.Select(s => new StaffMetadata
+                        {
+                            Id = s.Id,
+                            Cref = s.Cref,
+                            TuningPitches = s.TuningPitches,
+                            CapoFret = s.CapoFret,
+                            Properties = s.Properties,
+                            Xml = s.Xml
+                        }).ToArray()
                     },
                     Measures = measures
                 };

@@ -21,6 +21,7 @@ public class MetadataMappingTests
         score.Tracks.Any(t => !string.IsNullOrWhiteSpace(t.Metadata.ShortName)).Should().BeTrue();
         score.Tracks.Any(t => !string.IsNullOrWhiteSpace(t.Metadata.Color)).Should().BeTrue();
         score.Tracks.Any(t => t.Metadata.TuningPitches.Length > 0).Should().BeTrue();
+        score.Tracks.Any(t => t.Metadata.Staffs.Count > 0).Should().BeTrue();
     }
 
     [Fact]
@@ -62,7 +63,18 @@ public class MetadataMappingTests
                         TuningPitches = [40,45,50,55,59,64],
                         TuningInstrument = "Guitar",
                         TuningLabel = "Std",
-                        TuningLabelVisible = true
+                        TuningLabelVisible = true,
+                        Staffs =
+                        [
+                            new StaffMetadata
+                            {
+                                Id = 1,
+                                Cref = "64",
+                                TuningPitches = [40,45,50,55,59,64],
+                                CapoFret = 2,
+                                Properties = new Dictionary<string,string> { ["CapoFret"] = "2" }
+                            }
+                        ]
                     },
                     Measures =
                     [
@@ -109,6 +121,8 @@ public class MetadataMappingTests
             track.Metadata.TuningInstrument.Should().Be("Guitar");
             track.Metadata.TuningLabel.Should().Be("Std");
             track.Metadata.TuningLabelVisible.Should().BeTrue();
+            track.Metadata.Staffs.Should().NotBeEmpty();
+            track.Metadata.Staffs[0].CapoFret.Should().Be(2);
         }
         finally
         {

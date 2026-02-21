@@ -89,7 +89,14 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         }
 
         AddRawElementXml(el, t.InstrumentSetXml);
-        AddRawElementXml(el, t.StavesXml);
+        if (!string.IsNullOrWhiteSpace(t.StavesXml))
+        {
+            AddRawElementXml(el, t.StavesXml);
+        }
+        else if (t.Staffs.Count > 0)
+        {
+            el.Add(BuildStaves(t.Staffs));
+        }
         AddRawElementXml(el, t.SoundsXml);
         AddRawElementXml(el, t.RseXml);
         AddRawElementXml(el, t.PlaybackStateXml);
@@ -132,6 +139,55 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         }
 
         return el;
+    }
+
+    private static XElement BuildStaves(IReadOnlyList<GpifStaff> staffs)
+    {
+        var root = new XElement("Staves");
+        foreach (var s in staffs)
+        {
+            if (!string.IsNullOrWhiteSpace(s.Xml))
+            {
+                try
+                {
+                    root.Add(XElement.Parse(s.Xml));
+                    continue;
+                }
+                catch
+                {
+                    // fallback to generated staff element
+                }
+            }
+
+            var staff = new XElement("Staff");
+            if (s.Id.HasValue) staff.SetAttributeValue("id", s.Id.Value);
+            if (!string.IsNullOrWhiteSpace(s.Cref)) staff.SetAttributeValue("cref", s.Cref);
+
+            var props = new XElement("Properties");
+            foreach (var kv in s.Properties)
+            {
+                props.Add(new XElement("Property", new XAttribute("name", kv.Key), new XElement("Value", kv.Value)));
+            }
+
+            if (s.TuningPitches.Length > 0)
+            {
+                props.Add(new XElement("Property", new XAttribute("name", "Tuning"), new XElement("Value", string.Join(' ', s.TuningPitches))));
+            }
+
+            if (s.CapoFret.HasValue)
+            {
+                props.Add(new XElement("Property", new XAttribute("name", "CapoFret"), new XElement("Value", s.CapoFret.Value)));
+            }
+
+            if (props.HasElements)
+            {
+                staff.Add(props);
+            }
+
+            root.Add(staff);
+        }
+
+        return root;
     }
 
     private static XElement BuildBar(GpifBar b) => new("Bar", new XAttribute("id", b.Id), new XElement("Voices", b.VoicesReferenceList));

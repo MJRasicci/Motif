@@ -119,6 +119,23 @@ public sealed class TrackMetadata
     public string AutomationsXml { get; init; } = string.Empty;
 
     public string TransposeXml { get; init; } = string.Empty;
+
+    public IReadOnlyList<StaffMetadata> Staffs { get; init; } = Array.Empty<StaffMetadata>();
+}
+
+public sealed class StaffMetadata
+{
+    public int? Id { get; init; }
+
+    public string Cref { get; init; } = string.Empty;
+
+    public int[] TuningPitches { get; init; } = Array.Empty<int>();
+
+    public int? CapoFret { get; init; }
+
+    public IReadOnlyDictionary<string, string> Properties { get; init; } = new Dictionary<string, string>();
+
+    public string Xml { get; init; } = string.Empty;
 }
 
 public sealed class MeasureModel

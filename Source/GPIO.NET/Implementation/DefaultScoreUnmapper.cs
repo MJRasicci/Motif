@@ -47,7 +47,16 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                 MidiConnectionXml = t.Metadata.MidiConnectionXml,
                 LyricsXml = t.Metadata.LyricsXml,
                 AutomationsXml = t.Metadata.AutomationsXml,
-                TransposeXml = t.Metadata.TransposeXml
+                TransposeXml = t.Metadata.TransposeXml,
+                Staffs = t.Metadata.Staffs.Select(s => new GpifStaff
+                {
+                    Id = s.Id,
+                    Cref = s.Cref,
+                    TuningPitches = s.TuningPitches,
+                    CapoFret = s.CapoFret,
+                    Properties = s.Properties,
+                    Xml = s.Xml
+                }).ToArray()
             })
             .ToArray();
 
