@@ -203,6 +203,6 @@ Earlier experiments and migration notes are documented in `AGENTS.md`.
 
 ## License
 
-(Insert license here)
+MIT — see `LICENSE.md`.
 
 ```
