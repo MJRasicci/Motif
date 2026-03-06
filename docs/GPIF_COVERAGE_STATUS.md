@@ -21,18 +21,23 @@ Legend:
 - ✅ Tempo map projection from tempo automations (`TempoEventMetadata`)
 - ✅ Unified automation timeline synthesis (master + track events, deterministic ordering, parsed numeric/reference hints, tempo projection attached when applicable)
 - ✅ Dynamic map projection from beat-level dynamics (`<Dynamic>` capture + synthesized per-track/voice change points)
-- 🟡 Master-track RSE (typed minimal + raw XML passthrough)
+- ✅ Master-track RSE (`Master` effect list typed + raw XML passthrough fallback)
 
 ## 3) Track metadata
 
 - ✅ Name/short name/color/layout/playing style/basic flags
 - ✅ Tuning fields (`TuningPitches`, label/instrument/visible)
-- ✅ Typed instrument set (`Name/Type/LineCount`)
-- ✅ Typed sounds (`Name/Label/Path/Role` + MIDI program fields)
+- ✅ Typed instrument set (`Name/Type/LineCount` + `Elements`/`Articulations`)
+- ✅ Typed sounds (`Name/Label/Path/Role` + MIDI program fields + sound-level RSE core)
 - ✅ Typed playback state value
+- ✅ Typed audio engine state value
 - ✅ Typed track automations list
+- ✅ Typed track/channel-strip RSE core (`Bank`, `ChannelStrip`, channel-strip automations)
+- ✅ Typed MIDI connection (`Port`, channels, one-channel-per-string flag)
+- ✅ Typed lyrics (`dispatched` + line text/offsets)
+- ✅ Typed transpose (`Chromatic`, `Octave`)
 - ✅ Typed staff list (`id/cref/tuning/capo/properties`)
-- 🟡 Track subsystem blocks as raw XML passthrough for fidelity:
+- ✅ Raw XML passthrough retained for fidelity fallback:
   - `InstrumentSetXml`, `StavesXml`, `SoundsXml`, `RseXml`,
   - `PlaybackStateXml`, `AudioEngineStateXml`, `MidiConnectionXml`,
   - `LyricsXml`, `AutomationsXml`, `TransposeXml`
@@ -102,7 +107,7 @@ Legend:
 
 ## 10) Remaining highest-priority gaps
 
-1. ⛔ Deep normalization of audio engine / MIDI connection / lyrics structures (currently passthrough-heavy)
+1. ⛔ Deeper audio-engine schema normalization beyond current typed core (advanced effect-chain topology, full notation-patch/audio internals)
 2. ⛔ Complete schema-driven element-by-element coverage auditing vs `GPIF.xsd`
 3. ⛔ Patch planner support for larger structural edits (new tracks/measures, advanced voice topology)
 
@@ -110,4 +115,4 @@ Legend:
 
 - **Milestone A:** Schema coverage audit tool (typed/hybrid/missing per XSD node)
 - **Milestone B:** Advanced patch planner for measure/track creation and structural diffs
-- **Milestone C:** Deeper normalization of audio engine / MIDI / lyrics blocks
+- **Milestone C:** Full remaining audio-engine/notation schema normalization

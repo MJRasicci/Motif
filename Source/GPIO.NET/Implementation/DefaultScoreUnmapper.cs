@@ -45,7 +45,24 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                 {
                     Name = t.Metadata.InstrumentSet.Name,
                     Type = t.Metadata.InstrumentSet.Type,
-                    LineCount = t.Metadata.InstrumentSet.LineCount
+                    LineCount = t.Metadata.InstrumentSet.LineCount,
+                    Elements = t.Metadata.InstrumentSet.Elements.Select(element => new GpifInstrumentElement
+                    {
+                        Name = element.Name,
+                        Type = element.Type,
+                        SoundbankName = element.SoundbankName,
+                        Articulations = element.Articulations.Select(articulation => new GpifInstrumentArticulation
+                        {
+                            Name = articulation.Name,
+                            StaffLine = articulation.StaffLine,
+                            Noteheads = articulation.Noteheads,
+                            TechniquePlacement = articulation.TechniquePlacement,
+                            TechniqueSymbol = articulation.TechniqueSymbol,
+                            InputMidiNumbers = articulation.InputMidiNumbers,
+                            OutputRseSound = articulation.OutputRseSound,
+                            OutputMidiNumber = articulation.OutputMidiNumber
+                        }).ToArray()
+                    }).ToArray()
                 },
                 Sounds = t.Metadata.Sounds.Select(s => new GpifSound
                 {
@@ -55,16 +72,45 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                     Role = s.Role,
                     MidiLsb = s.MidiLsb,
                     MidiMsb = s.MidiMsb,
-                    MidiProgram = s.MidiProgram
+                    MidiProgram = s.MidiProgram,
+                    Rse = new GpifSoundRse
+                    {
+                        SoundbankPatch = s.Rse.SoundbankPatch,
+                        SoundbankSet = s.Rse.SoundbankSet,
+                        ElementsSettingsXml = s.Rse.ElementsSettingsXml,
+                        Pickups = new GpifSoundRsePickups
+                        {
+                            OverloudPosition = s.Rse.Pickups.OverloudPosition,
+                            Volumes = s.Rse.Pickups.Volumes,
+                            Tones = s.Rse.Pickups.Tones
+                        },
+                        EffectChain = s.Rse.EffectChain.Select(effect => new GpifRseEffect
+                        {
+                            Id = effect.Id,
+                            Bypass = effect.Bypass,
+                            Parameters = effect.Parameters
+                        }).ToArray()
+                    }
                 }).ToArray(),
                 ChannelRse = new GpifRse
                 {
+                    Bank = t.Metadata.Rse.Bank,
                     ChannelStripVersion = t.Metadata.Rse.ChannelStripVersion,
-                    ChannelStripParameters = t.Metadata.Rse.ChannelStripParameters
+                    ChannelStripParameters = t.Metadata.Rse.ChannelStripParameters,
+                    Automations = t.Metadata.Rse.Automations.Select(a => new GpifAutomation
+                    {
+                        Type = a.Type,
+                        Linear = a.Linear,
+                        Bar = a.Bar,
+                        Position = a.Position,
+                        Visible = a.Visible,
+                        Value = a.Value
+                    }).ToArray()
                 },
                 PlaybackStateXml = t.Metadata.PlaybackStateXml,
                 AudioEngineStateXml = t.Metadata.AudioEngineStateXml,
                 PlaybackState = new GpifPlaybackState { Value = t.Metadata.PlaybackState.Value },
+                AudioEngineState = new GpifAudioEngineState { Value = t.Metadata.AudioEngineState.Value },
                 MidiConnectionXml = t.Metadata.MidiConnectionXml,
                 LyricsXml = t.Metadata.LyricsXml,
                 AutomationsXml = t.Metadata.AutomationsXml,
@@ -78,6 +124,27 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                     Value = a.Value
                 }).ToArray(),
                 TransposeXml = t.Metadata.TransposeXml,
+                MidiConnection = new GpifMidiConnection
+                {
+                    Port = t.Metadata.MidiConnection.Port,
+                    PrimaryChannel = t.Metadata.MidiConnection.PrimaryChannel,
+                    SecondaryChannel = t.Metadata.MidiConnection.SecondaryChannel,
+                    ForceOneChannelPerString = t.Metadata.MidiConnection.ForceOneChannelPerString
+                },
+                Lyrics = new GpifLyrics
+                {
+                    Dispatched = t.Metadata.Lyrics.Dispatched,
+                    Lines = t.Metadata.Lyrics.Lines.Select(line => new GpifLyricsLine
+                    {
+                        Text = line.Text,
+                        Offset = line.Offset
+                    }).ToArray()
+                },
+                Transpose = new GpifTranspose
+                {
+                    Chromatic = t.Metadata.Transpose.Chromatic,
+                    Octave = t.Metadata.Transpose.Octave
+                },
                 Staffs = t.Metadata.Staffs.Select(s => new GpifStaff
                 {
                     Id = s.Id,
@@ -351,7 +418,16 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                     Value = a.Value
                 }).ToArray(),
                 Anacrusis = score.MasterTrack.Anacrusis,
-                RseXml = score.MasterTrack.RseXml
+                RseXml = score.MasterTrack.RseXml,
+                Rse = new GpifMasterRse
+                {
+                    MasterEffects = score.MasterTrack.Rse.MasterEffects.Select(effect => new GpifRseEffect
+                    {
+                        Id = effect.Id,
+                        Bypass = effect.Bypass,
+                        Parameters = effect.Parameters
+                    }).ToArray()
+                }
             },
             Tracks = tracks,
             MasterBars = masterBars,

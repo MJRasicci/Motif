@@ -125,6 +125,8 @@ public sealed class GpifTrack
 
     public GpifPlaybackState PlaybackState { get; init; } = new();
 
+    public GpifAudioEngineState AudioEngineState { get; init; } = new();
+
     public IReadOnlyList<GpifAutomation> Automations { get; init; } = Array.Empty<GpifAutomation>();
 
     public string MidiConnectionXml { get; init; } = string.Empty;
@@ -134,6 +136,12 @@ public sealed class GpifTrack
     public string AutomationsXml { get; init; } = string.Empty;
 
     public string TransposeXml { get; init; } = string.Empty;
+
+    public GpifMidiConnection MidiConnection { get; init; } = new();
+
+    public GpifLyrics Lyrics { get; init; } = new();
+
+    public GpifTranspose Transpose { get; init; } = new();
 
     public IReadOnlyList<GpifStaff> Staffs { get; init; } = Array.Empty<GpifStaff>();
 }

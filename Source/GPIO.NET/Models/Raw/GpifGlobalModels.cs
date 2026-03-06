@@ -9,4 +9,11 @@ public sealed class GpifMasterTrack
     public bool Anacrusis { get; init; }
 
     public string RseXml { get; init; } = string.Empty;
+
+    public GpifMasterRse Rse { get; init; } = new();
+}
+
+public sealed class GpifMasterRse
+{
+    public IReadOnlyList<GpifRseEffect> MasterEffects { get; init; } = Array.Empty<GpifRseEffect>();
 }

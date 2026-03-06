@@ -62,7 +62,24 @@ public sealed class DefaultScoreMapper : IScoreMapper
                         {
                             Name = track.InstrumentSet.Name,
                             Type = track.InstrumentSet.Type,
-                            LineCount = track.InstrumentSet.LineCount
+                            LineCount = track.InstrumentSet.LineCount,
+                            Elements = track.InstrumentSet.Elements.Select(element => new InstrumentElementMetadata
+                            {
+                                Name = element.Name,
+                                Type = element.Type,
+                                SoundbankName = element.SoundbankName,
+                                Articulations = element.Articulations.Select(articulation => new InstrumentArticulationMetadata
+                                {
+                                    Name = articulation.Name,
+                                    StaffLine = articulation.StaffLine,
+                                    Noteheads = articulation.Noteheads,
+                                    TechniquePlacement = articulation.TechniquePlacement,
+                                    TechniqueSymbol = articulation.TechniqueSymbol,
+                                    InputMidiNumbers = articulation.InputMidiNumbers,
+                                    OutputRseSound = articulation.OutputRseSound,
+                                    OutputMidiNumber = articulation.OutputMidiNumber
+                                }).ToArray()
+                            }).ToArray()
                         },
                         Sounds = track.Sounds.Select(s => new SoundMetadata
                         {
@@ -72,16 +89,45 @@ public sealed class DefaultScoreMapper : IScoreMapper
                             Role = s.Role,
                             MidiLsb = s.MidiLsb,
                             MidiMsb = s.MidiMsb,
-                            MidiProgram = s.MidiProgram
+                            MidiProgram = s.MidiProgram,
+                            Rse = new SoundRseMetadata
+                            {
+                                SoundbankPatch = s.Rse.SoundbankPatch,
+                                SoundbankSet = s.Rse.SoundbankSet,
+                                ElementsSettingsXml = s.Rse.ElementsSettingsXml,
+                                Pickups = new SoundRsePickupsMetadata
+                                {
+                                    OverloudPosition = s.Rse.Pickups.OverloudPosition,
+                                    Volumes = s.Rse.Pickups.Volumes,
+                                    Tones = s.Rse.Pickups.Tones
+                                },
+                                EffectChain = s.Rse.EffectChain.Select(effect => new RseEffectMetadata
+                                {
+                                    Id = effect.Id,
+                                    Bypass = effect.Bypass,
+                                    Parameters = effect.Parameters
+                                }).ToArray()
+                            }
                         }).ToArray(),
                         Rse = new RseMetadata
                         {
+                            Bank = track.ChannelRse.Bank,
                             ChannelStripVersion = track.ChannelRse.ChannelStripVersion,
-                            ChannelStripParameters = track.ChannelRse.ChannelStripParameters
+                            ChannelStripParameters = track.ChannelRse.ChannelStripParameters,
+                            Automations = track.ChannelRse.Automations.Select(a => new AutomationMetadata
+                            {
+                                Type = a.Type,
+                                Linear = a.Linear,
+                                Bar = a.Bar,
+                                Position = a.Position,
+                                Visible = a.Visible,
+                                Value = a.Value
+                            }).ToArray()
                         },
                         PlaybackStateXml = track.PlaybackStateXml,
                         AudioEngineStateXml = track.AudioEngineStateXml,
                         PlaybackState = new PlaybackStateMetadata { Value = track.PlaybackState.Value },
+                        AudioEngineState = new AudioEngineStateMetadata { Value = track.AudioEngineState.Value },
                         MidiConnectionXml = track.MidiConnectionXml,
                         LyricsXml = track.LyricsXml,
                         AutomationsXml = track.AutomationsXml,
@@ -95,6 +141,27 @@ public sealed class DefaultScoreMapper : IScoreMapper
                             Value = a.Value
                         }).ToArray(),
                         TransposeXml = track.TransposeXml,
+                        MidiConnection = new MidiConnectionMetadata
+                        {
+                            Port = track.MidiConnection.Port,
+                            PrimaryChannel = track.MidiConnection.PrimaryChannel,
+                            SecondaryChannel = track.MidiConnection.SecondaryChannel,
+                            ForceOneChannelPerString = track.MidiConnection.ForceOneChannelPerString
+                        },
+                        Lyrics = new LyricsMetadata
+                        {
+                            Dispatched = track.Lyrics.Dispatched,
+                            Lines = track.Lyrics.Lines.Select(line => new LyricsLineMetadata
+                            {
+                                Text = line.Text,
+                                Offset = line.Offset
+                            }).ToArray()
+                        },
+                        Transpose = new TransposeMetadata
+                        {
+                            Chromatic = track.Transpose.Chromatic,
+                            Octave = track.Transpose.Octave
+                        },
                         Staffs = track.Staffs.Select(s => new StaffMetadata
                         {
                             Id = s.Id,
@@ -138,6 +205,15 @@ public sealed class DefaultScoreMapper : IScoreMapper
                 DynamicMap = BuildDynamicMap(tracks),
                 Anacrusis = source.MasterTrack.Anacrusis,
                 RseXml = source.MasterTrack.RseXml,
+                Rse = new MasterTrackRseMetadata
+                {
+                    MasterEffects = source.MasterTrack.Rse.MasterEffects.Select(effect => new RseEffectMetadata
+                    {
+                        Id = effect.Id,
+                        Bypass = effect.Bypass,
+                        Parameters = effect.Parameters
+                    }).ToArray()
+                },
                 TempoMap = tempoMap
             },
             Metadata = new ScoreMetadata

@@ -18,6 +18,15 @@ Status legend:
 - ✅ Beats
 - ✅ Notes (pitch + articulation/effect coverage tracked below)
 
+## Metadata subsystem blocks
+- ✅ Master-track RSE `Master` effects typed + read/map/write parity
+- ✅ Track RSE channel-strip core (`Bank`, version/parameters, channel-strip automations)
+- ✅ Track audio engine state (`AudioEngineState`)
+- ✅ Track MIDI connection (`Port`, channels, one-channel-per-string flag)
+- ✅ Track lyrics block (`dispatched` + line text/offset)
+- ✅ Track transpose block (`Chromatic`, `Octave`)
+- ✅ Deeper instrument/sound typing (`InstrumentSet` elements/articulations + sound-level RSE core)
+
 ## Navigation / playback flow
 - ✅ Repeat start/end metadata
 - ✅ Alternate ending metadata

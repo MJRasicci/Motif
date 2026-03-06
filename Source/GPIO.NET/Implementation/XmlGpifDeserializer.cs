@@ -91,11 +91,15 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                     PlaybackStateXml = t.Element("PlaybackState")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                     AudioEngineStateXml = t.Element("AudioEngineState")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                     PlaybackState = ParsePlaybackState(t.Element("PlaybackState")),
+                    AudioEngineState = ParseAudioEngineState(t.Element("AudioEngineState")),
                     MidiConnectionXml = t.Element("MidiConnection")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                     LyricsXml = t.Element("Lyrics")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                     AutomationsXml = t.Element("Automations")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                     Automations = ParseAutomations(t.Element("Automations")),
                     TransposeXml = t.Element("Transpose")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                    MidiConnection = ParseMidiConnection(t.Element("MidiConnection")),
+                    Lyrics = ParseLyrics(t.Element("Lyrics")),
+                    Transpose = ParseTranspose(t.Element("Transpose")),
                     Staffs = staves
                 };
             })
@@ -340,7 +344,8 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                 TrackIds = SplitInts(masterTrack?.Element("Tracks")?.Value),
                 Automations = ParseAutomations(masterTrack?.Element("Automations")),
                 Anacrusis = masterTrack?.Element("Anacrusis") is not null,
-                RseXml = masterTrack?.Element("RSE")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty
+                RseXml = masterTrack?.Element("RSE")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+                Rse = ParseMasterRse(masterTrack?.Element("RSE"))
             },
             Tracks = tracks,
             MasterBars = masterBars,
@@ -508,7 +513,28 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
         {
             Name = instrumentSet?.Element("Name")?.Value ?? string.Empty,
             Type = instrumentSet?.Element("Type")?.Value ?? string.Empty,
-            LineCount = TryParseNullableInt(instrumentSet?.Element("LineCount")?.Value)
+            LineCount = TryParseNullableInt(instrumentSet?.Element("LineCount")?.Value),
+            Elements = (instrumentSet?.Element("Elements")?.Elements("Element") ?? Enumerable.Empty<XElement>())
+                .Select(element => new GpifInstrumentElement
+                {
+                    Name = element.Element("Name")?.Value ?? string.Empty,
+                    Type = element.Element("Type")?.Value ?? string.Empty,
+                    SoundbankName = element.Element("SoundbankName")?.Value ?? string.Empty,
+                    Articulations = (element.Element("Articulations")?.Elements("Articulation") ?? Enumerable.Empty<XElement>())
+                        .Select(articulation => new GpifInstrumentArticulation
+                        {
+                            Name = articulation.Element("Name")?.Value ?? string.Empty,
+                            StaffLine = TryParseNullableInt(articulation.Element("StaffLine")?.Value),
+                            Noteheads = articulation.Element("Noteheads")?.Value ?? string.Empty,
+                            TechniquePlacement = articulation.Element("TechniquePlacement")?.Value ?? string.Empty,
+                            TechniqueSymbol = articulation.Element("TechniqueSymbol")?.Value ?? string.Empty,
+                            InputMidiNumbers = articulation.Element("InputMidiNumbers")?.Value ?? string.Empty,
+                            OutputRseSound = articulation.Element("OutputRSESound")?.Value ?? string.Empty,
+                            OutputMidiNumber = TryParseNullableInt(articulation.Element("OutputMidiNumber")?.Value)
+                        })
+                        .ToArray()
+                })
+                .ToArray()
         };
 
     private static GpifSound[] ParseSounds(XElement? sounds)
@@ -521,21 +547,92 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                 Role = s.Element("Role")?.Value ?? string.Empty,
                 MidiLsb = TryParseNullableInt(s.Element("MIDI")?.Element("LSB")?.Value),
                 MidiMsb = TryParseNullableInt(s.Element("MIDI")?.Element("MSB")?.Value),
-                MidiProgram = TryParseNullableInt(s.Element("MIDI")?.Element("Program")?.Value)
+                MidiProgram = TryParseNullableInt(s.Element("MIDI")?.Element("Program")?.Value),
+                Rse = ParseSoundRse(s.Element("RSE"))
             })
             .ToArray();
+
+    private static GpifSoundRse ParseSoundRse(XElement? rse)
+        => new()
+        {
+            SoundbankPatch = rse?.Element("SoundbankPatch")?.Value ?? string.Empty,
+            SoundbankSet = rse?.Element("SoundbankSet")?.Value ?? string.Empty,
+            ElementsSettingsXml = rse?.Element("ElementsSettings")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
+            Pickups = new GpifSoundRsePickups
+            {
+                OverloudPosition = rse?.Element("Pickups")?.Element("OverloudPosition")?.Value ?? string.Empty,
+                Volumes = rse?.Element("Pickups")?.Element("Volumes")?.Value ?? string.Empty,
+                Tones = rse?.Element("Pickups")?.Element("Tones")?.Value ?? string.Empty
+            },
+            EffectChain = ParseRseEffects(rse?.Element("EffectChain")?.Elements("Effect"))
+        };
 
     private static GpifRse ParseRse(XElement? rse)
         => new()
         {
+            Bank = rse?.Element("Bank")?.Value ?? string.Empty,
             ChannelStripVersion = rse?.Element("ChannelStrip")?.Attribute("version")?.Value ?? string.Empty,
-            ChannelStripParameters = rse?.Element("ChannelStrip")?.Element("Parameters")?.Value ?? string.Empty
+            ChannelStripParameters = rse?.Element("ChannelStrip")?.Element("Parameters")?.Value ?? string.Empty,
+            Automations = ParseAutomations(rse?.Element("ChannelStrip")?.Element("Automations"))
+        };
+
+    private static GpifMasterRse ParseMasterRse(XElement? rse)
+        => new()
+        {
+            MasterEffects = ParseRseEffects(rse?.Element("Master")?.Elements("Effect"))
+        };
+
+    private static GpifRseEffect[] ParseRseEffects(IEnumerable<XElement>? effects)
+        => (effects ?? Enumerable.Empty<XElement>())
+            .Select(effect => new GpifRseEffect
+            {
+                Id = effect.Attribute("id")?.Value ?? string.Empty,
+                Bypass = effect.Element("ByPass") is not null || effect.Element("Bypass") is not null,
+                Parameters = effect.Element("Parameters")?.Value ?? string.Empty
+            })
+            .ToArray();
+
+    private static GpifAudioEngineState ParseAudioEngineState(XElement? audioEngineState)
+        => new()
+        {
+            Value = audioEngineState?.Value?.Trim() ?? string.Empty
         };
 
     private static GpifPlaybackState ParsePlaybackState(XElement? playbackState)
         => new()
         {
             Value = playbackState?.Value?.Trim() ?? string.Empty
+        };
+
+    private static GpifMidiConnection ParseMidiConnection(XElement? midiConnection)
+        => new()
+        {
+            Port = TryParseNullableInt(midiConnection?.Element("Port")?.Value),
+            PrimaryChannel = TryParseNullableInt(midiConnection?.Element("PrimaryChannel")?.Value),
+            SecondaryChannel = TryParseNullableInt(midiConnection?.Element("SecondaryChannel")?.Value),
+            ForceOneChannelPerString = TryParseNullableBool(
+                midiConnection?.Element("ForeOneChannelPerString")?.Value
+                ?? midiConnection?.Element("ForceOneChannelPerString")?.Value)
+        };
+
+    private static GpifLyrics ParseLyrics(XElement? lyrics)
+        => new()
+        {
+            Dispatched = TryParseNullableBool(lyrics?.Attribute("dispatched")?.Value),
+            Lines = (lyrics?.Elements("Line") ?? Enumerable.Empty<XElement>())
+                .Select(line => new GpifLyricsLine
+                {
+                    Text = line.Element("Text")?.Value ?? string.Empty,
+                    Offset = TryParseNullableInt(line.Element("Offset")?.Value)
+                })
+                .ToArray()
+        };
+
+    private static GpifTranspose ParseTranspose(XElement? transpose)
+        => new()
+        {
+            Chromatic = TryParseNullableInt(transpose?.Element("Chromatic")?.Value),
+            Octave = TryParseNullableInt(transpose?.Element("Octave")?.Value)
         };
 
     private static GpifAutomation[] ParseAutomations(XElement? automations)

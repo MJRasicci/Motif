@@ -122,6 +122,8 @@ public sealed class TrackMetadata
 
     public PlaybackStateMetadata PlaybackState { get; init; } = new();
 
+    public AudioEngineStateMetadata AudioEngineState { get; init; } = new();
+
     public IReadOnlyList<AutomationMetadata> Automations { get; init; } = Array.Empty<AutomationMetadata>();
 
     public string MidiConnectionXml { get; init; } = string.Empty;
@@ -131,6 +133,12 @@ public sealed class TrackMetadata
     public string AutomationsXml { get; init; } = string.Empty;
 
     public string TransposeXml { get; init; } = string.Empty;
+
+    public MidiConnectionMetadata MidiConnection { get; init; } = new();
+
+    public LyricsMetadata Lyrics { get; init; } = new();
+
+    public TransposeMetadata Transpose { get; init; } = new();
 
     public IReadOnlyList<StaffMetadata> Staffs { get; init; } = Array.Empty<StaffMetadata>();
 }
@@ -157,6 +165,38 @@ public sealed class InstrumentSetMetadata
     public string Type { get; init; } = string.Empty;
 
     public int? LineCount { get; init; }
+
+    public IReadOnlyList<InstrumentElementMetadata> Elements { get; init; } = Array.Empty<InstrumentElementMetadata>();
+}
+
+public sealed class InstrumentElementMetadata
+{
+    public string Name { get; init; } = string.Empty;
+
+    public string Type { get; init; } = string.Empty;
+
+    public string SoundbankName { get; init; } = string.Empty;
+
+    public IReadOnlyList<InstrumentArticulationMetadata> Articulations { get; init; } = Array.Empty<InstrumentArticulationMetadata>();
+}
+
+public sealed class InstrumentArticulationMetadata
+{
+    public string Name { get; init; } = string.Empty;
+
+    public int? StaffLine { get; init; }
+
+    public string Noteheads { get; init; } = string.Empty;
+
+    public string TechniquePlacement { get; init; } = string.Empty;
+
+    public string TechniqueSymbol { get; init; } = string.Empty;
+
+    public string InputMidiNumbers { get; init; } = string.Empty;
+
+    public string OutputRseSound { get; init; } = string.Empty;
+
+    public int? OutputMidiNumber { get; init; }
 }
 
 public sealed class SoundMetadata
@@ -174,18 +214,92 @@ public sealed class SoundMetadata
     public int? MidiMsb { get; init; }
 
     public int? MidiProgram { get; init; }
+
+    public SoundRseMetadata Rse { get; init; } = new();
+}
+
+public sealed class SoundRseMetadata
+{
+    public string SoundbankPatch { get; init; } = string.Empty;
+
+    public string SoundbankSet { get; init; } = string.Empty;
+
+    public string ElementsSettingsXml { get; init; } = string.Empty;
+
+    public SoundRsePickupsMetadata Pickups { get; init; } = new();
+
+    public IReadOnlyList<RseEffectMetadata> EffectChain { get; init; } = Array.Empty<RseEffectMetadata>();
+}
+
+public sealed class SoundRsePickupsMetadata
+{
+    public string OverloudPosition { get; init; } = string.Empty;
+
+    public string Volumes { get; init; } = string.Empty;
+
+    public string Tones { get; init; } = string.Empty;
 }
 
 public sealed class RseMetadata
 {
+    public string Bank { get; init; } = string.Empty;
+
     public string ChannelStripVersion { get; init; } = string.Empty;
 
     public string ChannelStripParameters { get; init; } = string.Empty;
+
+    public IReadOnlyList<AutomationMetadata> Automations { get; init; } = Array.Empty<AutomationMetadata>();
+}
+
+public sealed class RseEffectMetadata
+{
+    public string Id { get; init; } = string.Empty;
+
+    public bool Bypass { get; init; }
+
+    public string Parameters { get; init; } = string.Empty;
 }
 
 public sealed class PlaybackStateMetadata
 {
     public string Value { get; init; } = string.Empty;
+}
+
+public sealed class AudioEngineStateMetadata
+{
+    public string Value { get; init; } = string.Empty;
+}
+
+public sealed class MidiConnectionMetadata
+{
+    public int? Port { get; init; }
+
+    public int? PrimaryChannel { get; init; }
+
+    public int? SecondaryChannel { get; init; }
+
+    public bool? ForceOneChannelPerString { get; init; }
+}
+
+public sealed class LyricsMetadata
+{
+    public bool? Dispatched { get; init; }
+
+    public IReadOnlyList<LyricsLineMetadata> Lines { get; init; } = Array.Empty<LyricsLineMetadata>();
+}
+
+public sealed class LyricsLineMetadata
+{
+    public string Text { get; init; } = string.Empty;
+
+    public int? Offset { get; init; }
+}
+
+public sealed class TransposeMetadata
+{
+    public int? Chromatic { get; init; }
+
+    public int? Octave { get; init; }
 }
 
 public sealed class AutomationMetadata
@@ -223,7 +337,14 @@ public sealed class MasterTrackMetadata
 
     public string RseXml { get; init; } = string.Empty;
 
+    public MasterTrackRseMetadata Rse { get; init; } = new();
+
     public IReadOnlyList<TempoEventMetadata> TempoMap { get; init; } = Array.Empty<TempoEventMetadata>();
+}
+
+public sealed class MasterTrackRseMetadata
+{
+    public IReadOnlyList<RseEffectMetadata> MasterEffects { get; init; } = Array.Empty<RseEffectMetadata>();
 }
 
 public sealed class TempoEventMetadata
