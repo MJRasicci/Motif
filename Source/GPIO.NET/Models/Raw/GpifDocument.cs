@@ -244,6 +244,42 @@ public sealed class GpifBeat
     public bool Brush { get; init; }
 
     public bool BrushIsUp { get; init; }
+
+    public bool Arpeggio { get; init; }
+
+    public int? BrushDurationTicks { get; init; }
+
+    public bool Rasgueado { get; init; }
+
+    public bool DeadSlapped { get; init; }
+
+    public bool Tremolo { get; init; }
+
+    public string TremoloValue { get; init; } = string.Empty;
+
+    public string ChordId { get; init; } = string.Empty;
+
+    public string FreeText { get; init; } = string.Empty;
+
+    public bool WhammyBar { get; init; }
+
+    public bool WhammyBarExtended { get; init; }
+
+    public decimal? WhammyBarOriginValue { get; init; }
+
+    public decimal? WhammyBarMiddleValue { get; init; }
+
+    public decimal? WhammyBarDestinationValue { get; init; }
+
+    public decimal? WhammyBarOriginOffset { get; init; }
+
+    public decimal? WhammyBarMiddleOffset1 { get; init; }
+
+    public decimal? WhammyBarMiddleOffset2 { get; init; }
+
+    public decimal? WhammyBarDestinationOffset { get; init; }
+
+    public IReadOnlyDictionary<string, int> XProperties { get; init; } = new Dictionary<string, int>();
 }
 
 public sealed class GpifNote
@@ -255,6 +291,8 @@ public sealed class GpifNote
     public IReadOnlyList<GpifNoteProperty> Properties { get; init; } = Array.Empty<GpifNoteProperty>();
 
     public GpifNoteArticulation Articulation { get; init; } = new();
+
+    public IReadOnlyDictionary<string, int> XProperties { get; init; } = new Dictionary<string, int>();
 }
 
 public sealed class GpifNoteProperty

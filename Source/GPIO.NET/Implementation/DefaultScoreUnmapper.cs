@@ -142,12 +142,20 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                             {
                                 var bend = ArticulationDecoders.EncodeBend(note.Articulation.Bend);
                                 var harmonic = ArticulationDecoders.EncodeHarmonic(note.Articulation.Harmonic);
+                                var noteXProperties = new Dictionary<string, int>();
+                                var encodedTrillSpeed = ArticulationDecoders.EncodeTrillSpeed(note.Articulation.TrillSpeed);
+                                if (encodedTrillSpeed.HasValue)
+                                {
+                                    noteXProperties["688062467"] = encodedTrillSpeed.Value;
+                                }
+
                                 var currentNoteId = noteId++;
                                 noteRefs.Add(currentNoteId);
                                 notes[currentNoteId] = new GpifNote
                                 {
                                     Id = currentNoteId,
                                     MidiPitch = note.MidiPitch,
+                                    XProperties = noteXProperties,
                                     Articulation = new GpifNoteArticulation
                                     {
                                         LeftFingering = note.Articulation.LeftFingering,
@@ -185,6 +193,13 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                             }
                         }
 
+                        var encodedWhammy = ArticulationDecoders.EncodeWhammyBar(beat.WhammyBar);
+                        var beatXProperties = new Dictionary<string, int>();
+                        if (beat.BrushDurationTicks.HasValue)
+                        {
+                            beatXProperties[beat.Arpeggio ? "687931393" : "687935489"] = beat.BrushDurationTicks.Value;
+                        }
+
                         beats[currentBeatId] = new GpifBeat
                         {
                             Id = currentBeatId,
@@ -196,7 +211,25 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                             Slapped = beat.Slapped,
                             Popped = beat.Popped,
                             Brush = beat.Brush,
-                            BrushIsUp = beat.BrushIsUp
+                            BrushIsUp = beat.BrushIsUp,
+                            Arpeggio = beat.Arpeggio,
+                            BrushDurationTicks = beat.BrushDurationTicks,
+                            Rasgueado = beat.Rasgueado,
+                            DeadSlapped = beat.DeadSlapped,
+                            Tremolo = beat.Tremolo,
+                            TremoloValue = beat.TremoloValue,
+                            ChordId = beat.ChordId,
+                            FreeText = beat.FreeText,
+                            WhammyBar = encodedWhammy.Enabled,
+                            WhammyBarExtended = encodedWhammy.Extended,
+                            WhammyBarOriginValue = encodedWhammy.OriginValue,
+                            WhammyBarMiddleValue = encodedWhammy.MiddleValue,
+                            WhammyBarDestinationValue = encodedWhammy.DestinationValue,
+                            WhammyBarOriginOffset = encodedWhammy.OriginOffset,
+                            WhammyBarMiddleOffset1 = encodedWhammy.MiddleOffset1,
+                            WhammyBarMiddleOffset2 = encodedWhammy.MiddleOffset2,
+                            WhammyBarDestinationOffset = encodedWhammy.DestinationOffset,
+                            XProperties = beatXProperties
                         };
 
                         beatIds.Add(currentBeatId);

@@ -392,6 +392,11 @@ public sealed class XmlGpifSerializer : IGpifSerializer
     {
         var el = new XElement("Beat", new XAttribute("id", b.Id), new XElement("Rhythm", new XAttribute("ref", b.RhythmRef)));
         AddTextElement(el, "GraceNotes", b.GraceType);
+        if (b.DeadSlapped) el.Add(new XElement("DeadSlapped"));
+        if (b.Tremolo) el.Add(new XElement("Tremolo", b.TremoloValue));
+        AddTextElement(el, "Chord", b.ChordId);
+        AddTextElement(el, "FreeText", b.FreeText);
+        if (b.Arpeggio) el.Add(new XElement("Arpeggio", b.BrushIsUp ? "Up" : "Down"));
         if (!string.IsNullOrWhiteSpace(b.NotesReferenceList)) el.Add(new XElement("Notes", b.NotesReferenceList));
 
         var beatProperties = new XElement("Properties");
@@ -423,19 +428,60 @@ public sealed class XmlGpifSerializer : IGpifSerializer
                 new XElement("Enable")));
         }
 
-        if (b.Brush)
+        if (b.Brush && !b.Arpeggio)
         {
             beatProperties.Add(new XElement("Property",
                 new XAttribute("name", "Brush"),
                 new XElement("Direction", b.BrushIsUp ? "Up" : "Down")));
         }
 
+        if (b.Rasgueado)
+        {
+            beatProperties.Add(new XElement("Property",
+                new XAttribute("name", "Rasgueado"),
+                new XElement("Enable")));
+        }
+
+        if (b.WhammyBar)
+        {
+            beatProperties.Add(new XElement("Property",
+                new XAttribute("name", "WhammyBar"),
+                new XElement("Enable")));
+        }
+
+        if (b.WhammyBarExtended)
+        {
+            beatProperties.Add(new XElement("Property",
+                new XAttribute("name", "WhammyBarExtend"),
+                new XElement("Enable")));
+        }
+
+        AddBeatFloatProperty(beatProperties, "WhammyBarOriginValue", b.WhammyBarOriginValue);
+        AddBeatFloatProperty(beatProperties, "WhammyBarMiddleValue", b.WhammyBarMiddleValue);
+        AddBeatFloatProperty(beatProperties, "WhammyBarDestinationValue", b.WhammyBarDestinationValue);
+        AddBeatFloatProperty(beatProperties, "WhammyBarOriginOffset", b.WhammyBarOriginOffset);
+        AddBeatFloatProperty(beatProperties, "WhammyBarMiddleOffset1", b.WhammyBarMiddleOffset1);
+        AddBeatFloatProperty(beatProperties, "WhammyBarMiddleOffset2", b.WhammyBarMiddleOffset2);
+        AddBeatFloatProperty(beatProperties, "WhammyBarDestinationOffset", b.WhammyBarDestinationOffset);
+
         if (beatProperties.HasElements)
         {
             el.Add(beatProperties);
         }
 
+        if (b.XProperties.Count > 0)
+        {
+            el.Add(new XElement("XProperties", b.XProperties.Select(kv =>
+                new XElement("XProperty", new XAttribute("id", kv.Key), new XElement("Int", kv.Value)))));
+        }
+
         return el;
+    }
+
+    private static void AddBeatFloatProperty(XElement parent, string name, decimal? value)
+    {
+        if (!value.HasValue) return;
+        parent.Add(new XElement("Property", new XAttribute("name", name), new XElement("Float", value.Value)));
     }
 
     private static XElement BuildNote(GpifNote n)
@@ -501,6 +547,13 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         AddDecimalProperty(props, "BendDestinationValue", n.Articulation.BendDestinationValue);
 
         if (props.HasElements) el.Add(props);
+
+        if (n.XProperties.Count > 0)
+        {
+            el.Add(new XElement("XProperties", n.XProperties.Select(kv =>
+                new XElement("XProperty", new XAttribute("id", kv.Key), new XElement("Int", kv.Value)))));
+        }
+
         return el;
     }
 

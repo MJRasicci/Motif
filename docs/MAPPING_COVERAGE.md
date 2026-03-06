@@ -48,12 +48,12 @@ Status legend:
 - ✅ Hammer-on / pull-off semantics (adjacent-note linkage + inferred HO/PO type)
 - ✅ Palm mute semantics (note property + beat-level effect projection)
 - ✅ Bend mapping (normalized curve units + inferred bend-type semantics)
-- 🟡 Beat whammy/tremolo-bar curve semantics (`<Whammy ... />` and `WhammyBar*` property-family normalization)
-- 🟡 Rasgueado pattern semantics (`Property name="Rasgueado"` pattern mapping)
-- 🟡 Dead-slapped beat semantics (`<DeadSlapped />` behavior + playback/model impact)
-- 🟡 Arpeggio/brush differentiation and timing (`<Arpeggio>` vs `Brush` plus brush-duration XProperties `687935489`/`687931393`)
-- 🟡 Trill speed semantics (`XProperty id="688062467"` tempo bucket decoding)
-- 🟡 Additional beat-effect semantics currently read as generic tags only (`<Tremolo>`, `<Chord>`, `<FreeText>` effect interactions)
+- ✅ Beat whammy/tremolo-bar curve semantics (`WhammyBar*` property-family normalization with /50 value and /100 offset scaling)
+- ✅ Rasgueado pattern semantics (`Property name="Rasgueado"` enable flag)
+- ✅ Dead-slapped beat semantics (`<DeadSlapped />` element presence)
+- ✅ Arpeggio/brush differentiation and timing (`<Arpeggio>` vs `Brush` plus brush-duration XProperties `687935489`/`687931393`, with Android-parity default `Brush` duration = 60 ticks)
+- ✅ Trill speed semantics (`XProperty id="688062467"` tempo bucket decoding: ≥240→16th, ≥120→32nd, ≥60→64th, <60→128th)
+- ✅ Additional beat-effect semantics (`<Tremolo>` with speed value, `<Chord>` ID, `<FreeText>` text)
 
 ## Tempo / automation / dynamics
 - ✅ Track/master automation capture + round-trip
@@ -67,8 +67,7 @@ Status legend:
 - ✅ Playback-sequence edge-case tests for repeat/jump behavior (DS/DC/Coda/Fine, alternate endings, anacrusis, legacy direction aliases)
 
 ## Immediate next targets
-1. Complete remaining articulation/effect variants listed above (whammy/rasgueado/dead-slapped/arpeggio-duration/trill-speed/beat-effect interactions)
-2. Expand automation timeline synthesis beyond current tempo projection
-3. Integrate dynamic map
-4. Add explicit schema coverage report generation
-5. Expand fixture corpus for advanced patch planner structural diffs
+1. Expand automation timeline synthesis beyond current tempo projection
+2. Integrate dynamic map
+3. Add explicit schema coverage report generation
+4. Expand fixture corpus for advanced patch planner structural diffs

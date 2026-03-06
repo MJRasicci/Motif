@@ -273,6 +273,84 @@ internal static class ArticulationDecoders
 
     private static bool Close(decimal left, decimal right)
         => Math.Abs(left - right) <= Epsilon;
+
+    public static WhammyBarModel? DecodeWhammyBar(GpifBeat beat)
+    {
+        var hasCurveData = beat.WhammyBarOriginValue.HasValue
+            || beat.WhammyBarMiddleValue.HasValue
+            || beat.WhammyBarDestinationValue.HasValue
+            || beat.WhammyBarOriginOffset.HasValue
+            || beat.WhammyBarMiddleOffset1.HasValue
+            || beat.WhammyBarMiddleOffset2.HasValue
+            || beat.WhammyBarDestinationOffset.HasValue;
+
+        if (!beat.WhammyBar && !beat.WhammyBarExtended && !hasCurveData)
+        {
+            return null;
+        }
+
+        return new WhammyBarModel
+        {
+            Enabled = beat.WhammyBar || beat.WhammyBarExtended || hasCurveData,
+            Extended = beat.WhammyBarExtended,
+            OriginValue = beat.WhammyBarOriginValue / BendValueScale,
+            MiddleValue = beat.WhammyBarMiddleValue / BendValueScale,
+            DestinationValue = beat.WhammyBarDestinationValue / BendValueScale,
+            OriginOffset = beat.WhammyBarOriginOffset / BendOffsetScale,
+            MiddleOffset1 = beat.WhammyBarMiddleOffset1 / BendOffsetScale,
+            MiddleOffset2 = beat.WhammyBarMiddleOffset2 / BendOffsetScale,
+            DestinationOffset = beat.WhammyBarDestinationOffset / BendOffsetScale
+        };
+    }
+
+    public static EncodedWhammyBar EncodeWhammyBar(WhammyBarModel? whammy)
+    {
+        if (whammy is null)
+        {
+            return default;
+        }
+
+        return new EncodedWhammyBar(
+            Enabled: whammy.Enabled,
+            Extended: whammy.Extended,
+            OriginValue: whammy.OriginValue * BendValueScale,
+            MiddleValue: whammy.MiddleValue * BendValueScale,
+            DestinationValue: whammy.DestinationValue * BendValueScale,
+            OriginOffset: whammy.OriginOffset * BendOffsetScale,
+            MiddleOffset1: whammy.MiddleOffset1 * BendOffsetScale,
+            MiddleOffset2: whammy.MiddleOffset2 * BendOffsetScale,
+            DestinationOffset: whammy.DestinationOffset * BendOffsetScale);
+    }
+
+    /// <summary>
+    /// Decodes trill speed from XProperty id 688062467.
+    /// Thresholds: &gt;=240 → Sixteenth, &gt;=120 → ThirtySecond, &gt;=60 → SixtyFourth, lower values → OneHundredTwentyEighth.
+    /// </summary>
+    public static TrillSpeedKind DecodeTrillSpeed(IReadOnlyDictionary<string, int>? noteXProperties)
+    {
+        if (noteXProperties is null || !noteXProperties.TryGetValue("688062467", out var value))
+        {
+            return TrillSpeedKind.None;
+        }
+
+        return value switch
+        {
+            >= 240 => TrillSpeedKind.Sixteenth,
+            >= 120 => TrillSpeedKind.ThirtySecond,
+            >= 60 => TrillSpeedKind.SixtyFourth,
+            _ => TrillSpeedKind.OneHundredTwentyEighth
+        };
+    }
+
+    public static int? EncodeTrillSpeed(TrillSpeedKind speed)
+        => speed switch
+        {
+            TrillSpeedKind.Sixteenth => 240,
+            TrillSpeedKind.ThirtySecond => 120,
+            TrillSpeedKind.SixtyFourth => 60,
+            TrillSpeedKind.OneHundredTwentyEighth => 30,
+            _ => null
+        };
 }
 
 internal readonly record struct EncodedBend(
@@ -290,3 +368,14 @@ internal readonly record struct EncodedHarmonic(
     int? TypeNumber,
     string TypeText,
     decimal? Fret);
+
+internal readonly record struct EncodedWhammyBar(
+    bool Enabled,
+    bool Extended,
+    decimal? OriginValue,
+    decimal? MiddleValue,
+    decimal? DestinationValue,
+    decimal? OriginOffset,
+    decimal? MiddleOffset1,
+    decimal? MiddleOffset2,
+    decimal? DestinationOffset);

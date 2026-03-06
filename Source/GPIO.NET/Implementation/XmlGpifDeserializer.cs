@@ -210,12 +210,19 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
             .Select(n =>
             {
                 var properties = ParseNoteProperties(n);
+                var noteXprops = (n.Element("XProperties")?.Elements("XProperty") ?? Enumerable.Empty<XElement>())
+                    .Where(x => x.Attribute("id") is not null)
+                    .Select(x => new { Id = x.Attribute("id")!.Value, Int = ParseInt(x.Element("Int")?.Value) })
+                    .Where(x => x.Int >= 0)
+                    .ToDictionary(x => x.Id, x => x.Int);
+
                 return new GpifNote
                 {
                     Id = ParseInt(n.Attribute("id")?.Value),
                     MidiPitch = ParseMidiPitch(n),
                     Properties = properties,
-                    Articulation = ParseArticulation(n, properties)
+                    Articulation = ParseArticulation(n, properties),
+                    XProperties = noteXprops
                 };
             })
             .ToDictionary(n => n.Id);
@@ -229,6 +236,43 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                 properties.TryGetValue("Slapped", out var slappedRaw);
                 properties.TryGetValue("Popped", out var poppedRaw);
                 properties.TryGetValue("Brush", out var brushRaw);
+                properties.TryGetValue("Rasgueado", out var rasgueadoRaw);
+                properties.TryGetValue("WhammyBar", out var whammyBarRaw);
+                properties.TryGetValue("WhammyBarExtend", out var whammyBarExtendRaw);
+
+                var hasArpeggio = b.Element("Arpeggio") is not null;
+                var arpeggioDirection = b.Element("Arpeggio")?.Value ?? string.Empty;
+
+                var xprops = (b.Element("XProperties")?.Elements("XProperty") ?? Enumerable.Empty<XElement>())
+                    .Where(x => x.Attribute("id") is not null)
+                    .Select(x => new { Id = x.Attribute("id")!.Value, Int = ParseInt(x.Element("Int")?.Value) })
+                    .Where(x => x.Int >= 0)
+                    .ToDictionary(x => x.Id, x => x.Int);
+
+                int? brushDurationTicks = null;
+                if (xprops.TryGetValue("687935489", out var bd1))
+                {
+                    brushDurationTicks = bd1;
+                }
+                else if (xprops.TryGetValue("687931393", out var bd2))
+                {
+                    brushDurationTicks = bd2;
+                }
+                else if (!string.IsNullOrWhiteSpace(brushRaw))
+                {
+                    // Android parser defaults brush direction-only beats to 60 ticks.
+                    brushDurationTicks = 60;
+                }
+
+                decimal? GetBeatPropertyFloat(string name)
+                {
+                    if (!properties.TryGetValue(name, out var raw) || string.IsNullOrWhiteSpace(raw))
+                    {
+                        return null;
+                    }
+
+                    return decimal.TryParse(raw, out var v) ? v : null;
+                }
 
                 return new GpifBeat
                 {
@@ -240,8 +284,27 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                     VibratoWithTremBarStrength = vibratoWithTremBarStrength ?? string.Empty,
                     Slapped = string.Equals(slappedRaw, "true", StringComparison.OrdinalIgnoreCase),
                     Popped = string.Equals(poppedRaw, "true", StringComparison.OrdinalIgnoreCase),
-                    Brush = !string.IsNullOrWhiteSpace(brushRaw),
+                    Brush = !string.IsNullOrWhiteSpace(brushRaw) || hasArpeggio,
                     BrushIsUp = string.Equals(brushRaw, "Up", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(arpeggioDirection, "Up", StringComparison.OrdinalIgnoreCase),
+                    Arpeggio = hasArpeggio,
+                    BrushDurationTicks = brushDurationTicks,
+                    Rasgueado = string.Equals(rasgueadoRaw, "true", StringComparison.OrdinalIgnoreCase),
+                    DeadSlapped = b.Element("DeadSlapped") is not null,
+                    Tremolo = b.Element("Tremolo") is not null,
+                    TremoloValue = b.Element("Tremolo")?.Value ?? string.Empty,
+                    ChordId = b.Element("Chord")?.Value ?? string.Empty,
+                    FreeText = b.Element("FreeText")?.Value ?? string.Empty,
+                    WhammyBar = string.Equals(whammyBarRaw, "true", StringComparison.OrdinalIgnoreCase),
+                    WhammyBarExtended = string.Equals(whammyBarExtendRaw, "true", StringComparison.OrdinalIgnoreCase),
+                    WhammyBarOriginValue = GetBeatPropertyFloat("WhammyBarOriginValue"),
+                    WhammyBarMiddleValue = GetBeatPropertyFloat("WhammyBarMiddleValue"),
+                    WhammyBarDestinationValue = GetBeatPropertyFloat("WhammyBarDestinationValue"),
+                    WhammyBarOriginOffset = GetBeatPropertyFloat("WhammyBarOriginOffset"),
+                    WhammyBarMiddleOffset1 = GetBeatPropertyFloat("WhammyBarMiddleOffset1"),
+                    WhammyBarMiddleOffset2 = GetBeatPropertyFloat("WhammyBarMiddleOffset2"),
+                    WhammyBarDestinationOffset = GetBeatPropertyFloat("WhammyBarDestinationOffset"),
+                    XProperties = xprops
                 };
             })
             .ToDictionary(b => b.Id);

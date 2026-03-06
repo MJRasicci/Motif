@@ -314,6 +314,24 @@ public sealed class BeatModel
 
     public bool BrushIsUp { get; init; }
 
+    public bool Arpeggio { get; init; }
+
+    public int? BrushDurationTicks { get; init; }
+
+    public bool Rasgueado { get; init; }
+
+    public bool DeadSlapped { get; init; }
+
+    public bool Tremolo { get; init; }
+
+    public string TremoloValue { get; init; } = string.Empty;
+
+    public string ChordId { get; init; } = string.Empty;
+
+    public string FreeText { get; init; } = string.Empty;
+
+    public WhammyBarModel? WhammyBar { get; init; }
+
     public IReadOnlyDictionary<string, string> VoiceProperties { get; init; } = new Dictionary<string, string>();
 
     public IReadOnlyList<string> VoiceDirectionTags { get; init; } = Array.Empty<string>();
@@ -359,6 +377,8 @@ public sealed class NoteArticulationModel
     public bool TieDestination { get; init; }
 
     public int? Trill { get; init; }
+
+    public TrillSpeedKind TrillSpeed { get; init; } = TrillSpeedKind.None;
 
     public int? Accent { get; init; }
 
@@ -472,4 +492,34 @@ public sealed class BendModel
     public decimal? DestinationOffset { get; init; }
 
     public decimal? DestinationValue { get; init; }
+}
+
+public sealed class WhammyBarModel
+{
+    public bool Enabled { get; init; }
+
+    public bool Extended { get; init; }
+
+    public decimal? OriginValue { get; init; }
+
+    public decimal? MiddleValue { get; init; }
+
+    public decimal? DestinationValue { get; init; }
+
+    public decimal? OriginOffset { get; init; }
+
+    public decimal? MiddleOffset1 { get; init; }
+
+    public decimal? MiddleOffset2 { get; init; }
+
+    public decimal? DestinationOffset { get; init; }
+}
+
+public enum TrillSpeedKind
+{
+    None = 0,
+    Sixteenth = 1,
+    ThirtySecond = 2,
+    SixtyFourth = 3,
+    OneHundredTwentyEighth = 4
 }

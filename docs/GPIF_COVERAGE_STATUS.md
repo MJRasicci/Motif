@@ -74,12 +74,12 @@ Legend:
 - ✅ Fingering fields (`LeftFingering`, `RightFingering`) and ornament text
 - ✅ Grace-note and beat-effect metadata (`GraceNotes`, `PickStroke`, `VibratoWTremBar`, `Brush`, `Slapped`, `Popped`)
 - ✅ Palm-mute beat effect projection from note properties
-- 🟡 Beat whammy/tremolo-bar curve normalization is still pending (`<Whammy ... />` and `WhammyBar*` property-family)
-- 🟡 Rasgueado pattern decoding is still pending (`Property name="Rasgueado"`)
-- 🟡 Dead-slapped beat semantics are still pending (`<DeadSlapped />`)
-- 🟡 Arpeggio/brush semantic split and brush-duration normalization are still pending (`<Arpeggio>`, `Brush`, XProperties `687935489`/`687931393`)
-- 🟡 Trill-speed decoding from note XProperty is still pending (`XProperty id="688062467"`)
-- 🟡 Additional beat-effect behavior currently represented only as generic tags is still pending (`<Tremolo>`, `<Chord>`, `<FreeText>` interactions)
+- ✅ Beat whammy/tremolo-bar curve normalization (`WhammyBar*` property-family, values /50, offsets /100)
+- ✅ Rasgueado pattern decoding (`Property name="Rasgueado"`)
+- ✅ Dead-slapped beat semantics (`<DeadSlapped />` element)
+- ✅ Arpeggio/brush semantic split and brush-duration normalization (`<Arpeggio>` vs `Brush`, XProperties `687935489`/`687931393`, and Android-style default `Brush` duration = 60 ticks)
+- ✅ Trill-speed decoding from note XProperty (`XProperty id="688062467"`, threshold buckets: >=240 Sixteenth, >=120 ThirtySecond, >=60 SixtyFourth, <60 OneHundredTwentyEighth)
+- ✅ Additional beat-effect elements (`<Tremolo>` with speed value, `<Chord>` ID, `<FreeText>` text)
 
 ## 8) Write path status
 
@@ -102,9 +102,8 @@ Legend:
 ## 10) Remaining highest-priority gaps
 
 1. ⛔ Deep normalization of audio engine / MIDI connection / lyrics structures (currently passthrough-heavy)
-2. ⛔ Broader semantic decoding for remaining articulation/effect variants beyond the current typed subset (see section 7 remaining-item bullets)
-3. ⛔ Complete schema-driven element-by-element coverage auditing vs `GPIF.xsd`
-4. ⛔ Patch planner support for larger structural edits (new tracks/measures, advanced voice topology)
+2. ⛔ Complete schema-driven element-by-element coverage auditing vs `GPIF.xsd`
+3. ⛔ Patch planner support for larger structural edits (new tracks/measures, advanced voice topology)
 
 ## Suggested next milestones
 
