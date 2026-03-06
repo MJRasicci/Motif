@@ -391,11 +391,14 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
             new XAttribute("id", id),
             new XElement("Properties",
                 new XElement("Property",
-                    new XAttribute("name", "Pitch"),
+                    new XAttribute("name", "ConcertPitch"),
                     new XElement("Pitch",
                         new XElement("Step", step),
                         new XElement("Accidental", accidental),
-                        new XElement("Octave", octave)))));
+                        new XElement("Octave", octave))),
+                new XElement("Property",
+                    new XAttribute("name", "Midi"),
+                    new XElement("Number", midi))));
     }
 
     private static void SetToggleElement(XElement parent, string elementName, bool enabled)
@@ -458,11 +461,17 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
     {
         var (step, accidental, octave) = FromMidi(midi);
         var props = GetOrCreateProperties(noteEl);
-        var prop = props.Elements("Property").FirstOrDefault(p => string.Equals((string?)p.Attribute("name"), "Pitch", StringComparison.OrdinalIgnoreCase));
+        var prop = props.Elements("Property").FirstOrDefault(
+            p => string.Equals((string?)p.Attribute("name"), "ConcertPitch", StringComparison.OrdinalIgnoreCase)
+              || string.Equals((string?)p.Attribute("name"), "Pitch", StringComparison.OrdinalIgnoreCase));
         if (prop is null)
         {
-            prop = new XElement("Property", new XAttribute("name", "Pitch"));
+            prop = new XElement("Property", new XAttribute("name", "ConcertPitch"));
             props.Add(prop);
+        }
+        else
+        {
+            prop.SetAttributeValue("name", "ConcertPitch");
         }
 
         prop.SetElementValue("Pitch", null);
@@ -470,6 +479,16 @@ public sealed class GuitarProPatcher : IGuitarProPatcher
             new XElement("Step", step),
             new XElement("Accidental", accidental),
             new XElement("Octave", octave)));
+
+        var midiProperty = props.Elements("Property").FirstOrDefault(
+            p => string.Equals((string?)p.Attribute("name"), "Midi", StringComparison.OrdinalIgnoreCase));
+        if (midiProperty is null)
+        {
+            midiProperty = new XElement("Property", new XAttribute("name", "Midi"));
+            props.Add(midiProperty);
+        }
+
+        midiProperty.SetElementValue("Number", midi);
     }
 
     private static XElement GetOrCreateProperties(XElement noteEl)

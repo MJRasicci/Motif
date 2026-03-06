@@ -3,6 +3,7 @@ namespace GPIO.NET.UnitTests;
 using FluentAssertions;
 using GPIO.NET.Implementation;
 using GPIO.NET.Models.Patching;
+using System.IO.Compression;
 
 public class GuitarProPatcherTests
 {
@@ -241,5 +242,52 @@ public class GuitarProPatcherTests
         {
             if (File.Exists(output)) File.Delete(output);
         }
+    }
+
+    [Fact]
+    public async Task Patcher_preserves_non_score_archive_entries()
+    {
+        var source = Path.Combine(AppContext.BaseDirectory, "Fixtures", "test.gp");
+        var output = Path.Combine(Path.GetTempPath(), $"gpio-patched-preserve-{Guid.NewGuid():N}.gp");
+
+        try
+        {
+            var patcher = new GuitarProPatcher();
+            await patcher.PatchAsync(source, output, new GpPatchDocument(), TestContext.Current.CancellationToken);
+
+            using var sourceZip = ZipFile.OpenRead(source);
+            using var outputZip = ZipFile.OpenRead(output);
+
+            var sourceEntryNames = sourceZip.Entries.Select(e => e.FullName).ToArray();
+            var outputEntryNames = outputZip.Entries.Select(e => e.FullName).ToArray();
+            outputEntryNames.Should().BeEquivalentTo(sourceEntryNames);
+
+            foreach (var entryName in new[] { "Content/PartConfiguration", "Content/LayoutConfiguration", "Content/Preferences.json" })
+            {
+                var sourceEntry = sourceZip.GetEntry(entryName);
+                var outputEntry = outputZip.GetEntry(entryName);
+                sourceEntry.Should().NotBeNull();
+                outputEntry.Should().NotBeNull();
+
+                var sourceBytes = await ReadAllBytesAsync(sourceEntry!, TestContext.Current.CancellationToken);
+                var outputBytes = await ReadAllBytesAsync(outputEntry!, TestContext.Current.CancellationToken);
+                outputBytes.Should().Equal(sourceBytes, $"entry '{entryName}' payload should be preserved");
+            }
+        }
+        finally
+        {
+            if (File.Exists(output))
+            {
+                File.Delete(output);
+            }
+        }
+    }
+
+    private static async Task<byte[]> ReadAllBytesAsync(ZipArchiveEntry entry, CancellationToken cancellationToken)
+    {
+        await using var stream = entry.Open();
+        using var buffer = new MemoryStream();
+        await stream.CopyToAsync(buffer, cancellationToken);
+        return buffer.ToArray();
     }
 }
