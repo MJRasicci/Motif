@@ -298,6 +298,20 @@ public sealed class BeatModel
 {
     public int Id { get; init; }
 
+    public string GraceType { get; init; } = string.Empty;
+
+    public string PickStrokeDirection { get; init; } = string.Empty;
+
+    public string VibratoWithTremBarStrength { get; init; } = string.Empty;
+
+    public bool Slapped { get; init; }
+
+    public bool Popped { get; init; }
+
+    public bool Brush { get; init; }
+
+    public bool BrushIsUp { get; init; }
+
     public IReadOnlyDictionary<string, string> VoiceProperties { get; init; } = new Dictionary<string, string>();
 
     public IReadOnlyList<string> VoiceDirectionTags { get; init; } = Array.Empty<string>();
@@ -326,6 +340,12 @@ public sealed class NoteModel
 
 public sealed class NoteArticulationModel
 {
+    public string LeftFingering { get; init; } = string.Empty;
+
+    public string RightFingering { get; init; } = string.Empty;
+
+    public string Ornament { get; init; } = string.Empty;
+
     public bool LetRing { get; init; }
 
     public string Vibrato { get; init; } = string.Empty;

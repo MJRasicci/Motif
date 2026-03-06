@@ -391,13 +391,59 @@ public sealed class XmlGpifSerializer : IGpifSerializer
     private static XElement BuildBeat(GpifBeat b)
     {
         var el = new XElement("Beat", new XAttribute("id", b.Id), new XElement("Rhythm", new XAttribute("ref", b.RhythmRef)));
+        AddTextElement(el, "GraceNotes", b.GraceType);
         if (!string.IsNullOrWhiteSpace(b.NotesReferenceList)) el.Add(new XElement("Notes", b.NotesReferenceList));
+
+        var beatProperties = new XElement("Properties");
+        if (!string.IsNullOrWhiteSpace(b.PickStrokeDirection))
+        {
+            beatProperties.Add(new XElement("Property",
+                new XAttribute("name", "PickStroke"),
+                new XElement("Direction", b.PickStrokeDirection)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(b.VibratoWithTremBarStrength))
+        {
+            beatProperties.Add(new XElement("Property",
+                new XAttribute("name", "VibratoWTremBar"),
+                new XElement("Strength", b.VibratoWithTremBarStrength)));
+        }
+
+        if (b.Slapped)
+        {
+            beatProperties.Add(new XElement("Property",
+                new XAttribute("name", "Slapped"),
+                new XElement("Enable")));
+        }
+
+        if (b.Popped)
+        {
+            beatProperties.Add(new XElement("Property",
+                new XAttribute("name", "Popped"),
+                new XElement("Enable")));
+        }
+
+        if (b.Brush)
+        {
+            beatProperties.Add(new XElement("Property",
+                new XAttribute("name", "Brush"),
+                new XElement("Direction", b.BrushIsUp ? "Up" : "Down")));
+        }
+
+        if (beatProperties.HasElements)
+        {
+            el.Add(beatProperties);
+        }
+
         return el;
     }
 
     private static XElement BuildNote(GpifNote n)
     {
         var el = new XElement("Note", new XAttribute("id", n.Id));
+        AddTextElement(el, "LeftFingering", n.Articulation.LeftFingering);
+        AddTextElement(el, "RightFingering", n.Articulation.RightFingering);
+        AddTextElement(el, "Ornament", n.Articulation.Ornament);
         if (n.Articulation.Accent.HasValue) el.Add(new XElement("Accent", n.Articulation.Accent.Value));
         if (n.Articulation.AntiAccent) el.Add(new XElement("AntiAccent"));
         if (n.Articulation.InstrumentArticulation.HasValue) el.Add(new XElement("InstrumentArticulation", n.Articulation.InstrumentArticulation.Value));

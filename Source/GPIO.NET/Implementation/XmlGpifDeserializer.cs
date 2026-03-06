@@ -221,11 +221,28 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
             .ToDictionary(n => n.Id);
 
         var beats = (root.Element("Beats")?.Elements("Beat") ?? Enumerable.Empty<XElement>())
-            .Select(b => new GpifBeat
+            .Select(b =>
             {
-                Id = ParseInt(b.Attribute("id")?.Value),
-                RhythmRef = ParseInt(b.Element("Rhythm")?.Attribute("ref")?.Value),
-                NotesReferenceList = b.Element("Notes")?.Value ?? string.Empty
+                var properties = ParsePropertyDictionary(b.Element("Properties"));
+                properties.TryGetValue("PickStroke", out var pickStrokeDirection);
+                properties.TryGetValue("VibratoWTremBar", out var vibratoWithTremBarStrength);
+                properties.TryGetValue("Slapped", out var slappedRaw);
+                properties.TryGetValue("Popped", out var poppedRaw);
+                properties.TryGetValue("Brush", out var brushRaw);
+
+                return new GpifBeat
+                {
+                    Id = ParseInt(b.Attribute("id")?.Value),
+                    RhythmRef = ParseInt(b.Element("Rhythm")?.Attribute("ref")?.Value),
+                    NotesReferenceList = b.Element("Notes")?.Value ?? string.Empty,
+                    GraceType = b.Element("GraceNotes")?.Value ?? string.Empty,
+                    PickStrokeDirection = pickStrokeDirection ?? string.Empty,
+                    VibratoWithTremBarStrength = vibratoWithTremBarStrength ?? string.Empty,
+                    Slapped = string.Equals(slappedRaw, "true", StringComparison.OrdinalIgnoreCase),
+                    Popped = string.Equals(poppedRaw, "true", StringComparison.OrdinalIgnoreCase),
+                    Brush = !string.IsNullOrWhiteSpace(brushRaw),
+                    BrushIsUp = string.Equals(brushRaw, "Up", StringComparison.OrdinalIgnoreCase)
+                };
             })
             .ToDictionary(b => b.Id);
 
@@ -362,6 +379,9 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
 
         return new GpifNoteArticulation
         {
+            LeftFingering = note.Element("LeftFingering")?.Value ?? string.Empty,
+            RightFingering = note.Element("RightFingering")?.Value ?? string.Empty,
+            Ornament = note.Element("Ornament")?.Value ?? string.Empty,
             LetRing = note.Element("LetRing") is not null,
             Vibrato = note.Element("Vibrato")?.Value ?? string.Empty,
             TieOrigin = ParseBool(tie?.Attribute("origin")?.Value),
@@ -533,6 +553,8 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
             ?? property.Element("Pitches")?.Value
             ?? property.Element("Number")?.Value
             ?? property.Element("Fret")?.Value
+            ?? property.Element("Direction")?.Value
+            ?? property.Element("Strength")?.Value
             ?? property.Element("Float")?.Value
             ?? property.Element("Bitset")?.Value
             ?? property.Element("String")?.Value;

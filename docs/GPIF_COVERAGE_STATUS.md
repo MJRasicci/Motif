@@ -69,6 +69,8 @@ Legend:
 - ✅ Slide flags + decoded slide enums
 - ✅ Harmonic typed fields (enabled/type/fret)
 - ✅ Bend typed curve fields
+- ✅ Fingering fields (`LeftFingering`, `RightFingering`) and ornament text
+- ✅ Grace-note and beat-effect metadata (`GraceNotes`, `PickStroke`, `VibratoWTremBar`, `Brush`, `Slapped`, `Popped`)
 - 🟡 Some articulation semantics are still flag-level and need deeper domain meaning validation
 
 ## 8) Write path status

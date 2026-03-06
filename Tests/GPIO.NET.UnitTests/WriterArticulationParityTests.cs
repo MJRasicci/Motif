@@ -27,6 +27,13 @@ public class WriterArticulationParityTests
                                 new BeatModel
                                 {
                                     Id = 1,
+                                    GraceType = "BeforeBeat",
+                                    PickStrokeDirection = "Up",
+                                    VibratoWithTremBarStrength = "Slight",
+                                    Slapped = true,
+                                    Popped = true,
+                                    Brush = true,
+                                    BrushIsUp = true,
                                     Duration = 0.25m,
                                     Notes =
                                     [
@@ -36,6 +43,9 @@ public class WriterArticulationParityTests
                                             MidiPitch = 64,
                                             Articulation = new NoteArticulationModel
                                             {
+                                                LeftFingering = "I",
+                                                RightFingering = "M",
+                                                Ornament = "Turn",
                                                 LetRing = true,
                                                 AntiAccent = true,
                                                 PalmMuted = true,
@@ -63,7 +73,18 @@ public class WriterArticulationParityTests
             var reader = new GPIO.NET.GuitarProReader();
             var readBack = await reader.ReadAsync(outFile, cancellationToken: TestContext.Current.CancellationToken);
 
-            var note = readBack.Tracks[0].Measures[0].Beats[0].Notes[0];
+            var beat = readBack.Tracks[0].Measures[0].Beats[0];
+            var note = beat.Notes[0];
+            beat.GraceType.Should().Be("BeforeBeat");
+            beat.PickStrokeDirection.Should().Be("Up");
+            beat.VibratoWithTremBarStrength.Should().Be("Slight");
+            beat.Slapped.Should().BeTrue();
+            beat.Popped.Should().BeTrue();
+            beat.Brush.Should().BeTrue();
+            beat.BrushIsUp.Should().BeTrue();
+            note.Articulation.LeftFingering.Should().Be("I");
+            note.Articulation.RightFingering.Should().Be("M");
+            note.Articulation.Ornament.Should().Be("Turn");
             note.Articulation.LetRing.Should().BeTrue();
             note.Articulation.AntiAccent.Should().BeTrue();
             note.Articulation.PalmMuted.Should().BeTrue();

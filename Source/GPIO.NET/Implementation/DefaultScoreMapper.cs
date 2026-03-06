@@ -263,6 +263,9 @@ public sealed class DefaultScoreMapper : IScoreMapper
                     Duration = duration,
                     Articulation = new NoteArticulationModel
                     {
+                        LeftFingering = n.Articulation.LeftFingering,
+                        RightFingering = n.Articulation.RightFingering,
+                        Ornament = n.Articulation.Ornament,
                         LetRing = n.Articulation.LetRing,
                         Vibrato = n.Articulation.Vibrato,
                         TieOrigin = n.Articulation.TieOrigin,
@@ -293,6 +296,13 @@ public sealed class DefaultScoreMapper : IScoreMapper
             beats.Add(new BeatModel
             {
                 Id = beat.Id,
+                GraceType = beat.GraceType,
+                PickStrokeDirection = beat.PickStrokeDirection,
+                VibratoWithTremBarStrength = beat.VibratoWithTremBarStrength,
+                Slapped = beat.Slapped,
+                Popped = beat.Popped,
+                Brush = beat.Brush,
+                BrushIsUp = beat.BrushIsUp,
                 VoiceProperties = voiceProps,
                 VoiceDirectionTags = voiceDirTags,
                 Offset = offset,

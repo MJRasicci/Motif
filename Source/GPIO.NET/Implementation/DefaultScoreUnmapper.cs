@@ -148,6 +148,9 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                                     MidiPitch = note.MidiPitch,
                                     Articulation = new GpifNoteArticulation
                                     {
+                                        LeftFingering = note.Articulation.LeftFingering,
+                                        RightFingering = note.Articulation.RightFingering,
+                                        Ornament = note.Articulation.Ornament,
                                         LetRing = note.Articulation.LetRing,
                                         Vibrato = note.Articulation.Vibrato,
                                         TieOrigin = note.Articulation.TieOrigin,
@@ -183,7 +186,14 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                         {
                             Id = currentBeatId,
                             RhythmRef = currentRhythmId,
-                            NotesReferenceList = ReferenceListFormatter.JoinRefs(noteRefs)
+                            NotesReferenceList = ReferenceListFormatter.JoinRefs(noteRefs),
+                            GraceType = beat.GraceType,
+                            PickStrokeDirection = beat.PickStrokeDirection,
+                            VibratoWithTremBarStrength = beat.VibratoWithTremBarStrength,
+                            Slapped = beat.Slapped,
+                            Popped = beat.Popped,
+                            Brush = beat.Brush,
+                            BrushIsUp = beat.BrushIsUp
                         };
 
                         beatIds.Add(currentBeatId);
