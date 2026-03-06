@@ -140,6 +140,8 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                         {
                             foreach (var note in beat.Notes)
                             {
+                                var bend = ArticulationDecoders.EncodeBend(note.Articulation.Bend);
+                                var harmonic = ArticulationDecoders.EncodeHarmonic(note.Articulation.Harmonic);
                                 var currentNoteId = noteId++;
                                 noteRefs.Add(currentNoteId);
                                 notes[currentNoteId] = new GpifNote
@@ -159,24 +161,25 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                                         Accent = note.Articulation.Accent,
                                         AntiAccent = note.Articulation.AntiAccent,
                                         InstrumentArticulation = note.Articulation.InstrumentArticulation,
-                                        PalmMuted = note.Articulation.PalmMuted,
+                                        PalmMuted = beat.PalmMuted || note.Articulation.PalmMuted,
                                         Muted = note.Articulation.Muted,
                                         Tapped = note.Articulation.Tapped,
                                         LeftHandTapped = note.Articulation.LeftHandTapped,
                                         HopoOrigin = note.Articulation.HopoOrigin,
                                         HopoDestination = note.Articulation.HopoDestination,
                                         SlideFlags = note.Articulation.SlideFlags ?? ArticulationDecoders.EncodeSlides(note.Articulation.Slides),
-                                        BendEnabled = note.Articulation.Bend?.Enabled ?? false,
-                                        BendOriginOffset = note.Articulation.Bend?.OriginOffset,
-                                        BendOriginValue = note.Articulation.Bend?.OriginValue,
-                                        BendMiddleOffset1 = note.Articulation.Bend?.MiddleOffset1,
-                                        BendMiddleOffset2 = note.Articulation.Bend?.MiddleOffset2,
-                                        BendMiddleValue = note.Articulation.Bend?.MiddleValue,
-                                        BendDestinationOffset = note.Articulation.Bend?.DestinationOffset,
-                                        BendDestinationValue = note.Articulation.Bend?.DestinationValue,
-                                        HarmonicEnabled = note.Articulation.Harmonic?.Enabled ?? false,
-                                        HarmonicType = note.Articulation.Harmonic?.Type,
-                                        HarmonicFret = note.Articulation.Harmonic?.Fret
+                                        BendEnabled = bend.Enabled,
+                                        BendOriginOffset = bend.OriginOffset,
+                                        BendOriginValue = bend.OriginValue,
+                                        BendMiddleOffset1 = bend.MiddleOffset1,
+                                        BendMiddleOffset2 = bend.MiddleOffset2,
+                                        BendMiddleValue = bend.MiddleValue,
+                                        BendDestinationOffset = bend.DestinationOffset,
+                                        BendDestinationValue = bend.DestinationValue,
+                                        HarmonicEnabled = harmonic.Enabled,
+                                        HarmonicType = harmonic.TypeNumber,
+                                        HarmonicTypeText = harmonic.TypeText,
+                                        HarmonicFret = harmonic.Fret
                                     }
                                 };
                             }

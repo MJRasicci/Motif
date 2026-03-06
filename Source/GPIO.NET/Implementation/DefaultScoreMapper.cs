@@ -282,7 +282,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
                         HopoDestination = n.Articulation.HopoDestination,
                         SlideFlags = n.Articulation.SlideFlags,
                         Slides = ArticulationDecoders.DecodeSlides(n.Articulation.SlideFlags),
-                        Bend = ArticulationDecoders.DecodeBend(n.Articulation),
+                        Bend = ArticulationDecoders.DecodeBend(n.Articulation, n.Articulation.TieDestination),
                         Harmonic = ArticulationDecoders.DecodeHarmonic(n.Articulation)
                     }
                 })
@@ -301,6 +301,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
                 VibratoWithTremBarStrength = beat.VibratoWithTremBarStrength,
                 Slapped = beat.Slapped,
                 Popped = beat.Popped,
+                PalmMuted = notes.Any(n => n.Articulation.PalmMuted),
                 Brush = beat.Brush,
                 BrushIsUp = beat.BrushIsUp,
                 VoiceProperties = voiceProps,

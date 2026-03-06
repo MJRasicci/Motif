@@ -345,6 +345,8 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                 Number = TryParseNullableInt(p.Element("Number")?.Value),
                 Fret = TryParseNullableInt(p.Element("Fret")?.Value),
                 StringNumber = TryParseNullableInt(p.Element("String")?.Value),
+                HType = p.Element("HType")?.Value ?? string.Empty,
+                HFret = TryParseNullableDecimal(p.Element("HFret")?.Value),
                 Float = TryParseNullableDecimal(p.Element("Float")?.Value)
             })
             .ToArray();
@@ -361,12 +363,20 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
         int? GetPropertyInt(string name)
             => properties.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))?.Number;
 
+        string GetPropertyText(string name)
+            => properties.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))?.HType ?? string.Empty;
+
         decimal? GetPropertyDecimal(string name)
         {
             var prop = properties.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
             if (prop is null)
             {
                 return null;
+            }
+
+            if (prop.HFret.HasValue)
+            {
+                return prop.HFret;
             }
 
             if (prop.Float.HasValue)
@@ -407,6 +417,7 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
             BendDestinationValue = GetPropertyDecimal("BendDestinationValue"),
             HarmonicEnabled = HasEnabledProperty("Harmonic"),
             HarmonicType = GetPropertyInt("HarmonicType"),
+            HarmonicTypeText = GetPropertyText("HarmonicType"),
             HarmonicFret = GetPropertyDecimal("HarmonicFret")
         };
     }

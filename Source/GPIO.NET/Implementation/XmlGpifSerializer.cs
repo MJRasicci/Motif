@@ -471,8 +471,25 @@ public sealed class XmlGpifSerializer : IGpifSerializer
             props.Add(new XElement("Property", new XAttribute("name", "Slide"), new XElement("Flags", n.Articulation.SlideFlags.Value)));
 
         if (n.Articulation.HarmonicEnabled) AddBoolProperty(props, "Harmonic", true);
-        AddNumberProperty(props, "HarmonicType", n.Articulation.HarmonicType);
-        AddDecimalProperty(props, "HarmonicFret", n.Articulation.HarmonicFret);
+        if (!string.IsNullOrWhiteSpace(n.Articulation.HarmonicTypeText))
+        {
+            props.Add(new XElement(
+                "Property",
+                new XAttribute("name", "HarmonicType"),
+                new XElement("HType", n.Articulation.HarmonicTypeText)));
+        }
+        else
+        {
+            AddNumberProperty(props, "HarmonicType", n.Articulation.HarmonicType);
+        }
+
+        if (n.Articulation.HarmonicFret.HasValue)
+        {
+            props.Add(new XElement(
+                "Property",
+                new XAttribute("name", "HarmonicFret"),
+                new XElement("HFret", n.Articulation.HarmonicFret.Value)));
+        }
 
         if (n.Articulation.BendEnabled) AddBoolProperty(props, "Bended", true);
         AddDecimalProperty(props, "BendOriginOffset", n.Articulation.BendOriginOffset);

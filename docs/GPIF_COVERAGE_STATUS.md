@@ -66,12 +66,12 @@ Legend:
 
 - ✅ Let ring / vibrato / tie / trill / accent / anti-accent
 - ✅ Palm mute / muted / tapped / left-hand-tapped / HOPO flags
-- ✅ Slide flags + decoded slide enums
-- ✅ Harmonic typed fields (enabled/type/fret)
-- ✅ Bend typed curve fields
+- ✅ Slide flags + decoded slide enums (validated against schema reference slide cases)
+- ✅ Harmonic typed fields (`HType` text + semantic harmonic-kind mapping + fret)
+- ✅ Bend typed curve fields (normalized values/offsets + inferred bend-type semantics)
 - ✅ Fingering fields (`LeftFingering`, `RightFingering`) and ornament text
 - ✅ Grace-note and beat-effect metadata (`GraceNotes`, `PickStroke`, `VibratoWTremBar`, `Brush`, `Slapped`, `Popped`)
-- 🟡 Some articulation semantics are still flag-level and need deeper domain meaning validation
+- ✅ Palm-mute beat effect projection from note properties
 
 ## 8) Write path status
 

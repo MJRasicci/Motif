@@ -32,6 +32,7 @@ public class WriterArticulationParityTests
                                     VibratoWithTremBarStrength = "Slight",
                                     Slapped = true,
                                     Popped = true,
+                                    PalmMuted = true,
                                     Brush = true,
                                     BrushIsUp = true,
                                     Duration = 0.25m,
@@ -51,8 +52,25 @@ public class WriterArticulationParityTests
                                                 PalmMuted = true,
                                                 HopoOrigin = true,
                                                 Slides = [SlideType.Shift, SlideType.OutUp],
-                                                Harmonic = new HarmonicModel { Enabled = true, Type = 2, Fret = 12m },
-                                                Bend = new BendModel { Enabled = true, OriginValue = 0m, DestinationValue = 2m }
+                                                Harmonic = new HarmonicModel
+                                                {
+                                                    Enabled = true,
+                                                    Type = 2,
+                                                    Kind = HarmonicTypeKind.Artificial,
+                                                    Fret = 12m
+                                                },
+                                                Bend = new BendModel
+                                                {
+                                                    Enabled = true,
+                                                    Type = BendTypeKind.Bend,
+                                                    OriginOffset = 0m,
+                                                    OriginValue = 0m,
+                                                    MiddleOffset1 = 0.12m,
+                                                    MiddleOffset2 = 0.12m,
+                                                    MiddleValue = 0.5m,
+                                                    DestinationOffset = 0.25m,
+                                                    DestinationValue = 1m
+                                                }
                                             }
                                         }
                                     ]
@@ -80,6 +98,7 @@ public class WriterArticulationParityTests
             beat.VibratoWithTremBarStrength.Should().Be("Slight");
             beat.Slapped.Should().BeTrue();
             beat.Popped.Should().BeTrue();
+            beat.PalmMuted.Should().BeTrue();
             beat.Brush.Should().BeTrue();
             beat.BrushIsUp.Should().BeTrue();
             note.Articulation.LeftFingering.Should().Be("I");
@@ -91,7 +110,16 @@ public class WriterArticulationParityTests
             note.Articulation.HopoOrigin.Should().BeTrue();
             note.Articulation.Slides.Should().Contain([SlideType.Shift, SlideType.OutUp]);
             note.Articulation.Harmonic.Should().NotBeNull();
+            note.Articulation.Harmonic!.Kind.Should().Be(HarmonicTypeKind.Artificial);
+            note.Articulation.Harmonic.Type.Should().Be(2);
+            note.Articulation.Harmonic.TypeName.Should().Be("Artificial");
             note.Articulation.Bend.Should().NotBeNull();
+            note.Articulation.Bend!.Type.Should().Be(BendTypeKind.Bend);
+            note.Articulation.Bend.OriginValue.Should().Be(0m);
+            note.Articulation.Bend.MiddleValue.Should().Be(0.5m);
+            note.Articulation.Bend.DestinationValue.Should().Be(1m);
+            note.Articulation.Bend.MiddleOffset1.Should().Be(0.12m);
+            note.Articulation.Bend.DestinationOffset.Should().Be(0.25m);
         }
         finally
         {

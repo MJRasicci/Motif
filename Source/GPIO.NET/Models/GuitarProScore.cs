@@ -308,6 +308,8 @@ public sealed class BeatModel
 
     public bool Popped { get; init; }
 
+    public bool PalmMuted { get; init; }
+
     public bool Brush { get; init; }
 
     public bool BrushIsUp { get; init; }
@@ -397,9 +399,38 @@ public enum SlideType
     Unknown128 = 128
 }
 
+public enum HarmonicTypeKind
+{
+    Unknown = 0,
+    NoHarmonic = 1,
+    Natural = 2,
+    Artificial = 3,
+    Pinch = 4,
+    Tap = 5,
+    Semi = 6,
+    Feedback = 7
+}
+
+public enum BendTypeKind
+{
+    Unknown = 0,
+    None = 1,
+    Hold = 2,
+    Prebend = 3,
+    Bend = 4,
+    Release = 5,
+    BendAndRelease = 6,
+    PrebendAndBend = 7,
+    PrebendAndRelease = 8
+}
+
 public sealed class HarmonicModel
 {
     public int? Type { get; init; }
+
+    public string TypeName { get; init; } = string.Empty;
+
+    public HarmonicTypeKind Kind { get; init; } = HarmonicTypeKind.Unknown;
 
     public decimal? Fret { get; init; }
 
@@ -409,6 +440,8 @@ public sealed class HarmonicModel
 public sealed class BendModel
 {
     public bool Enabled { get; init; }
+
+    public BendTypeKind Type { get; init; } = BendTypeKind.Unknown;
 
     public decimal? OriginOffset { get; init; }
 

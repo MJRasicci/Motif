@@ -271,6 +271,10 @@ public sealed class GpifNoteProperty
 
     public int? StringNumber { get; init; }
 
+    public string HType { get; init; } = string.Empty;
+
+    public decimal? HFret { get; init; }
+
     public decimal? Float { get; init; }
 }
 
@@ -331,6 +335,8 @@ public sealed class GpifNoteArticulation
     public bool HarmonicEnabled { get; init; }
 
     public int? HarmonicType { get; init; }
+
+    public string HarmonicTypeText { get; init; } = string.Empty;
 
     public decimal? HarmonicFret { get; init; }
 }

@@ -43,11 +43,11 @@ Status legend:
 - ✅ Ornament text (`Ornament`)
 - ✅ Grace-note beat typing (`GraceNotes`: `BeforeBeat`/`OnBeat`)
 - ✅ Beat effect fields (`PickStroke`, `VibratoWTremBar`, `Brush`, `Slapped`, `Popped`)
-- 🟡 Harmonics (enabled/type/fret mapped)
-- 🟡 Slide mapping (flags decoded to slide enum; GP naming validation still in progress)
+- ✅ Harmonics (typed semantic kind + `HType`/`HFret` GPIF parity)
+- ✅ Slide mapping (semantic enum projection validated against schema fixture cases)
 - 🟡 Hammer-on / pull-off semantics (Hopo origin/destination captured)
-- 🟡 Palm mute / dead-note toggles (property flags captured; deeper semantics pending)
-- 🟡 Bend/whammy mapping to domain model (curve points mapped)
+- ✅ Palm mute semantics (note property + beat-level effect projection)
+- ✅ Bend mapping (normalized curve units + inferred bend-type semantics)
 
 ## Tempo / automation / dynamics
 - ⛔ Tempo map + automation timeline
@@ -59,7 +59,7 @@ Status legend:
 - ✅ Playback-sequence edge-case tests for repeat/jump behavior (DS/DC/Coda/Fine, alternate endings, anacrusis, legacy direction aliases)
 
 ## Immediate next targets
-1. Expand articulation semantics (harmonics, slides, palm mute, bends) beyond flag-level mapping
-2. Integrate tempo/automation timeline mapping
+1. Integrate tempo/automation timeline mapping
+2. Integrate dynamic map
 3. Add explicit schema coverage report generation
 4. Expand fixture corpus for advanced patch planner structural diffs
