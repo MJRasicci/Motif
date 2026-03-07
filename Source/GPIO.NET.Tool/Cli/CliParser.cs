@@ -27,6 +27,7 @@ internal static class CliParser
         var strict = false;
         string? batchInputDir = null;
         string? batchOutputDir = null;
+        var batchRoundTripDiagnostics = false;
         var continueOnError = true;
         string? failureLogPath = null;
 
@@ -138,6 +139,10 @@ internal static class CliParser
                     batchOutputDir = value;
                     break;
 
+                case "--batch-roundtrip-diagnostics":
+                    batchRoundTripDiagnostics = ParseBoolOption(value, true);
+                    break;
+
                 case "--continue-on-error":
                     continueOnError = ParseBoolOption(value, true);
                     break;
@@ -182,6 +187,7 @@ internal static class CliParser
             Strict = strict,
             BatchInputDir = string.IsNullOrWhiteSpace(batchInputDir) ? null : Path.GetFullPath(batchInputDir),
             BatchOutputDir = string.IsNullOrWhiteSpace(batchOutputDir) ? null : Path.GetFullPath(batchOutputDir),
+            BatchRoundTripDiagnostics = batchRoundTripDiagnostics,
             ContinueOnError = continueOnError,
             FailureLogPath = string.IsNullOrWhiteSpace(failureLogPath) ? null : Path.GetFullPath(failureLogPath)
         };

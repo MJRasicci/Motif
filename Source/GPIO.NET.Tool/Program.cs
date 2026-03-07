@@ -17,6 +17,12 @@ try
             throw new InvalidOperationException("Batch mode requires --batch-output-dir.");
         }
 
+        if (options.BatchRoundTripDiagnostics)
+        {
+            var runner = new BatchRoundTripDiagnosticsRunner();
+            return await runner.RunAsync(options).ConfigureAwait(false);
+        }
+
         var inputRoot = options.BatchInputDir;
         var outputRoot = options.BatchOutputDir;
         Directory.CreateDirectory(outputRoot);
@@ -423,6 +429,10 @@ BATCH EXPORT
     Export every .gp file found under ./songs to mapped JSON under ./json,
     mirroring the source directory structure.
 
+  gpio --batch-input-dir ./songs --batch-output-dir ./analysis --batch-roundtrip-diagnostics
+    Run a no-edit mapped JSON/full-write roundtrip for every .gp file under ./songs
+    and write aggregate drift diagnostics plus JSONL file/diagnostic streams under ./analysis.
+
   gpio --batch-input-dir ./songs --batch-output-dir ./json --continue-on-error=false
   gpio --batch-input-dir ./songs --batch-output-dir ./json --failure-log ./failures.jsonl
 
@@ -443,9 +453,10 @@ OPTIONS
   --strict                       Fail on unsupported changes in patch mode
   --batch-input-dir <dir>        Source directory for batch export
   --batch-output-dir <dir>       Destination directory for batch export
+  --batch-roundtrip-diagnostics  In batch mode, run roundtrip diagnostics instead of JSON export
   --continue-on-error[=bool]     Skip failed files in batch mode (default: true)
   --failure-log <path>           Batch failure log path
-  --diagnostics-out <path>       Write diagnostics to a file (write/patch modes)
+  --diagnostics-out <path>       Write diagnostics to a file (write/patch modes, or batch summary override)
   --diagnostics-json             Emit diagnostics as JSON
   --json-indent[=bool]           Indent JSON output (default: true)
   --json-ignore-null[=bool]      Omit null fields from JSON (default: false)

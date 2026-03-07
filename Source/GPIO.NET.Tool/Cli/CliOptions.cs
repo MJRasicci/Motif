@@ -32,6 +32,8 @@ internal sealed class CliOptions
 
     public string? BatchOutputDir { get; init; }
 
+    public bool BatchRoundTripDiagnostics { get; init; }
+
     public bool ContinueOnError { get; init; } = true;
 
     public string? FailureLogPath { get; init; }

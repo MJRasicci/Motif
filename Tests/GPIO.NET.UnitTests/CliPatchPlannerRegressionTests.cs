@@ -184,6 +184,74 @@ public class CliPatchPlannerRegressionTests
         }
     }
 
+    [Fact]
+    public async Task Batch_roundtrip_diagnostics_writes_summary_and_file_results_for_fixture_directory()
+    {
+        var sourceGp = FixturePath("schema-reference.gp");
+        File.Exists(sourceGp).Should().BeTrue();
+
+        var repoRoot = FindRepositoryRoot();
+        var toolProject = Path.Combine(repoRoot, "Source", "GPIO.NET.Tool", "GPIO.NET.Tool.csproj");
+        Directory.Exists(Path.GetDirectoryName(toolProject)!).Should().BeTrue();
+
+        var tempDir = Path.Combine(Path.GetTempPath(), $"gpio-cli-batch-rt-{Guid.NewGuid():N}");
+        var inputDir = Path.Combine(tempDir, "input");
+        var outputDir = Path.Combine(tempDir, "output");
+        Directory.CreateDirectory(Path.Combine(inputDir, "nested"));
+        Directory.CreateDirectory(outputDir);
+
+        var copiedGp = Path.Combine(inputDir, "nested", "schema-reference.gp");
+        File.Copy(sourceGp, copiedGp, overwrite: true);
+
+        var summaryPath = Path.Combine(outputDir, "batch-roundtrip-summary.json");
+        var fileResultsPath = Path.Combine(outputDir, "batch-file-results.jsonl");
+        var diagnosticsPath = Path.Combine(outputDir, "batch-diagnostics.jsonl");
+
+        try
+        {
+            await RunDotNetAsync(
+                $"run --project \"{toolProject}\" -- --batch-input-dir \"{inputDir}\" --batch-output-dir \"{outputDir}\" --batch-roundtrip-diagnostics",
+                repoRoot);
+
+            File.Exists(summaryPath).Should().BeTrue();
+            File.Exists(fileResultsPath).Should().BeTrue();
+            File.Exists(diagnosticsPath).Should().BeTrue();
+
+            using var summary = JsonDocument.Parse(await File.ReadAllTextAsync(summaryPath, TestContext.Current.CancellationToken));
+            summary.RootElement.GetProperty("TotalFiles").GetInt32().Should().Be(1);
+            summary.RootElement.GetProperty("SucceededFiles").GetInt32().Should().Be(1);
+            summary.RootElement.GetProperty("FailedFiles").GetInt32().Should().Be(0);
+            summary.RootElement.GetProperty("FilesWithDiagnostics").GetInt32().Should().BeGreaterThan(0);
+            summary.RootElement.GetProperty("FilesWithByteDrift").GetInt32().Should().BeGreaterThan(0);
+
+            var diagnosticCodes = summary.RootElement
+                .GetProperty("DiagnosticCodes")
+                .EnumerateArray()
+                .Select(entry => entry.GetProperty("Name").GetString())
+                .ToArray();
+
+            diagnosticCodes.Should().Contain("RAW_GPIF_BYTE_DRIFT");
+
+            var fileResults = await File.ReadAllLinesAsync(fileResultsPath, TestContext.Current.CancellationToken);
+            fileResults.Should().ContainSingle();
+
+            using var fileResult = JsonDocument.Parse(fileResults[0]);
+            fileResult.RootElement.GetProperty("RelativePath").GetString().Should().Be(Path.Combine("nested", "schema-reference.gp"));
+            fileResult.RootElement.GetProperty("PatchPlanIsNoOp").GetBoolean().Should().BeTrue();
+            fileResult.RootElement.GetProperty("DiagnosticCount").GetInt32().Should().BeGreaterThan(0);
+
+            var diagnostics = await File.ReadAllLinesAsync(diagnosticsPath, TestContext.Current.CancellationToken);
+            diagnostics.Should().NotBeEmpty();
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+    }
+
     private static GuitarProScore CreateZeroBasedPatchPlannerSourceScore()
         => new()
         {
