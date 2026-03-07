@@ -85,6 +85,103 @@ public class WriterReferenceReuseTests
     }
 
     [Fact]
+    public async Task Unmapper_reuses_remapped_note_aliases_when_conflicting_source_ids_repeat()
+    {
+        var score = new GuitarProScore
+        {
+            Tracks =
+            [
+                new TrackModel
+                {
+                    Id = 0,
+                    Name = "Guitar",
+                    Measures =
+                    [
+                        new MeasureModel
+                        {
+                            Index = 0,
+                            TimeSignature = "4/4",
+                            Voices =
+                            [
+                                new MeasureVoiceModel
+                                {
+                                    VoiceIndex = 0,
+                                    SourceVoiceId = 0,
+                                    Beats =
+                                    [
+                                        CreateBeat(10, CreateNote(0, 48)),
+                                        CreateBeat(11, CreateNote(0, 50)),
+                                        CreateBeat(11, CreateNote(0, 50))
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var unmapper = new DefaultScoreUnmapper();
+        var result = await unmapper.UnmapAsync(score, TestContext.Current.CancellationToken);
+
+        result.Diagnostics.Warnings.Count(w => w.Code == "NOTE_ID_CONFLICT").Should().Be(1);
+        result.Diagnostics.Warnings.Select(w => w.Code).Should().NotContain("BEAT_ID_CONFLICT");
+        result.RawDocument.NotesById.Should().HaveCount(2);
+        result.RawDocument.BeatsById.Should().HaveCount(2);
+        result.RawDocument.VoicesById[0].BeatsReferenceList.Should().Be("10 11 11");
+        result.RawDocument.BeatsById[10].NotesReferenceList.Should().Be("0");
+        result.RawDocument.BeatsById[11].NotesReferenceList.Should().Be("1");
+    }
+
+    [Fact]
+    public async Task Unmapper_does_not_split_shared_note_ids_when_beat_palm_mute_is_derived_from_other_notes()
+    {
+        var score = new GuitarProScore
+        {
+            Tracks =
+            [
+                new TrackModel
+                {
+                    Id = 0,
+                    Name = "Guitar",
+                    Measures =
+                    [
+                        new MeasureModel
+                        {
+                            Index = 0,
+                            TimeSignature = "4/4",
+                            Voices =
+                            [
+                                new MeasureVoiceModel
+                                {
+                                    VoiceIndex = 0,
+                                    SourceVoiceId = 0,
+                                    Beats =
+                                    [
+                                        CreateBeatWithPalmMute(0, true, CreateNote(0, 48), CreateNote(1, 52, palmMuted: true)),
+                                        CreateBeat(2, CreateNote(0, 48), CreateNote(2, 55))
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var unmapper = new DefaultScoreUnmapper();
+        var result = await unmapper.UnmapAsync(score, TestContext.Current.CancellationToken);
+
+        result.Diagnostics.Warnings.Should().BeEmpty();
+        result.RawDocument.NotesById.Should().HaveCount(3);
+        result.RawDocument.BeatsById.Should().HaveCount(2);
+        result.RawDocument.BeatsById[0].NotesReferenceList.Should().Be("0 1");
+        result.RawDocument.BeatsById[2].NotesReferenceList.Should().Be("0 2");
+        result.RawDocument.NotesById[0].Articulation.PalmMuted.Should().BeFalse();
+        result.RawDocument.NotesById[1].Articulation.PalmMuted.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Unmapper_preserves_measure_with_zero_voices_without_synthesizing_empty_voice()
     {
         var score = new GuitarProScore
@@ -243,11 +340,24 @@ public class WriterReferenceReuseTests
             Notes = notes
         };
 
-    private static NoteModel CreateNote(int id, int midiPitch)
+    private static BeatModel CreateBeatWithPalmMute(int id, bool palmMuted, params NoteModel[] notes)
         => new()
         {
             Id = id,
-            MidiPitch = midiPitch
+            PalmMuted = palmMuted,
+            Duration = 0.25m,
+            Notes = notes
+        };
+
+    private static NoteModel CreateNote(int id, int midiPitch, bool palmMuted = false)
+        => new()
+        {
+            Id = id,
+            MidiPitch = midiPitch,
+            Articulation = new NoteArticulationModel
+            {
+                PalmMuted = palmMuted
+            }
         };
 
     private static string FixturePath(string fixtureName)

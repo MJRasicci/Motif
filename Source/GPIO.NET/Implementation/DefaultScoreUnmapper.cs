@@ -172,6 +172,11 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
         var beats = new Dictionary<int, GpifBeat>();
         var notes = new Dictionary<int, GpifNote>();
         var rhythms = new Dictionary<int, GpifRhythm>();
+        var remappedBarIdsBySourceId = new Dictionary<int, List<int>>();
+        var remappedVoiceIdsBySourceId = new Dictionary<int, List<int>>();
+        var remappedBeatIdsBySourceId = new Dictionary<int, List<int>>();
+        var remappedNoteIdsBySourceId = new Dictionary<int, List<int>>();
+        var remappedRhythmIdsBySourceId = new Dictionary<int, List<int>>();
         var rhythmIdsBySignature = new Dictionary<RhythmSignature, int>();
         var masterBars = new List<GpifMasterBar>();
 
@@ -265,7 +270,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                                             AntiAccent = note.Articulation.AntiAccent,
                                             AntiAccentValue = note.Articulation.AntiAccentValue,
                                             InstrumentArticulation = note.Articulation.InstrumentArticulation,
-                                            PalmMuted = beat.PalmMuted || note.Articulation.PalmMuted,
+                                            PalmMuted = ResolveNotePalmMuted(note, beat),
                                             Muted = note.Articulation.Muted,
                                             Tapped = note.Articulation.Tapped,
                                             LeftHandTapped = note.Articulation.LeftHandTapped,
@@ -293,6 +298,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                                         notes,
                                         ref noteId,
                                         NotesEqual,
+                                        remappedNoteIdsBySourceId,
                                         diagnostics,
                                         code: "NOTE_ID_CONFLICT",
                                         category: "ReferenceReuse",
@@ -325,6 +331,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                                     rhythms,
                                     ref rhythmId,
                                     RhythmsEqual,
+                                    remappedRhythmIdsBySourceId,
                                     diagnostics,
                                     code: "RHYTHM_ID_CONFLICT",
                                     category: "ReferenceReuse",
@@ -394,6 +401,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                                 beats,
                                 ref beatId,
                                 BeatsEqual,
+                                remappedBeatIdsBySourceId,
                                 diagnostics,
                                 code: "BEAT_ID_CONFLICT",
                                 category: "ReferenceReuse",
@@ -421,6 +429,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                             voices,
                             ref voiceId,
                             VoicesEqual,
+                            remappedVoiceIdsBySourceId,
                             diagnostics,
                             code: "VOICE_ID_CONFLICT",
                             category: "ReferenceReuse",
@@ -456,6 +465,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                         bars,
                         ref barId,
                         BarsEqual,
+                        remappedBarIdsBySourceId,
                         diagnostics,
                         code: "BAR_ID_CONFLICT",
                         category: "ReferenceReuse",
@@ -696,6 +706,23 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
         }
 
         return (bestString ?? note.StringNumber, bestFret);
+    }
+
+    private static bool ResolveNotePalmMuted(NoteModel note, BeatModel beat)
+    {
+        if (note.Articulation.PalmMuted)
+        {
+            return true;
+        }
+
+        if (!beat.PalmMuted)
+        {
+            return false;
+        }
+
+        // BeatModel.PalmMuted is a derived aggregate on read, so only fan it back out when the caller
+        // set the beat-level flag without any explicit note-level palm-muted articulations.
+        return beat.Notes.Count > 0 && !beat.Notes.Any(candidate => candidate.Articulation.PalmMuted);
     }
 
     private static int[] ResolveTuningPitches(TrackModel track, int staffIndex)
@@ -1054,6 +1081,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
         Dictionary<int, T> existingItems,
         ref int nextId,
         Func<T, T, bool> structurallyEqual,
+        Dictionary<int, List<int>> remappedIdsBySourceId,
         WriteDiagnostics diagnostics,
         string code,
         string category,
@@ -1068,7 +1096,15 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                     return preferredId;
                 }
 
+                if (TryReuseRemappedId(preferredId, candidate, existingItems, remappedIdsBySourceId, structurallyEqual, out var remappedId))
+                {
+                    return remappedId;
+                }
+
                 diagnostics.Warn(code, category, message);
+                var allocatedId = NextAvailableId(existingItems, ref nextId);
+                RegisterRemappedId(preferredId, allocatedId, remappedIdsBySourceId);
+                return allocatedId;
             }
             else
             {
@@ -1078,6 +1114,44 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
         }
 
         return NextAvailableId(existingItems, ref nextId);
+    }
+
+    private static bool TryReuseRemappedId<T>(
+        int preferredId,
+        T candidate,
+        IReadOnlyDictionary<int, T> existingItems,
+        IReadOnlyDictionary<int, List<int>> remappedIdsBySourceId,
+        Func<T, T, bool> structurallyEqual,
+        out int remappedId)
+    {
+        if (remappedIdsBySourceId.TryGetValue(preferredId, out var remappedIds))
+        {
+            foreach (var candidateId in remappedIds)
+            {
+                if (existingItems.TryGetValue(candidateId, out var existing) && structurallyEqual(existing, candidate))
+                {
+                    remappedId = candidateId;
+                    return true;
+                }
+            }
+        }
+
+        remappedId = -1;
+        return false;
+    }
+
+    private static void RegisterRemappedId(
+        int preferredId,
+        int allocatedId,
+        IDictionary<int, List<int>> remappedIdsBySourceId)
+    {
+        if (!remappedIdsBySourceId.TryGetValue(preferredId, out var remappedIds))
+        {
+            remappedIds = [];
+            remappedIdsBySourceId[preferredId] = remappedIds;
+        }
+
+        remappedIds.Add(allocatedId);
     }
 
     private static int NextAvailableId<T>(Dictionary<int, T> existingItems, ref int nextId)
