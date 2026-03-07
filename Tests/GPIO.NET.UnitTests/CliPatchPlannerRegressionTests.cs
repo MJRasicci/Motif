@@ -78,6 +78,7 @@ public class CliPatchPlannerRegressionTests
 
         var jsonPath = Path.Combine(tempDir, "schema-reference.json");
         var outputGp = Path.Combine(tempDir, "schema-reference.roundtrip.gp");
+        var diagnosticsPath = Path.Combine(tempDir, "schema-reference.diagnostics.json");
 
         try
         {
@@ -86,7 +87,7 @@ public class CliPatchPlannerRegressionTests
                 repoRoot);
 
             await RunDotNetAsync(
-                $"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{outputGp}\" --from-json --source-gp \"{sourceGp}\" --format json",
+                $"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{outputGp}\" --from-json --source-gp \"{sourceGp}\" --format json --diagnostics-out \"{diagnosticsPath}\" --diagnostics-json",
                 repoRoot);
 
             var json = await File.ReadAllTextAsync(jsonPath, TestContext.Current.CancellationToken);
@@ -114,6 +115,16 @@ public class CliPatchPlannerRegressionTests
 
             tuplet.Should().NotBeNull();
             tuplet!.Elements().Should().BeEmpty();
+
+            File.Exists(diagnosticsPath).Should().BeTrue();
+            using var diagnostics = JsonDocument.Parse(await File.ReadAllTextAsync(diagnosticsPath, TestContext.Current.CancellationToken));
+            var codes = diagnostics.RootElement
+                .EnumerateArray()
+                .Select(entry => entry.GetProperty("Code").GetString())
+                .ToArray();
+
+            codes.Should().Contain("EMPTY_SCORE_NODES_DROPPED");
+            codes.Should().Contain("RAW_GPIF_BYTE_DRIFT");
         }
         finally
         {

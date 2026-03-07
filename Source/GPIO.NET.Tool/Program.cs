@@ -1,6 +1,7 @@
 using GPIO.NET;
 using GPIO.NET.Implementation;
 using GPIO.NET.Models;
+using GPIO.NET.Models.Patching;
 using GPIO.NET.Tool.Cli;
 using System.IO.Compression;
 using System.Text.Json;
@@ -102,8 +103,8 @@ try
             }
 
             var reader = new GuitarProReader();
-            var sourceScore = await reader.ReadAsync(options.SourceGpPath).ConfigureAwait(false);
-            var plan = JsonPatchPlanner.BuildPatch(sourceScore, editedScore);
+            var patchSourceScore = await reader.ReadAsync(options.SourceGpPath).ConfigureAwait(false);
+            var plan = JsonPatchPlanner.BuildPatch(patchSourceScore, editedScore);
 
             if (options.Strict && plan.UnsupportedChanges.Count > 0)
             {
@@ -153,12 +154,32 @@ try
             return 0;
         }
 
+        var sourceScore = default(GuitarProScore);
+        if (!string.IsNullOrWhiteSpace(options.SourceGpPath))
+        {
+            var reader = new GuitarProReader();
+            sourceScore = await reader.ReadAsync(options.SourceGpPath).ConfigureAwait(false);
+        }
+
         var unmapper = new DefaultScoreUnmapper();
         var unmapResult = await unmapper.UnmapAsync(editedScore).ConfigureAwait(false);
 
         await using var gpifBuffer = new MemoryStream();
         var serializer = new XmlGpifSerializer();
         await serializer.SerializeAsync(unmapResult.RawDocument, gpifBuffer).ConfigureAwait(false);
+
+        if (sourceScore is not null && IsNoOpWrite(sourceScore, editedScore))
+        {
+            var sourceGpifBytes = await ReadScoreGpifBytesAsync(options.SourceGpPath!).ConfigureAwait(false);
+            var sourceRaw = await DeserializeRawGpifAsync(sourceGpifBytes).ConfigureAwait(false);
+            GpifWriteFidelityDiagnostics.AppendNoOpSourceFidelityWarnings(
+                sourceRaw,
+                unmapResult.RawDocument,
+                sourceGpifBytes,
+                gpifBuffer.ToArray(),
+                unmapResult.Diagnostics);
+        }
+
         gpifBuffer.Position = 0;
 
         if (!string.IsNullOrWhiteSpace(options.SourceGpPath) && !AreSamePath(options.SourceGpPath, outputPath))
@@ -305,6 +326,43 @@ static bool AreSamePath(string left, string right)
         .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
     var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
     return string.Equals(normalizedLeft, normalizedRight, comparison);
+}
+
+static bool IsNoOpWrite(GuitarProScore sourceScore, GuitarProScore editedScore)
+{
+    var plan = JsonPatchPlanner.BuildPatch(sourceScore, editedScore);
+    return plan.UnsupportedChanges.Count == 0 && !HasPatchOperations(plan.Patch);
+}
+
+static bool HasPatchOperations(GpPatchDocument patch)
+    => patch.AppendBars.Count > 0
+       || patch.AppendVoices.Count > 0
+       || patch.AppendNotes.Count > 0
+       || patch.InsertBeats.Count > 0
+       || patch.AddNotesToBeats.Count > 0
+       || patch.ReorderBeatNotes.Count > 0
+       || patch.UpdateNoteArticulations.Count > 0
+       || patch.UpdateNotePitches.Count > 0
+       || patch.DeleteNotes.Count > 0
+       || patch.DeleteBeats.Count > 0;
+
+static async Task<byte[]> ReadScoreGpifBytesAsync(string gpPath)
+{
+    await using var archive = await ZipFile.OpenReadAsync(gpPath, CancellationToken.None).ConfigureAwait(false);
+    var entry = archive.GetEntry("Content/score.gpif")
+        ?? throw new InvalidDataException("Archive does not contain Content/score.gpif");
+
+    await using var stream = await entry.OpenAsync(CancellationToken.None).ConfigureAwait(false);
+    using var buffer = new MemoryStream();
+    await stream.CopyToAsync(buffer).ConfigureAwait(false);
+    return buffer.ToArray();
+}
+
+static async Task<GPIO.NET.Models.Raw.GpifDocument> DeserializeRawGpifAsync(byte[] gpifBytes)
+{
+    await using var stream = new MemoryStream(gpifBytes, writable: false);
+    var deserializer = new XmlGpifDeserializer();
+    return await deserializer.DeserializeAsync(stream).ConfigureAwait(false);
 }
 
 static void PrintHelp()
