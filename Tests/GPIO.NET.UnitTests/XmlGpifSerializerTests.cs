@@ -43,4 +43,27 @@ public class XmlGpifSerializerTests
         xml.Should().Contain("<Letter><![CDATA[]]></Letter>");
         xml.Should().Contain("<Text><![CDATA[Intro]]></Text>");
     }
+
+    [Fact]
+    public async Task Serializer_emits_explicit_empty_optional_score_nodes()
+    {
+        var score = new GuitarProScore
+        {
+            Metadata = new ScoreMetadata
+            {
+                ExplicitEmptyOptionalElements = ["WordsAndMusic", "PageHeader"]
+            }
+        };
+
+        var unmapper = new DefaultScoreUnmapper();
+        var writeResult = await unmapper.UnmapAsync(score, TestContext.Current.CancellationToken);
+
+        var serializer = new XmlGpifSerializer();
+        await using var buffer = new MemoryStream();
+        await serializer.SerializeAsync(writeResult.RawDocument, buffer, TestContext.Current.CancellationToken);
+
+        var xml = Encoding.UTF8.GetString(buffer.ToArray());
+        xml.Should().Contain("<WordsAndMusic");
+        xml.Should().Contain("<PageHeader");
+    }
 }

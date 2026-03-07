@@ -43,6 +43,8 @@ public sealed class GpifRevisionInfo
 
 public sealed class ScoreInfo
 {
+    public string[] ExplicitEmptyOptionalElements { get; init; } = Array.Empty<string>();
+
     public string Title { get; init; } = string.Empty;
 
     public string SubTitle { get; init; } = string.Empty;

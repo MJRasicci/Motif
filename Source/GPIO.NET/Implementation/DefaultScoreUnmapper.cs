@@ -497,6 +497,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
             EncodingDescription = score.Metadata.EncodingDescription,
             Score = new ScoreInfo
             {
+                ExplicitEmptyOptionalElements = score.Metadata.ExplicitEmptyOptionalElements,
                 Title = score.Title,
                 SubTitle = score.Metadata.SubTitle,
                 Artist = score.Artist,

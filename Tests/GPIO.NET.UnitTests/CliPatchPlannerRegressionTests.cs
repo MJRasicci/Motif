@@ -123,8 +123,8 @@ public class CliPatchPlannerRegressionTests
                 .Select(entry => entry.GetProperty("Code").GetString())
                 .ToArray();
 
-            codes.Should().Contain("EMPTY_SCORE_NODES_DROPPED");
             codes.Should().Contain("RAW_GPIF_BYTE_DRIFT");
+            codes.Should().NotContain("EMPTY_SCORE_NODES_DROPPED");
         }
         finally
         {

@@ -33,6 +33,8 @@ public sealed class TrackModel
 
 public sealed class ScoreMetadata
 {
+    public string[] ExplicitEmptyOptionalElements { get; init; } = Array.Empty<string>();
+
     public string GpVersion { get; init; } = string.Empty;
 
     public string GpRevisionRequired { get; init; } = string.Empty;

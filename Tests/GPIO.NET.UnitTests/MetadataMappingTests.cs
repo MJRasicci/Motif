@@ -18,6 +18,7 @@ public class MetadataMappingTests
         score.Metadata.SubTitle.Should().NotBeNullOrWhiteSpace();
         score.Metadata.Copyright.Should().NotBeNullOrWhiteSpace();
         score.Metadata.Notices.Should().NotBeNullOrWhiteSpace();
+        score.Metadata.ExplicitEmptyOptionalElements.Should().Contain(["WordsAndMusic", "PageHeader"]);
 
         score.Tracks.Should().NotBeEmpty();
         score.Tracks.Any(t => !string.IsNullOrWhiteSpace(t.Metadata.ShortName)).Should().BeTrue();
@@ -53,6 +54,7 @@ public class MetadataMappingTests
             Album = "B",
             Metadata = new ScoreMetadata
             {
+                ExplicitEmptyOptionalElements = ["WordsAndMusic", "PageHeader"],
                 SubTitle = "Sub",
                 Copyright = "(c) test",
                 Notices = "notice",
@@ -269,6 +271,7 @@ public class MetadataMappingTests
             readBack.Metadata.Instructions.Should().Be("instructions");
             readBack.Metadata.ScoreZoomPolicy.Should().Be("Value");
             readBack.Metadata.ScoreZoom.Should().Be("1.5");
+            readBack.Metadata.ExplicitEmptyOptionalElements.Should().Contain(["WordsAndMusic", "PageHeader"]);
 
             var track = readBack.Tracks[0];
             track.Metadata.ShortName.Should().Be("gtr");

@@ -226,6 +226,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
             },
             Metadata = new ScoreMetadata
             {
+                ExplicitEmptyOptionalElements = source.Score.ExplicitEmptyOptionalElements,
                 GpVersion = source.GpVersion,
                 GpRevisionRequired = source.GpRevision.Required,
                 GpRevisionRecommended = source.GpRevision.Recommended,

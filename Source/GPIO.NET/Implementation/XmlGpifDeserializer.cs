@@ -327,6 +327,7 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
             EncodingDescription = root.Element("Encoding")?.Element("EncodingDescription")?.Value ?? string.Empty,
             Score = new ScoreInfo
             {
+                ExplicitEmptyOptionalElements = ParseExplicitEmptyOptionalScoreElements(score),
                 Title = score?.Element("Title")?.Value ?? string.Empty,
                 SubTitle = score?.Element("SubTitle")?.Value ?? string.Empty,
                 Artist = score?.Element("Artist")?.Value ?? string.Empty,
@@ -369,6 +370,39 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
 
     private static int ParseInt(string? value)
         => int.TryParse(value, out var result) ? result : -1;
+
+    private static string[] ParseExplicitEmptyOptionalScoreElements(XElement? score)
+    {
+        if (score is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        return score.Elements()
+            .Where(element => IsOptionalScoreElement(element.Name.LocalName) && !element.HasElements && string.IsNullOrWhiteSpace(element.Value))
+            .Select(element => element.Name.LocalName)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static bool IsOptionalScoreElement(string elementName)
+        => elementName is "SubTitle"
+            or "Words"
+            or "Music"
+            or "WordsAndMusic"
+            or "Copyright"
+            or "Tabber"
+            or "Instructions"
+            or "Notices"
+            or "FirstPageHeader"
+            or "FirstPageFooter"
+            or "PageHeader"
+            or "PageFooter"
+            or "ScoreSystemsDefaultLayout"
+            or "ScoreSystemsLayout"
+            or "ScoreZoomPolicy"
+            or "ScoreZoom"
+            or "MultiVoice";
 
     private static bool ParseBool(string? value)
         => bool.TryParse(value, out var result) && result;

@@ -68,23 +68,23 @@ public sealed class XmlGpifSerializer : IGpifSerializer
             new XElement("Artist", s.Artist),
             new XElement("Album", s.Album));
 
-        AddTextElement(el, "SubTitle", s.SubTitle);
-        AddTextElement(el, "Words", s.Words);
-        AddTextElement(el, "Music", s.Music);
-        AddTextElement(el, "WordsAndMusic", s.WordsAndMusic);
-        AddTextElement(el, "Copyright", s.Copyright);
-        AddTextElement(el, "Tabber", s.Tabber);
-        AddTextElement(el, "Instructions", s.Instructions);
-        AddTextElement(el, "Notices", s.Notices);
-        AddTextElement(el, "FirstPageHeader", s.FirstPageHeader);
-        AddTextElement(el, "FirstPageFooter", s.FirstPageFooter);
-        AddTextElement(el, "PageHeader", s.PageHeader);
-        AddTextElement(el, "PageFooter", s.PageFooter);
-        AddTextElement(el, "ScoreSystemsDefaultLayout", s.ScoreSystemsDefaultLayout);
-        AddTextElement(el, "ScoreSystemsLayout", s.ScoreSystemsLayout);
-        AddTextElement(el, "ScoreZoomPolicy", s.ScoreZoomPolicy);
-        AddTextElement(el, "ScoreZoom", s.ScoreZoom);
-        AddTextElement(el, "MultiVoice", s.MultiVoice);
+        AddScoreTextElement(el, s, "SubTitle", s.SubTitle);
+        AddScoreTextElement(el, s, "Words", s.Words);
+        AddScoreTextElement(el, s, "Music", s.Music);
+        AddScoreTextElement(el, s, "WordsAndMusic", s.WordsAndMusic);
+        AddScoreTextElement(el, s, "Copyright", s.Copyright);
+        AddScoreTextElement(el, s, "Tabber", s.Tabber);
+        AddScoreTextElement(el, s, "Instructions", s.Instructions);
+        AddScoreTextElement(el, s, "Notices", s.Notices);
+        AddScoreTextElement(el, s, "FirstPageHeader", s.FirstPageHeader);
+        AddScoreTextElement(el, s, "FirstPageFooter", s.FirstPageFooter);
+        AddScoreTextElement(el, s, "PageHeader", s.PageHeader);
+        AddScoreTextElement(el, s, "PageFooter", s.PageFooter);
+        AddScoreTextElement(el, s, "ScoreSystemsDefaultLayout", s.ScoreSystemsDefaultLayout);
+        AddScoreTextElement(el, s, "ScoreSystemsLayout", s.ScoreSystemsLayout);
+        AddScoreTextElement(el, s, "ScoreZoomPolicy", s.ScoreZoomPolicy);
+        AddScoreTextElement(el, s, "ScoreZoom", s.ScoreZoom);
+        AddScoreTextElement(el, s, "MultiVoice", s.MultiVoice);
 
         return el;
     }
@@ -850,6 +850,22 @@ public sealed class XmlGpifSerializer : IGpifSerializer
     {
         if (string.IsNullOrWhiteSpace(value))
         {
+            return;
+        }
+
+        parent.Add(new XElement(name, value));
+    }
+
+    private static void AddScoreTextElement(XElement parent, ScoreInfo score, string name, string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            if (!score.ExplicitEmptyOptionalElements.Contains(name, StringComparer.Ordinal))
+            {
+                return;
+            }
+
+            parent.Add(new XElement(name, string.Empty));
             return;
         }
 

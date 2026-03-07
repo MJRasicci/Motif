@@ -6,6 +6,7 @@ using GPIO.NET.Models;
 using GPIO.NET.Models.Raw;
 using GPIO.NET.Models.Write;
 using System.IO.Compression;
+using System.Xml.Linq;
 
 public class WriterDiagnosticsTests
 {
@@ -42,7 +43,7 @@ public class WriterDiagnosticsTests
     }
 
     [Fact]
-    public async Task No_op_source_fidelity_diagnostics_warn_for_schema_reference_byte_drift_and_empty_score_nodes()
+    public async Task No_op_source_fidelity_diagnostics_stop_warning_for_empty_score_nodes_once_preserved()
     {
         var fixturePath = FixturePath("schema-reference.gp");
         var sourceBytes = await ReadScoreGpifBytesAsync(fixturePath);
@@ -62,12 +63,11 @@ public class WriterDiagnosticsTests
             outputBytes,
             result.Diagnostics);
 
-        result.Diagnostics.Warnings.Select(w => w.Code).Should().Contain("EMPTY_SCORE_NODES_DROPPED");
-        result.Diagnostics.Warnings.Select(w => w.Code).Should().Contain("RAW_GPIF_BYTE_DRIFT");
-
-        var emptyScoreNodeWarning = result.Diagnostics.Warnings.Single(w => w.Code == "EMPTY_SCORE_NODES_DROPPED");
-        emptyScoreNodeWarning.Message.Should().Contain("WordsAndMusic");
-        emptyScoreNodeWarning.Message.Should().Contain("PageHeader");
+        var scoreElement = XDocument.Parse(System.Text.Encoding.UTF8.GetString(outputBytes)).Root!.Element("Score");
+        scoreElement.Should().NotBeNull();
+        scoreElement!.Element("WordsAndMusic").Should().NotBeNull();
+        scoreElement.Element("PageHeader").Should().NotBeNull();
+        result.Diagnostics.Warnings.Select(w => w.Code).Should().NotContain("EMPTY_SCORE_NODES_DROPPED");
     }
 
     [Fact]
