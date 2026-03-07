@@ -3,32 +3,32 @@ namespace GPIO.NET.UnitTests;
 using FluentAssertions;
 using GPIO.NET.Implementation;
 using GPIO.NET.Models;
+using GPIO.NET.Models.Raw;
 using System.Globalization;
+using System.IO.Compression;
 using System.Text.Json;
 
 public class WriterReferenceReuseTests
 {
     [Fact]
-    public async Task Unmapper_preserves_shared_reference_counts_for_simple_score_fixture()
+    public async Task Unmapper_preserves_shared_reference_counts_for_schema_reference_fixture()
     {
-        var repoRoot = FindRepositoryRoot();
-        var sourceGp = Path.Combine(repoRoot, "Temp", "SimpleScore.gp");
+        var sourceGp = FixturePath("schema-reference.gp");
         File.Exists(sourceGp).Should().BeTrue();
 
         var reader = new GPIO.NET.GuitarProReader();
         var score = await reader.ReadAsync(sourceGp, cancellationToken: TestContext.Current.CancellationToken);
+        var sourceRaw = await ReadRawAsync(sourceGp);
 
         var unmapper = new DefaultScoreUnmapper();
         var result = await unmapper.UnmapAsync(score, TestContext.Current.CancellationToken);
 
         result.Diagnostics.Warnings.Should().BeEmpty();
-        result.RawDocument.BarsById.Should().HaveCount(4);
-        result.RawDocument.VoicesById.Should().HaveCount(4);
-        result.RawDocument.BeatsById.Should().HaveCount(6);
-        result.RawDocument.NotesById.Should().HaveCount(12);
-        result.RawDocument.RhythmsById.Should().HaveCount(1);
-        result.RawDocument.VoicesById.Values.Sum(v => SplitRefs(v.BeatsReferenceList).Count).Should().Be(16);
-        result.RawDocument.BeatsById.Values.Sum(b => SplitRefs(b.NotesReferenceList).Count).Should().Be(28);
+        AssertStructuralCountsEqual(sourceRaw, result.RawDocument);
+        result.RawDocument.VoicesById.Values.Sum(v => SplitRefs(v.BeatsReferenceList).Count)
+            .Should().Be(sourceRaw.VoicesById.Values.Sum(v => SplitRefs(v.BeatsReferenceList).Count));
+        result.RawDocument.BeatsById.Values.Sum(b => SplitRefs(b.NotesReferenceList).Count)
+            .Should().Be(sourceRaw.BeatsById.Values.Sum(b => SplitRefs(b.NotesReferenceList).Count));
     }
 
     [Fact]
@@ -159,61 +159,80 @@ public class WriterReferenceReuseTests
     }
 
     [Fact]
-    public async Task Reader_maps_multistaff_master_bar_slots_without_shifting_following_tracks()
+    public async Task Mapper_maps_multistaff_master_bar_slots_without_shifting_following_tracks()
     {
-        var repoRoot = FindRepositoryRoot();
-        var sourceGp = Path.Combine(repoRoot, "Temp", "Last To Know.gp");
-        File.Exists(sourceGp).Should().BeTrue();
+        var mapper = new DefaultScoreMapper();
+        var score = await mapper.MapAsync(CreateMultiStaffRawDocument(), TestContext.Current.CancellationToken);
 
-        var reader = new GPIO.NET.GuitarProReader();
-        var score = await reader.ReadAsync(sourceGp, cancellationToken: TestContext.Current.CancellationToken);
+        var piano = score.Tracks.Single(track => track.Name == "Piano");
+        var drums = score.Tracks.Single(track => track.Name == "Drums");
 
-        var piano = score.Tracks.Single(track => track.Id == 9);
-        var drums = score.Tracks.Single(track => track.Id == 10);
-
-        piano.Measures.Should().NotBeEmpty();
+        piano.Measures.Should().ContainSingle();
+        piano.Measures[0].SourceBarId.Should().Be(0);
         piano.Measures[0].Clef.Should().Be("G2");
         piano.Measures[0].AdditionalStaffBars.Should().ContainSingle();
         piano.Measures[0].AdditionalStaffBars[0].StaffIndex.Should().Be(1);
+        piano.Measures[0].AdditionalStaffBars[0].SourceBarId.Should().Be(1);
         piano.Measures[0].AdditionalStaffBars[0].Clef.Should().Be("F4");
 
-        drums.Measures.Should().NotBeEmpty();
-        drums.Measures[0].SourceBarId.Should().Be(11);
+        drums.Measures.Should().ContainSingle();
+        drums.Measures[0].SourceBarId.Should().Be(2);
         drums.Measures[0].Clef.Should().Be("Neutral");
     }
 
     [Fact]
-    public async Task Json_round_trip_preserves_raw_counts_for_last_to_know_fixture()
+    public async Task Json_round_trip_preserves_multistaff_master_bar_slot_counts()
     {
-        var repoRoot = FindRepositoryRoot();
-        var sourceGp = Path.Combine(repoRoot, "Temp", "Last To Know.gp");
-        File.Exists(sourceGp).Should().BeTrue();
+        var sourceRaw = CreateMultiStaffRawDocument();
+        var roundTrippedRaw = await ReadJsonRoundTrippedRawAsync(sourceRaw);
 
-        var raw = await ReadJsonRoundTrippedRawAsync(sourceGp);
+        AssertStructuralCountsEqual(sourceRaw, roundTrippedRaw);
+        SplitRefs(roundTrippedRaw.MasterBars[0].BarsReferenceList).Should().Equal([0, 1, 2]);
+        roundTrippedRaw.BarsById[0].Clef.Should().Be("G2");
+        roundTrippedRaw.BarsById[1].Clef.Should().Be("F4");
+        roundTrippedRaw.BarsById[2].Clef.Should().Be("Neutral");
+    }
 
-        raw.BarsById.Should().HaveCount(684);
-        raw.VoicesById.Should().HaveCount(621);
-        raw.BeatsById.Should().HaveCount(706);
-        raw.NotesById.Should().HaveCount(542);
-        raw.RhythmsById.Should().HaveCount(11);
-        raw.MasterBars.Should().OnlyContain(masterBar => SplitRefs(masterBar.BarsReferenceList).Count == 12);
+    [Fact]
+    public void To_json_preserves_source_rhythm_shape()
+    {
+        var json = CreateTupletScore().ToJson();
+
+        json.Should().Contain("\"SourceRhythm\"");
+        json.Should().Contain("\"PrimaryTuplet\"");
+        json.Should().Contain("\"NoteValue\": \"32nd\"");
+    }
+
+    [Fact]
+    public async Task Json_round_trip_preserves_tuplet_rhythm_shapes_for_schema_reference_fixture()
+    {
+        var sourceGp = FixturePath("schema-reference.gp");
+        var sourceRaw = await ReadRawAsync(sourceGp);
+        var roundTrippedRaw = await ReadJsonRoundTrippedRawAsync(sourceGp);
+
+        var expectedTuplets = sourceRaw.RhythmsById.Values
+            .Where(r => r.PrimaryTuplet is not null || r.SecondaryTuplet is not null)
+            .OrderBy(r => r.Id)
+            .Select(CreateRhythmSignature)
+            .ToArray();
+
+        var actualTuplets = roundTrippedRaw.RhythmsById.Values
+            .Where(r => r.PrimaryTuplet is not null || r.SecondaryTuplet is not null)
+            .OrderBy(r => r.Id)
+            .Select(CreateRhythmSignature)
+            .ToArray();
+
+        actualTuplets.Should().BeEquivalentTo(expectedTuplets, options => options.WithStrictOrdering());
     }
 
     [Fact]
     public async Task Json_round_trip_preserves_raw_counts_for_schema_reference_fixture()
     {
-        var repoRoot = FindRepositoryRoot();
-        var sourceGp = Path.Combine(repoRoot, "Temp", "schema-reference.gp");
-        File.Exists(sourceGp).Should().BeTrue();
+        var sourceGp = FixturePath("schema-reference.gp");
+        var sourceRaw = await ReadRawAsync(sourceGp);
+        var roundTrippedRaw = await ReadJsonRoundTrippedRawAsync(sourceGp);
 
-        var raw = await ReadJsonRoundTrippedRawAsync(sourceGp);
-
-        raw.BarsById.Should().HaveCount(45);
-        raw.VoicesById.Should().HaveCount(48);
-        raw.BeatsById.Should().HaveCount(164);
-        raw.NotesById.Should().HaveCount(111);
-        raw.RhythmsById.Should().HaveCount(15);
-        raw.MasterBars.Should().OnlyContain(masterBar => SplitRefs(masterBar.BarsReferenceList).Count == 1);
+        AssertStructuralCountsEqual(sourceRaw, roundTrippedRaw);
     }
 
     private static BeatModel CreateBeat(int id, params NoteModel[] notes)
@@ -231,27 +250,34 @@ public class WriterReferenceReuseTests
             MidiPitch = midiPitch
         };
 
-    private static string FindRepositoryRoot()
+    private static string FixturePath(string fixtureName)
+        => Path.Combine(AppContext.BaseDirectory, "Fixtures", fixtureName);
+
+    private static async Task<GpifDocument> ReadRawAsync(string gpPath)
     {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "Source", "GPIO.NET.Tool", "GPIO.NET.Tool.csproj")))
-            {
-                return directory.FullName;
-            }
+        using var archive = ZipFile.OpenRead(gpPath);
+        var entry = archive.GetEntry("Content/score.gpif");
+        entry.Should().NotBeNull();
 
-            directory = directory.Parent;
-        }
-
-        throw new DirectoryNotFoundException("Unable to locate repository root from test output directory.");
+        await using var stream = entry!.Open();
+        return await new XmlGpifDeserializer().DeserializeAsync(stream, TestContext.Current.CancellationToken);
     }
 
-    private static async Task<GPIO.NET.Models.Raw.GpifDocument> ReadJsonRoundTrippedRawAsync(string gpPath)
+    private static async Task<GpifDocument> ReadJsonRoundTrippedRawAsync(string gpPath)
     {
         var reader = new GPIO.NET.GuitarProReader();
         var score = await reader.ReadAsync(gpPath, cancellationToken: TestContext.Current.CancellationToken);
+        return await ReadJsonRoundTrippedRawAsync(score);
+    }
 
+    private static async Task<GpifDocument> ReadJsonRoundTrippedRawAsync(GpifDocument sourceRaw)
+    {
+        var score = await new DefaultScoreMapper().MapAsync(sourceRaw, TestContext.Current.CancellationToken);
+        return await ReadJsonRoundTrippedRawAsync(score);
+    }
+
+    private static async Task<GpifDocument> ReadJsonRoundTrippedRawAsync(GuitarProScore score)
+    {
         var json = score.ToJson(indented: false);
         var fromJson = JsonSerializer.Deserialize<GuitarProScore>(json, new JsonSerializerOptions
         {
@@ -265,6 +291,213 @@ public class WriterReferenceReuseTests
         writeResult.Diagnostics.Warnings.Should().BeEmpty();
         return writeResult.RawDocument;
     }
+
+    private static void AssertStructuralCountsEqual(GpifDocument expected, GpifDocument actual)
+    {
+        actual.BarsById.Should().HaveCount(expected.BarsById.Count);
+        actual.VoicesById.Should().HaveCount(expected.VoicesById.Count);
+        actual.BeatsById.Should().HaveCount(expected.BeatsById.Count);
+        actual.NotesById.Should().HaveCount(expected.NotesById.Count);
+        actual.RhythmsById.Should().HaveCount(expected.RhythmsById.Count);
+        actual.MasterBars.Select(masterBar => SplitRefs(masterBar.BarsReferenceList).Count)
+            .Should().Equal(expected.MasterBars.Select(masterBar => SplitRefs(masterBar.BarsReferenceList).Count));
+    }
+
+    private static object CreateRhythmSignature(GpifRhythm rhythm)
+        => new
+        {
+            rhythm.Id,
+            rhythm.NoteValue,
+            rhythm.AugmentationDots,
+            Primary = CreateTupletSignature(rhythm.PrimaryTuplet),
+            Secondary = CreateTupletSignature(rhythm.SecondaryTuplet)
+        };
+
+    private static string? CreateTupletSignature(TupletRatio? tuplet)
+        => tuplet is null
+            ? null
+            : $"{tuplet.Numerator}/{tuplet.Denominator}";
+
+    private static GpifDocument CreateMultiStaffRawDocument()
+        => new()
+        {
+            Score = new ScoreInfo
+            {
+                Title = "MultiStaff",
+                Artist = "GPIO",
+                Album = "Tests"
+            },
+            MasterTrack = new GpifMasterTrack
+            {
+                TrackIds = [9, 10]
+            },
+            Tracks =
+            [
+                new GpifTrack
+                {
+                    Id = 9,
+                    Name = "Piano",
+                    Staffs =
+                    [
+                        new GpifStaff { Id = 0, Cref = "64" },
+                        new GpifStaff { Id = 1, Cref = "65" }
+                    ]
+                },
+                new GpifTrack
+                {
+                    Id = 10,
+                    Name = "Drums",
+                    Staffs =
+                    [
+                        new GpifStaff { Id = 2, Cref = "128" }
+                    ]
+                }
+            ],
+            MasterBars =
+            [
+                new GpifMasterBar
+                {
+                    Index = 0,
+                    Time = "4/4",
+                    BarsReferenceList = "0 1 2"
+                }
+            ],
+            BarsById = new Dictionary<int, GpifBar>
+            {
+                [0] = new()
+                {
+                    Id = 0,
+                    VoicesReferenceList = "10",
+                    Clef = "G2"
+                },
+                [1] = new()
+                {
+                    Id = 1,
+                    VoicesReferenceList = "11",
+                    Clef = "F4"
+                },
+                [2] = new()
+                {
+                    Id = 2,
+                    VoicesReferenceList = "12",
+                    Clef = "Neutral"
+                }
+            },
+            VoicesById = new Dictionary<int, GpifVoice>
+            {
+                [10] = new()
+                {
+                    Id = 10,
+                    BeatsReferenceList = "100"
+                },
+                [11] = new()
+                {
+                    Id = 11,
+                    BeatsReferenceList = "101"
+                },
+                [12] = new()
+                {
+                    Id = 12,
+                    BeatsReferenceList = "102"
+                }
+            },
+            BeatsById = new Dictionary<int, GpifBeat>
+            {
+                [100] = new()
+                {
+                    Id = 100,
+                    RhythmRef = 1000,
+                    NotesReferenceList = "200"
+                },
+                [101] = new()
+                {
+                    Id = 101,
+                    RhythmRef = 1000,
+                    NotesReferenceList = "201"
+                },
+                [102] = new()
+                {
+                    Id = 102,
+                    RhythmRef = 1000,
+                    NotesReferenceList = "202"
+                }
+            },
+            NotesById = new Dictionary<int, GpifNote>
+            {
+                [200] = new()
+                {
+                    Id = 200,
+                    MidiPitch = 60
+                },
+                [201] = new()
+                {
+                    Id = 201,
+                    MidiPitch = 48
+                },
+                [202] = new()
+                {
+                    Id = 202,
+                    MidiPitch = 35
+                }
+            },
+            RhythmsById = new Dictionary<int, GpifRhythm>
+            {
+                [1000] = new()
+                {
+                    Id = 1000,
+                    NoteValue = "Quarter"
+                }
+            }
+        };
+
+    private static GuitarProScore CreateTupletScore()
+        => new()
+        {
+            Tracks =
+            [
+                new TrackModel
+                {
+                    Id = 0,
+                    Name = "Lead Guitar",
+                    Measures =
+                    [
+                        new MeasureModel
+                        {
+                            Index = 0,
+                            TimeSignature = "4/4",
+                            SectionLetter = "A",
+                            SectionText = "Intro",
+                            Beats =
+                            [
+                                new BeatModel
+                                {
+                                    Id = 1,
+                                    SourceRhythmId = 10,
+                                    SourceRhythm = new RhythmShapeModel
+                                    {
+                                        NoteValue = "32nd",
+                                        PrimaryTuplet = new TupletRatioModel
+                                        {
+                                            Numerator = 3,
+                                            Denominator = 2
+                                        }
+                                    },
+                                    Duration = 1m / 48m,
+                                    Notes =
+                                    [
+                                        new NoteModel
+                                        {
+                                            Id = 1,
+                                            MidiPitch = 64
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
 
     private static IReadOnlyList<int> SplitRefs(string refs)
         => refs.Split(' ', StringSplitOptions.RemoveEmptyEntries)

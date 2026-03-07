@@ -86,4 +86,56 @@ public class WriterRhythmUnmapTests
         result.RawDocument.BeatsById[1].RhythmRef.Should().Be(3);
         result.RawDocument.BeatsById[2].RhythmRef.Should().Be(7);
     }
+
+    [Fact]
+    public async Task Unmapper_preserves_source_tuplet_shape_when_duration_is_unchanged()
+    {
+        var score = new GuitarProScore
+        {
+            Tracks =
+            [
+                new TrackModel
+                {
+                    Id = 0,
+                    Name = "Guitar",
+                    Measures =
+                    [
+                        new MeasureModel
+                        {
+                            Index = 0,
+                            TimeSignature = "4/4",
+                            Beats =
+                            [
+                                new BeatModel
+                                {
+                                    Id = 1,
+                                    SourceRhythmId = 10,
+                                    SourceRhythm = new RhythmShapeModel
+                                    {
+                                        NoteValue = "32nd",
+                                        PrimaryTuplet = new TupletRatioModel
+                                        {
+                                            Numerator = 3,
+                                            Denominator = 2
+                                        }
+                                    },
+                                    Duration = 1m / 48m
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var unmapper = new DefaultScoreUnmapper();
+        var result = await unmapper.UnmapAsync(score, TestContext.Current.CancellationToken);
+
+        result.Diagnostics.Warnings.Should().BeEmpty();
+        result.RawDocument.RhythmsById.Should().ContainKey(10);
+        result.RawDocument.RhythmsById[10].NoteValue.Should().Be("32nd");
+        result.RawDocument.RhythmsById[10].PrimaryTuplet.Should().NotBeNull();
+        result.RawDocument.RhythmsById[10].PrimaryTuplet!.Numerator.Should().Be(3);
+        result.RawDocument.RhythmsById[10].PrimaryTuplet!.Denominator.Should().Be(2);
+    }
 }

@@ -781,8 +781,8 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
             return null;
         }
 
-        var numerator = ParseInt(tuplet.Element("Num")?.Value);
-        var denominator = ParseInt(tuplet.Element("Den")?.Value);
+        var numerator = ParseInt(tuplet.Attribute("num")?.Value ?? tuplet.Element("Num")?.Value);
+        var denominator = ParseInt(tuplet.Attribute("den")?.Value ?? tuplet.Element("Den")?.Value);
         if (numerator <= 0 || denominator <= 0)
         {
             return null;

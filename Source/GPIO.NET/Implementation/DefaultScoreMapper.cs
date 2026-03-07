@@ -465,6 +465,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
             {
                 Id = beat.Id,
                 SourceRhythmId = beat.RhythmRef,
+                SourceRhythm = MapRhythmShape(source, beat.RhythmRef),
                 GraceType = beat.GraceType,
                 Dynamic = beat.Dynamic,
                 PickStrokeDirection = beat.PickStrokeDirection,
@@ -496,6 +497,31 @@ public sealed class DefaultScoreMapper : IScoreMapper
 
         return beats;
     }
+
+    private static RhythmShapeModel? MapRhythmShape(GpifDocument source, int rhythmRef)
+    {
+        if (!source.RhythmsById.TryGetValue(rhythmRef, out var rhythm))
+        {
+            return null;
+        }
+
+        return new RhythmShapeModel
+        {
+            NoteValue = rhythm.NoteValue,
+            AugmentationDots = rhythm.AugmentationDots,
+            PrimaryTuplet = ToTupletModel(rhythm.PrimaryTuplet),
+            SecondaryTuplet = ToTupletModel(rhythm.SecondaryTuplet)
+        };
+    }
+
+    private static TupletRatioModel? ToTupletModel(TupletRatio? tuplet)
+        => tuplet is null
+            ? null
+            : new TupletRatioModel
+            {
+                Numerator = tuplet.Numerator,
+                Denominator = tuplet.Denominator
+            };
 
     private static bool IsStringedTrack(GpifTrack track)
         => track.TuningPitches.Length > 0 || track.Staffs.Any(s => s.TuningPitches.Length > 0);

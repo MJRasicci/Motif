@@ -262,7 +262,10 @@ public sealed class XmlGpifSerializer : IGpifSerializer
 
         if (!string.IsNullOrWhiteSpace(m.SectionLetter) || !string.IsNullOrWhiteSpace(m.SectionText))
         {
-            el.Add(new XElement("Section", new XElement("Letter", m.SectionLetter), new XElement("Text", m.SectionText)));
+            el.Add(new XElement(
+                "Section",
+                new XElement("Letter", new XCData(m.SectionLetter)),
+                new XElement("Text", new XCData(m.SectionText))));
         }
 
         if (!string.IsNullOrWhiteSpace(m.Jump) || !string.IsNullOrWhiteSpace(m.Target) || m.DirectionProperties.Count > 0)
@@ -577,8 +580,8 @@ public sealed class XmlGpifSerializer : IGpifSerializer
     {
         var el = new XElement("Rhythm", new XAttribute("id", r.Id), new XElement("NoteValue", r.NoteValue));
         for (var i = 0; i < r.AugmentationDots; i++) el.Add(new XElement("AugmentationDot"));
-        if (r.PrimaryTuplet is not null) el.Add(new XElement("PrimaryTuplet", new XElement("Num", r.PrimaryTuplet.Numerator), new XElement("Den", r.PrimaryTuplet.Denominator)));
-        if (r.SecondaryTuplet is not null) el.Add(new XElement("SecondaryTuplet", new XElement("Num", r.SecondaryTuplet.Numerator), new XElement("Den", r.SecondaryTuplet.Denominator)));
+        if (r.PrimaryTuplet is not null) el.Add(new XElement("PrimaryTuplet", new XAttribute("num", r.PrimaryTuplet.Numerator), new XAttribute("den", r.PrimaryTuplet.Denominator)));
+        if (r.SecondaryTuplet is not null) el.Add(new XElement("SecondaryTuplet", new XAttribute("num", r.SecondaryTuplet.Numerator), new XAttribute("den", r.SecondaryTuplet.Denominator)));
         return el;
     }
     private static XElement BuildBeat(GpifBeat b)

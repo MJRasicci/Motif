@@ -516,6 +516,24 @@ public sealed class MeasureVoiceModel
     public IReadOnlyList<BeatModel> Beats { get; init; } = Array.Empty<BeatModel>();
 }
 
+public sealed class RhythmShapeModel
+{
+    public string NoteValue { get; init; } = string.Empty;
+
+    public int AugmentationDots { get; init; }
+
+    public TupletRatioModel? PrimaryTuplet { get; init; }
+
+    public TupletRatioModel? SecondaryTuplet { get; init; }
+}
+
+public sealed class TupletRatioModel
+{
+    public int Numerator { get; init; }
+
+    public int Denominator { get; init; }
+}
+
 public sealed class FermataMetadata
 {
     public string Type { get; init; } = string.Empty;
@@ -530,6 +548,8 @@ public sealed class BeatModel
     public int Id { get; init; }
 
     public int SourceRhythmId { get; init; } = -1;
+
+    public RhythmShapeModel? SourceRhythm { get; init; }
 
     public string GraceType { get; init; } = string.Empty;
 
