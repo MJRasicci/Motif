@@ -125,6 +125,49 @@ public class WriterRemainingFidelityTests
     }
 
     [Fact]
+    public async Task Score_metadata_cdata_round_trips_through_json_write_path()
+    {
+        const string gpif = """
+        <GPIF>
+          <Score>
+            <Title><![CDATA[Song Title]]></Title>
+            <Artist><![CDATA[Artist]]></Artist>
+            <Album><![CDATA[Album]]></Album>
+            <Words><![CDATA[Words]]></Words>
+            <Music><![CDATA[Music]]></Music>
+            <WordsAndMusic><![CDATA[Words & Music]]></WordsAndMusic>
+            <Copyright><![CDATA[(c) test]]></Copyright>
+            <PageFooter><![CDATA[<html>Page %page%/%pages%</html>]]></PageFooter>
+            <ScoreSystemsDefaultLayout>4</ScoreSystemsDefaultLayout>
+            <MultiVoice>0</MultiVoice>
+          </Score>
+          <MasterTrack><Tracks>0</Tracks></MasterTrack>
+          <Tracks><Track id="0"><Name>Track</Name></Track></Tracks>
+          <MasterBars><MasterBar><Time>4/4</Time><Bars>1</Bars></MasterBar></MasterBars>
+          <Bars><Bar id="1"><Voices>10</Voices></Bar></Bars>
+          <Voices><Voice id="10"><Beats>100</Beats></Voice></Voices>
+          <Rhythms><Rhythm id="1000"><NoteValue>Quarter</NoteValue></Rhythm></Rhythms>
+          <Beats><Beat id="100"><Rhythm ref="1000" /></Beat></Beats>
+          <Notes />
+        </GPIF>
+        """;
+
+        var roundTrip = await RoundTripThroughJsonAndWrite(gpif);
+        var scoreElement = roundTrip.Root!.Element("Score")!;
+
+        scoreElement.Element("Title")!.Nodes().OfType<XCData>().Select(node => node.Value).Should().ContainSingle("Song Title");
+        scoreElement.Element("Artist")!.Nodes().OfType<XCData>().Select(node => node.Value).Should().ContainSingle("Artist");
+        scoreElement.Element("Album")!.Nodes().OfType<XCData>().Select(node => node.Value).Should().ContainSingle("Album");
+        scoreElement.Element("Words")!.Nodes().OfType<XCData>().Select(node => node.Value).Should().ContainSingle("Words");
+        scoreElement.Element("Music")!.Nodes().OfType<XCData>().Select(node => node.Value).Should().ContainSingle("Music");
+        scoreElement.Element("WordsAndMusic")!.Nodes().OfType<XCData>().Select(node => node.Value).Should().ContainSingle("Words & Music");
+        scoreElement.Element("Copyright")!.Nodes().OfType<XCData>().Select(node => node.Value).Should().ContainSingle("(c) test");
+        scoreElement.Element("PageFooter")!.Nodes().OfType<XCData>().Select(node => node.Value).Should().ContainSingle("<html>Page %page%/%pages%</html>");
+        scoreElement.Element("ScoreSystemsDefaultLayout")!.Nodes().OfType<XCData>().Should().BeEmpty();
+        scoreElement.Element("MultiVoice")!.Nodes().OfType<XCData>().Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Track_and_bar_notation_passthrough_round_trip_let_ring_throughout_and_simile_mark()
     {
         var gpif = """

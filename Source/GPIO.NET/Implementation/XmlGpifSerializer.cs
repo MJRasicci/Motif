@@ -79,28 +79,28 @@ public sealed class XmlGpifSerializer : IGpifSerializer
     private static XElement BuildScore(ScoreInfo s)
     {
         var el = new XElement("Score",
-            new XElement("Title", s.Title),
-            new XElement("Artist", s.Artist),
-            new XElement("Album", s.Album));
+            CreateCDataElement("Title", s.Title),
+            CreateCDataElement("Artist", s.Artist),
+            CreateCDataElement("Album", s.Album));
 
-        AddScoreTextElement(el, s, "SubTitle", s.SubTitle);
-        AddScoreTextElement(el, s, "Words", s.Words);
-        AddScoreTextElement(el, s, "Music", s.Music);
-        AddScoreTextElement(el, s, "WordsAndMusic", s.WordsAndMusic);
-        AddScoreTextElement(el, s, "Copyright", s.Copyright);
-        AddScoreTextElement(el, s, "Tabber", s.Tabber);
-        AddScoreTextElement(el, s, "Instructions", s.Instructions);
-        AddScoreTextElement(el, s, "Notices", s.Notices);
-        AddScoreTextElement(el, s, "FirstPageHeader", s.FirstPageHeader);
-        AddScoreTextElement(el, s, "FirstPageFooter", s.FirstPageFooter);
-        AddScoreTextElement(el, s, "PageHeader", s.PageHeader);
-        AddScoreTextElement(el, s, "PageFooter", s.PageFooter);
-        AddScoreTextElement(el, s, "ScoreSystemsDefaultLayout", s.ScoreSystemsDefaultLayout);
-        AddScoreTextElement(el, s, "ScoreSystemsLayout", s.ScoreSystemsLayout);
-        AddScoreTextElement(el, s, "ScoreZoomPolicy", s.ScoreZoomPolicy);
-        AddScoreTextElement(el, s, "ScoreZoom", s.ScoreZoom);
+        AddOptionalScoreCDataElement(el, s, "SubTitle", s.SubTitle);
+        AddOptionalScoreCDataElement(el, s, "Words", s.Words);
+        AddOptionalScoreCDataElement(el, s, "Music", s.Music);
+        AddOptionalScoreCDataElement(el, s, "WordsAndMusic", s.WordsAndMusic);
+        AddOptionalScoreCDataElement(el, s, "Copyright", s.Copyright);
+        AddOptionalScoreCDataElement(el, s, "Tabber", s.Tabber);
+        AddOptionalScoreCDataElement(el, s, "Instructions", s.Instructions);
+        AddOptionalScoreCDataElement(el, s, "Notices", s.Notices);
+        AddOptionalScoreCDataElement(el, s, "FirstPageHeader", s.FirstPageHeader);
+        AddOptionalScoreCDataElement(el, s, "FirstPageFooter", s.FirstPageFooter);
+        AddOptionalScoreCDataElement(el, s, "PageHeader", s.PageHeader);
+        AddOptionalScoreCDataElement(el, s, "PageFooter", s.PageFooter);
+        AddOptionalPlainTextScoreElement(el, s, "ScoreSystemsDefaultLayout", s.ScoreSystemsDefaultLayout);
+        AddOptionalPlainTextScoreElement(el, s, "ScoreSystemsLayout", s.ScoreSystemsLayout);
+        AddOptionalPlainTextScoreElement(el, s, "ScoreZoomPolicy", s.ScoreZoomPolicy);
+        AddOptionalPlainTextScoreElement(el, s, "ScoreZoom", s.ScoreZoom);
         AddRawElementXml(el, s.PageSetupXml);
-        AddScoreTextElement(el, s, "MultiVoice", s.MultiVoice);
+        AddOptionalPlainTextScoreElement(el, s, "MultiVoice", s.MultiVoice);
 
         return el;
     }
@@ -1112,7 +1112,23 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         }
     }
 
-    private static void AddScoreTextElement(XElement parent, ScoreInfo score, string name, string value)
+    private static void AddOptionalScoreCDataElement(XElement parent, ScoreInfo score, string name, string value)
+    {
+        if (value.Length == 0)
+        {
+            if (!score.ExplicitEmptyOptionalElements.Contains(name, StringComparer.Ordinal))
+            {
+                return;
+            }
+
+            parent.Add(CreateCDataElement(name, value));
+            return;
+        }
+
+        parent.Add(CreateCDataElement(name, value));
+    }
+
+    private static void AddOptionalPlainTextScoreElement(XElement parent, ScoreInfo score, string name, string value)
     {
         if (value.Length == 0)
         {
@@ -1125,10 +1141,11 @@ public sealed class XmlGpifSerializer : IGpifSerializer
             return;
         }
 
-        parent.Add(string.IsNullOrWhiteSpace(value)
-            ? new XElement(name, new XCData(value))
-            : new XElement(name, value));
+        parent.Add(new XElement(name, value));
     }
+
+    private static XElement CreateCDataElement(string name, string value)
+        => new(name, new XCData(value));
 
     private static bool CanPreserveSourceGpRevisionXml(GpifRevisionInfo revision, out XElement rawRevision)
     {
