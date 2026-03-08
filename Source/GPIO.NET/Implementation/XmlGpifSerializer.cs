@@ -20,46 +20,29 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         ArgumentNullException.ThrowIfNull(document);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var root = new XElement("GPIF",
-            new XElement("GPVersion", ResolveOrDefault(document.GpVersion, DefaultGpVersion)),
-            BuildGpRevision(document.GpRevision),
-            new XElement("Encoding", new XElement("EncodingDescription", ResolveOrDefault(document.EncodingDescription, DefaultEncodingDescription))),
-            BuildScore(document.Score),
-            BuildMasterTrack(document.MasterTrack));
+        var builder = new StringBuilder();
+        builder.Append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+        builder.Append("<GPIF>\n");
+        AppendElementXml(builder, new XElement("GPVersion", ResolveOrDefault(document.GpVersion, DefaultGpVersion)));
+        AppendElementXml(builder, BuildGpRevision(document.GpRevision));
+        AppendElementXml(builder, new XElement("Encoding", new XElement("EncodingDescription", ResolveOrDefault(document.EncodingDescription, DefaultEncodingDescription))));
+        AppendElementXml(builder, BuildScore(document.Score));
+        AppendElementXml(builder, BuildMasterTrack(document.MasterTrack));
+        AppendRawElementXml(builder, document.BackingTrackXml);
+        AppendRawElementXml(builder, document.AudioTracksXml);
+        AppendCollectionXml(builder, "Tracks", document.Tracks.OrderBy(t => t.Id).Select(BuildTrack));
+        AppendCollectionXml(builder, "MasterBars", document.MasterBars.OrderBy(m => m.Index).Select(BuildMasterBar));
+        AppendCollectionXml(builder, "Bars", document.BarsById.OrderBy(kv => kv.Key).Select(kv => BuildBar(kv.Value)));
+        AppendCollectionXml(builder, "Voices", document.VoicesById.OrderBy(kv => kv.Key).Select(kv => BuildVoice(kv.Value)));
+        AppendCollectionXml(builder, "Beats", document.BeatsById.OrderBy(kv => kv.Key).Select(kv => BuildBeat(kv.Value)));
+        AppendCollectionXml(builder, "Notes", document.NotesById.OrderBy(kv => kv.Key).Select(kv => BuildNote(kv.Value)));
+        AppendCollectionXml(builder, "Rhythms", document.RhythmsById.OrderBy(kv => kv.Key).Select(kv => BuildRhythm(kv.Value)));
+        AppendRawElementXml(builder, document.AssetsXml);
+        AppendRawElementXml(builder, document.ScoreViewsXml);
+        builder.Append("</GPIF>");
 
-        AddRawElementXml(root, document.BackingTrackXml);
-        AddRawElementXml(root, document.AudioTracksXml);
-
-        root.Add(
-            new XElement("Tracks", document.Tracks.OrderBy(t => t.Id).Select(BuildTrack)),
-            new XElement("MasterBars", document.MasterBars.OrderBy(m => m.Index).Select(BuildMasterBar)),
-            new XElement("Bars", document.BarsById.OrderBy(kv => kv.Key).Select(kv => BuildBar(kv.Value))),
-            new XElement("Voices", document.VoicesById.OrderBy(kv => kv.Key).Select(kv => BuildVoice(kv.Value))),
-            new XElement("Beats", document.BeatsById.OrderBy(kv => kv.Key).Select(kv => BuildBeat(kv.Value))),
-            new XElement("Notes", document.NotesById.OrderBy(kv => kv.Key).Select(kv => BuildNote(kv.Value))),
-            new XElement("Rhythms", document.RhythmsById.OrderBy(kv => kv.Key).Select(kv => BuildRhythm(kv.Value))));
-
-        AddRawElementXml(root, document.AssetsXml);
-
-        AddRawElementXml(root, document.ScoreViewsXml);
-
-        var x = new XDocument(
-            new XDeclaration("1.0", "utf-8", null),
-            root);
-
-        var settings = new XmlWriterSettings
-        {
-            Async = true,
-            Indent = true,
-            IndentChars = string.Empty,
-            NewLineChars = "\n",
-            NewLineHandling = NewLineHandling.Replace,
-            OmitXmlDeclaration = false,
-            Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)
-        };
-        using var writer = XmlWriter.Create(output, settings);
-        x.WriteTo(writer);
-        await writer.FlushAsync();
+        var bytes = Encoding.UTF8.GetBytes(builder.ToString());
+        await output.WriteAsync(bytes, cancellationToken);
     }
 
     private static XElement BuildGpRevision(GpifRevisionInfo revision)
@@ -80,6 +63,9 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         => string.IsNullOrWhiteSpace(value) ? fallback : value;
 
     private static XElement BuildScore(ScoreInfo s)
+        => PreserveSourceElementXmlIfEquivalent(s.Xml, BuildScoreCore(s));
+
+    private static XElement BuildScoreCore(ScoreInfo s)
     {
         var el = new XElement("Score",
             CreateCDataElement("Title", s.Title),
@@ -109,6 +95,9 @@ public sealed class XmlGpifSerializer : IGpifSerializer
     }
 
     private static XElement BuildMasterTrack(GpifMasterTrack master)
+        => PreserveSourceElementXmlIfEquivalent(master.Xml, BuildMasterTrackCore(master));
+
+    private static XElement BuildMasterTrackCore(GpifMasterTrack master)
     {
         var el = new XElement("MasterTrack",
             new XElement("Tracks", string.Join(' ', master.TrackIds)));
@@ -140,6 +129,9 @@ public sealed class XmlGpifSerializer : IGpifSerializer
     }
 
     private static XElement BuildTrack(GpifTrack t)
+        => PreserveSourceElementXmlIfEquivalent(t.Xml, BuildTrackCore(t));
+
+    private static XElement BuildTrackCore(GpifTrack t)
     {
         var el = new XElement("Track",
             new XAttribute("id", t.Id),
@@ -307,6 +299,9 @@ public sealed class XmlGpifSerializer : IGpifSerializer
            && (track.HasTrackTuningProperty || string.IsNullOrWhiteSpace(track.StavesXml));
 
     private static XElement BuildMasterBar(GpifMasterBar m)
+        => PreserveSourceElementXmlIfEquivalent(m.Xml, BuildMasterBarCore(m));
+
+    private static XElement BuildMasterBarCore(GpifMasterBar m)
     {
         var el = new XElement("MasterBar",
             new XElement("Time", m.Time),
@@ -626,6 +621,9 @@ public sealed class XmlGpifSerializer : IGpifSerializer
     }
 
     private static XElement BuildBar(GpifBar b)
+        => PreserveSourceElementXmlIfEquivalent(b.Xml, BuildBarCore(b));
+
+    private static XElement BuildBarCore(GpifBar b)
     {
         var bar = new XElement("Bar", new XAttribute("id", b.Id), new XElement("Voices", b.VoicesReferenceList));
         AddTextElement(bar, "Clef", b.Clef);
@@ -648,6 +646,9 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         return bar;
     }
     private static XElement BuildVoice(GpifVoice v)
+        => PreserveSourceElementXmlIfEquivalent(v.Xml, BuildVoiceCore(v));
+
+    private static XElement BuildVoiceCore(GpifVoice v)
     {
         var voice = new XElement("Voice", new XAttribute("id", v.Id), new XElement("Beats", v.BeatsReferenceList));
         if (v.Properties.Count > 0)
@@ -663,6 +664,9 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         return voice;
     }
     private static XElement BuildRhythm(GpifRhythm r)
+        => PreserveSourceElementXmlIfEquivalent(r.Xml, BuildRhythmCore(r));
+
+    private static XElement BuildRhythmCore(GpifRhythm r)
     {
         var el = new XElement("Rhythm", new XAttribute("id", r.Id), new XElement("NoteValue", r.NoteValue));
         if (r.AugmentationDotCounts.Length > 0)
@@ -693,6 +697,9 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         return el;
     }
     private static XElement BuildBeat(GpifBeat b)
+        => PreserveSourceElementXmlIfEquivalent(b.Xml, BuildBeatCore(b));
+
+    private static XElement BuildBeatCore(GpifBeat b)
     {
         var el = new XElement("Beat", new XAttribute("id", b.Id), new XElement("Rhythm", new XAttribute("ref", b.RhythmRef)));
         AddTextElement(el, "GraceNotes", b.GraceType);
@@ -904,6 +911,9 @@ public sealed class XmlGpifSerializer : IGpifSerializer
         => bool.TryParse(value, out var parsed) && parsed;
 
     private static XElement BuildNote(GpifNote n)
+        => PreserveSourceElementXmlIfEquivalent(n.Xml, BuildNoteCore(n));
+
+    private static XElement BuildNoteCore(GpifNote n)
     {
         var el = new XElement("Note", new XAttribute("id", n.Id));
         AddTextElement(el, "LeftFingering", n.Articulation.LeftFingering);
@@ -1207,11 +1217,83 @@ public sealed class XmlGpifSerializer : IGpifSerializer
 
         try
         {
-            parent.Add(XElement.Parse(xml));
+            parent.Add(XElement.Parse(xml, LoadOptions.PreserveWhitespace));
         }
         catch
         {
             // ignore malformed passthrough chunks
+        }
+    }
+
+    private static void AppendCollectionXml(StringBuilder builder, string name, IEnumerable<XElement> elements)
+    {
+        var materialized = elements.ToArray();
+        if (materialized.Length == 0)
+        {
+            builder.Append('<').Append(name).Append(" />\n");
+            return;
+        }
+
+        builder.Append('<').Append(name).Append(">\n");
+        foreach (var element in materialized)
+        {
+            AppendElementXml(builder, element);
+        }
+
+        builder.Append("</").Append(name).Append(">\n");
+    }
+
+    private static void AppendElementXml(StringBuilder builder, XElement element)
+    {
+        builder.Append(NormalizeXml(element.ToString(SaveOptions.DisableFormatting)));
+        builder.Append('\n');
+    }
+
+    private static void AppendRawElementXml(StringBuilder builder, string xml)
+    {
+        if (string.IsNullOrWhiteSpace(xml))
+        {
+            return;
+        }
+
+        builder.Append(NormalizeXml(xml));
+        builder.Append('\n');
+    }
+
+    private static string NormalizeXml(string xml)
+        => xml.Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n');
+
+    private static XElement PreserveSourceElementXmlIfEquivalent(string xml, XElement generatedElement)
+    {
+        if (CanPreserveSourceElementXml(xml, generatedElement, out var rawElement))
+        {
+            return rawElement;
+        }
+
+        return generatedElement;
+    }
+
+    private static bool CanPreserveSourceElementXml(string xml, XElement generatedElement, out XElement rawElement)
+    {
+        rawElement = null!;
+        if (string.IsNullOrWhiteSpace(xml))
+        {
+            return false;
+        }
+
+        try
+        {
+            rawElement = XElement.Parse(xml, LoadOptions.PreserveWhitespace);
+            var sourceComparable = XElement.Parse(xml);
+            var generatedComparable = XElement.Parse(generatedElement.ToString(SaveOptions.DisableFormatting));
+            var differences = GpifXmlDifferenceComparer.Compare(sourceComparable, generatedComparable);
+            return differences.All(diff => string.Equals(diff.Code, "RAW_XML_CHILD_ORDER_DRIFT", StringComparison.Ordinal));
+        }
+        catch
+        {
+            rawElement = null!;
+            return false;
         }
     }
 

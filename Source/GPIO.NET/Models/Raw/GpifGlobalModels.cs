@@ -2,6 +2,8 @@ namespace GPIO.NET.Models.Raw;
 
 public sealed class GpifMasterTrack
 {
+    public string Xml { get; init; } = string.Empty;
+
     public int[] TrackIds { get; init; } = Array.Empty<int>();
 
     public string AutomationsXml { get; init; } = string.Empty;

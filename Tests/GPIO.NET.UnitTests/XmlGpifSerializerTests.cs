@@ -3,6 +3,7 @@ namespace GPIO.NET.UnitTests;
 using FluentAssertions;
 using GPIO.NET.Implementation;
 using GPIO.NET.Models;
+using GPIO.NET.Models.Raw;
 using System.Text;
 using System.Xml.Linq;
 
@@ -163,5 +164,161 @@ public class XmlGpifSerializerTests
 
         var lines = xml.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         lines.Should().OnlyContain(line => line.Length == 0 || line[0] == '<');
+    }
+
+    [Fact]
+    public async Task Serializer_does_not_reuse_stale_raw_node_xml_when_values_change()
+    {
+        var document = new GpifDocument
+        {
+            Score = new ScoreInfo
+            {
+                Title = "T",
+                Artist = "A",
+                Album = "B"
+            },
+            MasterTrack = new GpifMasterTrack
+            {
+                TrackIds = [0]
+            },
+            Tracks =
+            [
+                new GpifTrack
+                {
+                    Id = 0,
+                    Name = "Track"
+                }
+            ],
+            MasterBars =
+            [
+                new GpifMasterBar
+                {
+                    Index = 0,
+                    Time = "4/4",
+                    BarsReferenceList = "1"
+                }
+            ],
+            BarsById = new Dictionary<int, GpifBar>
+            {
+                [1] = new()
+                {
+                    Id = 1,
+                    VoicesReferenceList = "10"
+                }
+            },
+            VoicesById = new Dictionary<int, GpifVoice>
+            {
+                [10] = new()
+                {
+                    Id = 10,
+                    BeatsReferenceList = "100"
+                }
+            },
+            BeatsById = new Dictionary<int, GpifBeat>
+            {
+                [100] = new()
+                {
+                    Xml = "<Beat id=\"100\"><Rhythm ref=\"1000\" /><FreeText><![CDATA[Dist.]]></FreeText></Beat>",
+                    Id = 100,
+                    RhythmRef = 1000,
+                    FreeText = "Clean"
+                }
+            },
+            RhythmsById = new Dictionary<int, GpifRhythm>
+            {
+                [1000] = new()
+                {
+                    Id = 1000,
+                    NoteValue = "Quarter"
+                }
+            }
+        };
+
+        await using var buffer = new MemoryStream();
+        await new XmlGpifSerializer().SerializeAsync(document, buffer, TestContext.Current.CancellationToken);
+
+        var xml = Encoding.UTF8.GetString(buffer.ToArray());
+        xml.Should().Contain("<FreeText>Clean</FreeText>");
+        xml.Should().NotContain("Dist.");
+    }
+
+    [Fact]
+    public async Task Serializer_does_not_reuse_stale_container_raw_xml_when_values_change()
+    {
+        var document = new GpifDocument
+        {
+            Score = new ScoreInfo
+            {
+                Xml = "<Score><Title><![CDATA[Old]]></Title><Artist><![CDATA[A]]></Artist><Album><![CDATA[B]]></Album></Score>",
+                Title = "New",
+                Artist = "A",
+                Album = "B"
+            },
+            MasterTrack = new GpifMasterTrack
+            {
+                Xml = "<MasterTrack><Tracks>99</Tracks></MasterTrack>",
+                TrackIds = [0]
+            },
+            Tracks =
+            [
+                new GpifTrack
+                {
+                    Xml = "<Track id=\"0\"><Name>Old Track</Name></Track>",
+                    Id = 0,
+                    Name = "New Track"
+                }
+            ],
+            MasterBars =
+            [
+                new GpifMasterBar
+                {
+                    Index = 0,
+                    Time = "4/4",
+                    BarsReferenceList = "1"
+                }
+            ],
+            BarsById = new Dictionary<int, GpifBar>
+            {
+                [1] = new()
+                {
+                    Id = 1,
+                    VoicesReferenceList = "10"
+                }
+            },
+            VoicesById = new Dictionary<int, GpifVoice>
+            {
+                [10] = new()
+                {
+                    Id = 10,
+                    BeatsReferenceList = "100"
+                }
+            },
+            BeatsById = new Dictionary<int, GpifBeat>
+            {
+                [100] = new()
+                {
+                    Id = 100,
+                    RhythmRef = 1000
+                }
+            },
+            RhythmsById = new Dictionary<int, GpifRhythm>
+            {
+                [1000] = new()
+                {
+                    Id = 1000,
+                    NoteValue = "Quarter"
+                }
+            }
+        };
+
+        await using var buffer = new MemoryStream();
+        await new XmlGpifSerializer().SerializeAsync(document, buffer, TestContext.Current.CancellationToken);
+
+        var xml = Encoding.UTF8.GetString(buffer.ToArray());
+        xml.Should().Contain("<Score><Title><![CDATA[New]]></Title><Artist><![CDATA[A]]></Artist><Album><![CDATA[B]]></Album></Score>");
+        xml.Should().Contain("<MasterTrack><Tracks>0</Tracks></MasterTrack>");
+        xml.Should().Contain("<Track id=\"0\"><Name>New Track</Name></Track>");
+        xml.Should().NotContain("Old Track");
+        xml.Should().NotContain("<Tracks>99</Tracks>");
     }
 }

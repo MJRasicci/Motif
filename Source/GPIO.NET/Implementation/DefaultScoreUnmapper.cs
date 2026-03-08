@@ -20,6 +20,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
             .OrderBy(t => t.Id)
             .Select(t => new GpifTrack
             {
+                Xml = t.Metadata.Xml,
                 Id = t.Id,
                 Name = t.Name,
                 ShortName = t.Metadata.ShortName,
@@ -256,6 +257,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
 
                                     var noteCandidate = new GpifNote
                                     {
+                                        Xml = note.Xml,
                                         Id = 0,
                                         Velocity = note.Velocity,
                                         MidiPitch = note.MidiPitch,
@@ -367,6 +369,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
 
                             var beatCandidate = new GpifBeat
                             {
+                                Xml = beat.Xml,
                                 Id = 0,
                                 RhythmRef = currentRhythmId,
                                 NotesReferenceList = ReferenceListFormatter.JoinRefs(noteRefs),
@@ -441,6 +444,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
 
                         var voiceCandidate = new GpifVoice
                         {
+                            Xml = measureVoice.Xml,
                             Id = 0,
                             BeatsReferenceList = ReferenceListFormatter.JoinRefs(beatIds),
                             Properties = measureVoice.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
@@ -469,6 +473,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
 
                     var barCandidate = new GpifBar
                     {
+                        Xml = staffBar.BarXml,
                         Id = 0,
                         VoicesReferenceList = ReferenceListFormatter.JoinRefs(voiceSlots),
                         Clef = staffBar.Clef,
@@ -502,6 +507,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                 {
                     masterBars.Add(new GpifMasterBar
                     {
+                        Xml = measure.MasterBarXml,
                         Index = m,
                         Time = measure.TimeSignature,
                         DoubleBar = measure.DoubleBar,
@@ -541,6 +547,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                 var existing = masterBars[m];
                 masterBars[m] = new GpifMasterBar
                 {
+                    Xml = existing.Xml,
                     Index = existing.Index,
                     Time = existing.Time,
                     DoubleBar = existing.DoubleBar,
@@ -584,6 +591,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
             EncodingDescription = score.Metadata.EncodingDescription,
             Score = new ScoreInfo
             {
+                Xml = score.Metadata.ScoreXml,
                 ExplicitEmptyOptionalElements = score.Metadata.ExplicitEmptyOptionalElements,
                 Title = score.Title,
                 SubTitle = score.Metadata.SubTitle,
@@ -609,6 +617,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
             },
             MasterTrack = new GpifMasterTrack
             {
+                Xml = score.MasterTrack.Xml,
                 TrackIds = score.MasterTrack.TrackIds,
                 AutomationsXml = score.MasterTrack.AutomationsXml,
                 Automations = score.MasterTrack.Automations.Select(a => new GpifAutomation
@@ -1055,6 +1064,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
         {
             new()
             {
+                BarXml = measure.BarXml,
                 StaffIndex = 0,
                 SourceBarId = measure.SourceBarId,
                 Clef = measure.Clef,
@@ -1238,6 +1248,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
     private static GpifBar WithBarId(GpifBar bar, int id)
         => new()
         {
+            Xml = bar.Xml,
             Id = id,
             VoicesReferenceList = bar.VoicesReferenceList,
             Clef = bar.Clef,
@@ -1250,6 +1261,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
     private static GpifVoice WithVoiceId(GpifVoice voice, int id)
         => new()
         {
+            Xml = voice.Xml,
             Id = id,
             BeatsReferenceList = voice.BeatsReferenceList,
             Properties = voice.Properties,
@@ -1259,6 +1271,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
     private static GpifBeat WithBeatId(GpifBeat beat, int id)
         => new()
         {
+            Xml = beat.Xml,
             Id = id,
             RhythmRef = beat.RhythmRef,
             NotesReferenceList = beat.NotesReferenceList,
@@ -1314,6 +1327,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
     private static GpifNote WithNoteId(GpifNote note, int id)
         => new()
         {
+            Xml = note.Xml,
             Id = id,
             Velocity = note.Velocity,
             MidiPitch = note.MidiPitch,
@@ -1332,6 +1346,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
     private static GpifRhythm WithRhythmId(GpifRhythm rhythm, int id)
         => new()
         {
+            Xml = rhythm.Xml,
             Id = id,
             NoteValue = rhythm.NoteValue,
             AugmentationDots = rhythm.AugmentationDots,
@@ -1517,6 +1532,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
 
         var sourceRhythm = new GpifRhythm
         {
+            Xml = beat.SourceRhythm.Xml,
             Id = 0,
             NoteValue = beat.SourceRhythm.NoteValue,
             AugmentationDots = beat.SourceRhythm.AugmentationDots,

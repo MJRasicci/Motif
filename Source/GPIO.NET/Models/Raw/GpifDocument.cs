@@ -51,6 +51,8 @@ public sealed class GpifRevisionInfo
 
 public sealed class ScoreInfo
 {
+    public string Xml { get; init; } = string.Empty;
+
     public string[] ExplicitEmptyOptionalElements { get; init; } = Array.Empty<string>();
 
     public string Title { get; init; } = string.Empty;
@@ -98,6 +100,8 @@ public sealed class ScoreInfo
 
 public sealed class GpifTrack
 {
+    public string Xml { get; init; } = string.Empty;
+
     public int Id { get; init; }
 
     public string Name { get; init; } = string.Empty;
@@ -202,6 +206,8 @@ public sealed class GpifStaff
 
 public sealed class GpifMasterBar
 {
+    public string Xml { get; init; } = string.Empty;
+
     public int Index { get; init; }
 
     public string Time { get; init; } = string.Empty;
@@ -266,6 +272,8 @@ public sealed class GpifFermata
 
 public sealed class GpifBar
 {
+    public string Xml { get; init; } = string.Empty;
+
     public int Id { get; init; }
 
     public string VoicesReferenceList { get; init; } = string.Empty;
@@ -283,6 +291,8 @@ public sealed class GpifBar
 
 public sealed class GpifVoice
 {
+    public string Xml { get; init; } = string.Empty;
+
     public int Id { get; init; }
 
     public string BeatsReferenceList { get; init; } = string.Empty;
@@ -294,6 +304,8 @@ public sealed class GpifVoice
 
 public sealed class GpifBeat
 {
+    public string Xml { get; init; } = string.Empty;
+
     public int Id { get; init; }
 
     public int RhythmRef { get; init; }
@@ -397,6 +409,8 @@ public sealed class GpifBeat
 
 public sealed class GpifNote
 {
+    public string Xml { get; init; } = string.Empty;
+
     public int Id { get; init; }
 
     public int? Velocity { get; init; }
@@ -521,6 +535,8 @@ public sealed class GpifNoteArticulation
 
 public sealed class GpifRhythm
 {
+    public string Xml { get; init; } = string.Empty;
+
     public int Id { get; init; }
 
     public string NoteValue { get; init; } = string.Empty;

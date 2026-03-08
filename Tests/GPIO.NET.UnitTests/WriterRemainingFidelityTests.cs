@@ -18,13 +18,25 @@ public class WriterRemainingFidelityTests
 
     private static async Task<XDocument> RoundTripThroughWrite(GuitarProScore score)
     {
+        var xml = await RoundTripThroughWriteText(score);
+        return XDocument.Parse(xml);
+    }
+
+    private static async Task<string> RoundTripThroughWriteText(GuitarProScore score)
+    {
         var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
         await using var stream = new MemoryStream();
         await new XmlGpifSerializer().SerializeAsync(result.RawDocument, stream, TestContext.Current.CancellationToken);
-        return XDocument.Parse(Encoding.UTF8.GetString(stream.ToArray()));
+        return Encoding.UTF8.GetString(stream.ToArray());
     }
 
     private static async Task<XDocument> RoundTripThroughJsonAndWrite(string gpif)
+    {
+        var xml = await RoundTripThroughJsonAndWriteText(gpif);
+        return XDocument.Parse(xml);
+    }
+
+    private static async Task<string> RoundTripThroughJsonAndWriteText(string gpif)
     {
         var score = await DeserializeAndMap(gpif);
         var json = score.ToJson(indented: false);
@@ -34,7 +46,7 @@ public class WriterRemainingFidelityTests
         });
 
         fromJson.Should().NotBeNull();
-        return await RoundTripThroughWrite(fromJson!);
+        return await RoundTripThroughWriteText(fromJson!);
     }
 
     [Fact]
@@ -165,6 +177,100 @@ public class WriterRemainingFidelityTests
         scoreElement.Element("PageFooter")!.Nodes().OfType<XCData>().Select(node => node.Value).Should().ContainSingle("<html>Page %page%/%pages%</html>");
         scoreElement.Element("ScoreSystemsDefaultLayout")!.Nodes().OfType<XCData>().Should().BeEmpty();
         scoreElement.Element("MultiVoice")!.Nodes().OfType<XCData>().Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Empty_section_cdata_with_internal_line_breaks_round_trips_as_empty()
+    {
+        const string gpif = """
+        <GPIF>
+          <Score><Title>T</Title><Artist>A</Artist><Album>B</Album></Score>
+          <MasterTrack><Tracks>0</Tracks></MasterTrack>
+          <Tracks><Track id="0"><Name>Track</Name></Track></Tracks>
+          <MasterBars>
+            <MasterBar>
+              <Time>4/4</Time>
+              <Section>
+                <Letter>
+                  <![CDATA[]]>
+                </Letter>
+                <Text>
+                  <![CDATA[]]>
+                </Text>
+              </Section>
+              <Bars>1</Bars>
+            </MasterBar>
+          </MasterBars>
+          <Bars><Bar id="1"><Voices>10</Voices></Bar></Bars>
+          <Voices><Voice id="10"><Beats>100</Beats></Voice></Voices>
+          <Rhythms><Rhythm id="1000"><NoteValue>Quarter</NoteValue></Rhythm></Rhythms>
+          <Beats><Beat id="100"><Rhythm ref="1000" /></Beat></Beats>
+          <Notes />
+        </GPIF>
+        """;
+
+        var score = await DeserializeAndMap(gpif);
+        var measure = score.Tracks[0].Measures[0];
+
+        measure.SectionLetter.Should().BeEmpty();
+        measure.SectionText.Should().BeEmpty();
+        measure.HasExplicitEmptySection.Should().BeTrue();
+
+        var roundTrip = await RoundTripThroughJsonAndWrite(gpif);
+        var section = roundTrip.Root!.Element("MasterBars")!.Element("MasterBar")!.Element("Section")!;
+        section.Element("Letter")!.Value.Should().BeEmpty();
+        section.Element("Text")!.Value.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Packed_structural_node_shapes_round_trip_through_json_write_path()
+    {
+        const string gpif = """
+        <GPIF>
+          <Score><Title>T</Title><Artist>A</Artist><Album>B</Album></Score>
+          <MasterTrack><Tracks>0</Tracks></MasterTrack>
+          <Tracks><Track id="0"><Name>Track</Name></Track></Tracks>
+          <MasterBars><MasterBar><Time>4/4</Time><FreeTime /><Bars>1</Bars></MasterBar></MasterBars>
+          <Bars><Bar id="1"><Voices>10</Voices><Clef>G2</Clef></Bar></Bars>
+          <Voices><Voice id="10"><Beats>100</Beats></Voice></Voices>
+          <Beats><Beat id="100"><Rhythm ref="1000" /><FreeText><![CDATA[Dist.]]></FreeText><Notes>200</Notes></Beat></Beats>
+          <Notes><Note id="200"><Properties><Property name="ConcertPitch"><Pitch><Step>E</Step><Accidental></Accidental><Octave>4</Octave></Pitch></Property><Property name="Midi"><Number>64</Number></Property><Property name="String"><String>1</String></Property><Property name="Fret"><Fret>0</Fret></Property></Properties></Note></Notes>
+          <Rhythms><Rhythm id="1000"><NoteValue>Eighth</NoteValue><AugmentationDot count="1" /></Rhythm></Rhythms>
+        </GPIF>
+        """;
+
+        var score = await DeserializeAndMap(gpif);
+        var json = score.ToJson(indented: false);
+        var fromJson = JsonSerializer.Deserialize<GuitarProScore>(json, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        fromJson.Should().NotBeNull();
+        score.Metadata.ScoreXml.Should().Contain("<Score><Title>T</Title><Artist>A</Artist><Album>B</Album></Score>");
+        score.MasterTrack.Xml.Should().Contain("<MasterTrack><Tracks>0</Tracks></MasterTrack>");
+        score.Tracks[0].Metadata.Xml.Should().Contain("<Track id=\"0\"><Name>Track</Name></Track>");
+        score.Tracks[0].Measures[0].MasterBarXml.Should().Contain("<MasterBar><Time>4/4</Time><FreeTime /><Bars>1</Bars></MasterBar>");
+        score.Tracks[0].Measures[0].Voices[0].Xml.Should().Contain("<Voice id=\"10\"><Beats>100</Beats></Voice>");
+        score.Tracks[0].Measures[0].Beats[0].Xml.Should().Contain("<Beat id=\"100\"><Rhythm ref=\"1000\" /><FreeText><![CDATA[Dist.]]></FreeText><Notes>200</Notes></Beat>");
+        score.Tracks[0].Measures[0].Beats[0].SourceRhythm!.Xml.Should().Contain("<Rhythm id=\"1000\"><NoteValue>Eighth</NoteValue><AugmentationDot count=\"1\" /></Rhythm>");
+        fromJson!.Metadata.ScoreXml.Should().Contain("<Score><Title>T</Title><Artist>A</Artist><Album>B</Album></Score>");
+        fromJson.MasterTrack.Xml.Should().Contain("<MasterTrack><Tracks>0</Tracks></MasterTrack>");
+        fromJson.Tracks[0].Metadata.Xml.Should().Contain("<Track id=\"0\"><Name>Track</Name></Track>");
+        fromJson!.Tracks[0].Measures[0].MasterBarXml.Should().Contain("<MasterBar><Time>4/4</Time><FreeTime /><Bars>1</Bars></MasterBar>");
+        fromJson.Tracks[0].Measures[0].Voices[0].Xml.Should().Contain("<Voice id=\"10\"><Beats>100</Beats></Voice>");
+        fromJson.Tracks[0].Measures[0].Beats[0].Xml.Should().Contain("<Beat id=\"100\"><Rhythm ref=\"1000\" /><FreeText><![CDATA[Dist.]]></FreeText><Notes>200</Notes></Beat>");
+        fromJson.Tracks[0].Measures[0].Beats[0].SourceRhythm!.Xml.Should().Contain("<Rhythm id=\"1000\"><NoteValue>Eighth</NoteValue><AugmentationDot count=\"1\" /></Rhythm>");
+
+        var xml = await RoundTripThroughWriteText(fromJson);
+
+        xml.Should().Contain("<Score><Title>T</Title><Artist>A</Artist><Album>B</Album></Score>");
+        xml.Should().Contain("<MasterTrack><Tracks>0</Tracks></MasterTrack>");
+        xml.Should().Contain("<Track id=\"0\"><Name>Track</Name></Track>");
+        xml.Should().Contain("<MasterBar><Time>4/4</Time><FreeTime /><Bars>1</Bars></MasterBar>");
+        xml.Should().Contain("<Voice id=\"10\"><Beats>100</Beats></Voice>");
+        xml.Should().Contain("<Beat id=\"100\"><Rhythm ref=\"1000\" /><FreeText><![CDATA[Dist.]]></FreeText><Notes>200</Notes></Beat>");
+        xml.Should().Contain("<Rhythm id=\"1000\"><NoteValue>Eighth</NoteValue><AugmentationDot count=\"1\" /></Rhythm>");
     }
 
     [Fact]

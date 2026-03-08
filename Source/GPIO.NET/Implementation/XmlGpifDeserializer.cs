@@ -10,7 +10,7 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var doc = XDocument.Load(scoreStream);
+        var doc = XDocument.Load(scoreStream, LoadOptions.PreserveWhitespace);
         var root = doc.Root ?? throw new InvalidDataException("GPIF root element missing.");
 
         var score = root.Element("Score");
@@ -63,6 +63,7 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
 
                 return new GpifTrack
                 {
+                    Xml = t.ToString(SaveOptions.DisableFormatting),
                     Id = ParseInt(t.Attribute("id")?.Value),
                     Name = t.Element("Name")?.Value ?? string.Empty,
                     ShortName = t.Element("ShortName")?.Value ?? string.Empty,
@@ -137,6 +138,7 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
 
                 return new GpifMasterBar
                 {
+                    Xml = mb.ToString(SaveOptions.DisableFormatting),
                     Index = index,
                     Time = mb.Element("Time")?.Value ?? string.Empty,
                     DoubleBar = mb.Element("DoubleBar") is not null,
@@ -150,11 +152,11 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                     RepeatEndAttributePresent = repeat?.Attribute("end") is not null,
                     RepeatCount = ParseInt(repeat?.Attribute("count")?.Value),
                     RepeatCountAttributePresent = repeat?.Attribute("count") is not null,
-                    SectionLetter = section?.Element("Letter")?.Value ?? string.Empty,
-                    SectionText = section?.Element("Text")?.Value ?? string.Empty,
+                    SectionLetter = ReadDirectTextValue(section?.Element("Letter")),
+                    SectionText = ReadDirectTextValue(section?.Element("Text")),
                     HasExplicitEmptySection = section is not null
                         && section.Elements().Any()
-                        && section.Elements().All(child => child.Value.Length == 0),
+                        && section.Elements().All(child => ReadDirectTextValue(child).Length == 0),
                     Jump = directions?.Element("Jump")?.Value ?? string.Empty,
                     Target = directions?.Element("Target")?.Value ?? string.Empty,
                     DirectionProperties = directionProps,
@@ -178,6 +180,7 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
 
                 return new GpifBar
                 {
+                    Xml = b.ToString(SaveOptions.DisableFormatting),
                     Id = ParseInt(b.Attribute("id")?.Value),
                     VoicesReferenceList = b.Element("Voices")?.Value ?? string.Empty,
                     Clef = b.Element("Clef")?.Value ?? string.Empty,
@@ -199,6 +202,7 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
                     .ToArray();
                 return new GpifVoice
                 {
+                    Xml = v.ToString(SaveOptions.DisableFormatting),
                     Id = ParseInt(v.Attribute("id")?.Value),
                     BeatsReferenceList = v.Element("Beats")?.Value ?? string.Empty,
                     Properties = props,
@@ -215,6 +219,7 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
 
                 return new GpifRhythm
                 {
+                    Xml = r.ToString(SaveOptions.DisableFormatting),
                     Id = ParseInt(r.Attribute("id")?.Value),
                     NoteValue = r.Element("NoteValue")?.Value ?? string.Empty,
                     AugmentationDots = r.Elements("AugmentationDot")
@@ -239,6 +244,7 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
 
                 return new GpifNote
                 {
+                    Xml = n.ToString(SaveOptions.DisableFormatting),
                     Id = ParseInt(n.Attribute("id")?.Value),
                     Velocity = TryParseNullableInt(n.Element("Velocity")?.Value),
                     MidiPitch = ParseNamedNumberProperty(n, "Midi") ?? ParseMidiPitch(n),
@@ -319,6 +325,7 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
 
                 return new GpifBeat
                 {
+                    Xml = b.ToString(SaveOptions.DisableFormatting),
                     Id = ParseInt(b.Attribute("id")?.Value),
                     RhythmRef = ParseInt(b.Element("Rhythm")?.Attribute("ref")?.Value),
                     NotesReferenceList = b.Element("Notes")?.Value ?? string.Empty,
@@ -389,22 +396,23 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
             EncodingDescription = root.Element("Encoding")?.Element("EncodingDescription")?.Value ?? string.Empty,
             Score = new ScoreInfo
             {
+                Xml = score?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                 ExplicitEmptyOptionalElements = ParseExplicitEmptyOptionalScoreElements(score),
-                Title = score?.Element("Title")?.Value ?? string.Empty,
-                SubTitle = score?.Element("SubTitle")?.Value ?? string.Empty,
-                Artist = score?.Element("Artist")?.Value ?? string.Empty,
-                Album = score?.Element("Album")?.Value ?? string.Empty,
-                Words = score?.Element("Words")?.Value ?? string.Empty,
-                Music = score?.Element("Music")?.Value ?? string.Empty,
-                WordsAndMusic = score?.Element("WordsAndMusic")?.Value ?? string.Empty,
-                Copyright = score?.Element("Copyright")?.Value ?? string.Empty,
-                Tabber = score?.Element("Tabber")?.Value ?? string.Empty,
-                Instructions = score?.Element("Instructions")?.Value ?? string.Empty,
-                Notices = score?.Element("Notices")?.Value ?? string.Empty,
-                FirstPageHeader = score?.Element("FirstPageHeader")?.Value ?? string.Empty,
-                FirstPageFooter = score?.Element("FirstPageFooter")?.Value ?? string.Empty,
-                PageHeader = score?.Element("PageHeader")?.Value ?? string.Empty,
-                PageFooter = score?.Element("PageFooter")?.Value ?? string.Empty,
+                Title = ReadDirectTextValue(score?.Element("Title")),
+                SubTitle = ReadDirectTextValue(score?.Element("SubTitle")),
+                Artist = ReadDirectTextValue(score?.Element("Artist")),
+                Album = ReadDirectTextValue(score?.Element("Album")),
+                Words = ReadDirectTextValue(score?.Element("Words")),
+                Music = ReadDirectTextValue(score?.Element("Music")),
+                WordsAndMusic = ReadDirectTextValue(score?.Element("WordsAndMusic")),
+                Copyright = ReadDirectTextValue(score?.Element("Copyright")),
+                Tabber = ReadDirectTextValue(score?.Element("Tabber")),
+                Instructions = ReadDirectTextValue(score?.Element("Instructions")),
+                Notices = ReadDirectTextValue(score?.Element("Notices")),
+                FirstPageHeader = ReadDirectTextValue(score?.Element("FirstPageHeader")),
+                FirstPageFooter = ReadDirectTextValue(score?.Element("FirstPageFooter")),
+                PageHeader = ReadDirectTextValue(score?.Element("PageHeader")),
+                PageFooter = ReadDirectTextValue(score?.Element("PageFooter")),
                 ScoreSystemsDefaultLayout = score?.Element("ScoreSystemsDefaultLayout")?.Value ?? string.Empty,
                 ScoreSystemsLayout = score?.Element("ScoreSystemsLayout")?.Value ?? string.Empty,
                 ScoreZoomPolicy = score?.Element("ScoreZoomPolicy")?.Value ?? string.Empty,
@@ -414,6 +422,7 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
             },
             MasterTrack = new GpifMasterTrack
             {
+                Xml = masterTrack?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                 TrackIds = SplitInts(masterTrack?.Element("Tracks")?.Value),
                 AutomationsXml = masterTrack?.Element("Automations")?.ToString(SaveOptions.DisableFormatting) ?? string.Empty,
                 Automations = ParseAutomations(masterTrack?.Element("Automations")),
@@ -486,6 +495,34 @@ public sealed class XmlGpifDeserializer : IGpifDeserializer
 
     private static bool ParseBool(string? value)
         => bool.TryParse(value, out var result) && result;
+
+    private static string ReadDirectTextValue(XElement? element)
+    {
+        if (element is null)
+        {
+            return string.Empty;
+        }
+
+        var cdataNodes = element.Nodes().OfType<XCData>().ToArray();
+        if (cdataNodes.Length > 0)
+        {
+            return string.Concat(cdataNodes.Select(node => node.Value));
+        }
+
+        var textNodes = element.Nodes().OfType<XText>().Select(node => node.Value).ToArray();
+        if (textNodes.Length <= 1)
+        {
+            return element.Value;
+        }
+
+        var nonWhitespaceText = textNodes
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+
+        return nonWhitespaceText.Length > 0 && nonWhitespaceText.Length < textNodes.Length
+            ? string.Concat(nonWhitespaceText)
+            : string.Concat(textNodes);
+    }
 
     private static int? ParseMidiPitch(XElement note)
     {

@@ -42,6 +42,16 @@ internal static class GpifXmlDifferenceComparer
         return differences;
     }
 
+    public static IReadOnlyList<GpifXmlDifference> Compare(XElement sourceElement, XElement outputElement)
+    {
+        ArgumentNullException.ThrowIfNull(sourceElement);
+        ArgumentNullException.ThrowIfNull(outputElement);
+
+        var differences = new List<GpifXmlDifference>();
+        CompareElements(sourceElement, outputElement, $"/{sourceElement.Name.LocalName}", differences);
+        return differences;
+    }
+
     private static void CompareElements(
         XElement sourceElement,
         XElement outputElement,

@@ -47,6 +47,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
                     Name = track.Name,
                     Metadata = new TrackMetadata
                     {
+                        Xml = track.Xml,
                         ShortName = track.ShortName,
                         HasExplicitEmptyShortName = track.HasExplicitEmptyShortName,
                         Color = track.Color,
@@ -213,6 +214,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
             Album = source.Score.Album,
             MasterTrack = new MasterTrackMetadata
             {
+                Xml = source.MasterTrack.Xml,
                 TrackIds = source.MasterTrack.TrackIds,
                 AutomationsXml = source.MasterTrack.AutomationsXml,
                 Automations = masterAutomations,
@@ -233,6 +235,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
             },
             Metadata = new ScoreMetadata
             {
+                ScoreXml = source.Score.Xml,
                 ExplicitEmptyOptionalElements = source.Score.ExplicitEmptyOptionalElements,
                 GpVersion = source.GpVersion,
                 GpRevisionXml = source.GpRevision.Xml,
@@ -323,6 +326,8 @@ public sealed class DefaultScoreMapper : IScoreMapper
 
             measures.Add(new MeasureModel
             {
+                MasterBarXml = masterBar.Xml,
+                BarXml = primaryStaff?.BarXml ?? string.Empty,
                 Index = masterBar.Index,
                 TimeSignature = masterBar.Time,
                 DoubleBar = masterBar.DoubleBar,
@@ -393,6 +398,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
             var mappedBeats = MapVoiceBeats(source, track, voice, isStringedTrack);
             voices.Add(new MeasureVoiceModel
             {
+                Xml = voice.Xml,
                 VoiceIndex = voiceIndex,
                 SourceVoiceId = voice.Id,
                 Properties = voice.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
@@ -407,6 +413,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
 
         return new MeasureStaffModel
         {
+            BarXml = bar.Xml,
             StaffIndex = staffIndex,
             SourceBarId = bar.Id,
             Clef = bar.Clef,
@@ -458,6 +465,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
 
                     return new NoteModel
                     {
+                        Xml = n.Xml,
                         Id = n.Id,
                         Velocity = n.Velocity,
                         MidiPitch = n.MidiPitch,
@@ -512,6 +520,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
 
             beats.Add(new BeatModel
             {
+                Xml = beat.Xml,
                 Id = beat.Id,
                 SourceRhythmId = beat.RhythmRef,
                 SourceRhythm = MapRhythmShape(source, beat.RhythmRef),
@@ -578,6 +587,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
 
         return new RhythmShapeModel
         {
+            Xml = rhythm.Xml,
             NoteValue = rhythm.NoteValue,
             AugmentationDots = rhythm.AugmentationDots,
             AugmentationDotUsesCountAttribute = rhythm.AugmentationDotUsesCountAttribute,

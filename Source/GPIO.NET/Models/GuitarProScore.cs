@@ -33,6 +33,8 @@ public sealed class TrackModel
 
 public sealed class ScoreMetadata
 {
+    public string ScoreXml { get; init; } = string.Empty;
+
     public string[] ExplicitEmptyOptionalElements { get; init; } = Array.Empty<string>();
 
     public string GpVersion { get; init; } = string.Empty;
@@ -94,6 +96,8 @@ public sealed class ScoreMetadata
 
 public sealed class TrackMetadata
 {
+    public string Xml { get; init; } = string.Empty;
+
     public string ShortName { get; init; } = string.Empty;
 
     public bool HasExplicitEmptyShortName { get; init; }
@@ -353,6 +357,8 @@ public sealed class AutomationMetadata
 
 public sealed class MasterTrackMetadata
 {
+    public string Xml { get; init; } = string.Empty;
+
     public int[] TrackIds { get; init; } = Array.Empty<int>();
 
     public string AutomationsXml { get; init; } = string.Empty;
@@ -467,6 +473,10 @@ public enum DynamicKind
 
 public sealed class MeasureModel
 {
+    public string MasterBarXml { get; init; } = string.Empty;
+
+    public string BarXml { get; init; } = string.Empty;
+
     public int Index { get; init; }
 
     public string TimeSignature { get; init; } = string.Empty;
@@ -538,6 +548,8 @@ public sealed class MeasureModel
 
 public sealed class MeasureStaffModel
 {
+    public string BarXml { get; init; } = string.Empty;
+
     public int StaffIndex { get; init; }
 
     public int SourceBarId { get; init; }
@@ -559,6 +571,8 @@ public sealed class MeasureStaffModel
 
 public sealed class MeasureVoiceModel
 {
+    public string Xml { get; init; } = string.Empty;
+
     public int VoiceIndex { get; init; }
 
     public int SourceVoiceId { get; init; }
@@ -572,6 +586,8 @@ public sealed class MeasureVoiceModel
 
 public sealed class RhythmShapeModel
 {
+    public string Xml { get; init; } = string.Empty;
+
     public string NoteValue { get; init; } = string.Empty;
 
     public int AugmentationDots { get; init; }
@@ -603,6 +619,8 @@ public sealed class FermataMetadata
 
 public sealed class BeatModel
 {
+    public string Xml { get; init; } = string.Empty;
+
     public int Id { get; init; }
 
     public int SourceRhythmId { get; init; } = -1;
@@ -704,6 +722,8 @@ public sealed class BeatModel
 
 public sealed class NoteModel
 {
+    public string Xml { get; init; } = string.Empty;
+
     public int Id { get; init; }
 
     public int? Velocity { get; init; }
