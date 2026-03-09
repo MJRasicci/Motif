@@ -41,6 +41,13 @@ The following are explicitly out of scope for v1:
   - CLI capabilities and limitations
 - [ ] Add/verify NuGet package metadata for all shipping packages
 
+### Progress Update — 2026-03-09
+
+- [x] Move the GP read/write pipeline out of `Motif.Core` and into `Motif.Extensions.GuitarPro`
+- [x] Move the GP-focused test suite into `Motif.Extensions.GuitarPro.UnitTests`
+- [x] Finish the namespace migration from `GPIO.NET` to `Motif*` across Core, Guitar Pro, and CLI code
+- [ ] Remaining rename work: public type/API cleanup, package metadata/package IDs, and any last documentation/badge references
+
 ---
 
 # Step 0 — Resolve Design Decisions That Shape the Core Model
@@ -271,38 +278,38 @@ Move all `.gp`, GPIF, archive, mapping, and GP-specific diagnostics concerns out
 
 ## Move to `Motif.Extensions.GuitarPro`
 
-* [ ] `Models/Raw/` (all GPIF XML model types)
-* [ ] `Implementation/` GP-specific archive, serializer, deserializer, mapping, and unmapping logic
-* [ ] GP-specific abstractions
-* [ ] `GuitarProReader`
-* [ ] `GuitarProWriter`
-* [ ] `GpReadOptions`
-* [ ] `Resources/DefaultTemplate.gp`
-* [ ] `Utilities/ReferenceListParser`
-* [ ] `Utilities/ReferenceListFormatter`
-* [ ] `Utilities/ArticulationDecoders`
-* [ ] `GpifWriteFidelityDiagnostics`
-* [ ] `GpifXmlDifferenceComparer`
+* [x] `Models/Raw/` (all GPIF XML model types)
+* [x] `Implementation/` GP-specific archive, serializer, deserializer, mapping, and unmapping logic
+* [x] GP-specific abstractions
+* [x] `GuitarProReader`
+* [x] `GuitarProWriter`
+* [x] `GpReadOptions`
+* [x] `Resources/DefaultTemplate.gp`
+* [x] `Utilities/ReferenceListParser`
+* [x] `Utilities/ReferenceListFormatter`
+* [x] `Utilities/ArticulationDecoders`
+* [x] `GpifWriteFidelityDiagnostics`
+* [x] `GpifXmlDifferenceComparer`
 
 ## Explicitly GP-Specific Interfaces/Types to Move or Remove
 
 These names are generic today, but the contracts are not.
 
-* [ ] `IScoreMapper` — currently maps `GpifDocument -> GuitarProScore`; move to GuitarPro if it remains
-* [ ] `IScoreUnmapper` — currently maps `GuitarProScore -> GpifDocument`; move to GuitarPro if it remains
+* [x] `IScoreMapper` — currently maps `GpifDocument -> GuitarProScore`; move to GuitarPro if it remains
+* [x] `IScoreUnmapper` — currently maps `GuitarProScore -> GpifDocument`; move to GuitarPro if it remains
 * [ ] Remove mapper/unmapper interfaces entirely if `IScoreReader` / `IScoreWriter` make them unnecessary public surface
 
 ## Keep in `Motif.Core` Only If Truly Format-Agnostic
 
 * [ ] Navigation abstractions and traversal logic after refactoring away from GPIF inputs
 * [ ] Format-agnostic diagnostics models such as `WriteDiagnostics` and `WriteDiagnosticEntry`
-* [ ] JSON serialization of the Core domain model
+* [x] JSON serialization of the Core domain model
 
 ## Do Not Keep in Core
 
-* [ ] `WriteResult` in its current form, because it contains `GpifDocument` directly
-* [ ] Any GPIF/archive/XML implementation detail
-* [ ] Any utility that encodes GPIF-specific syntax or semantics
+* [x] `WriteResult` in its current form, because it contains `GpifDocument` directly
+* [x] Any GPIF/archive/XML implementation detail
+* [x] Any utility that encodes GPIF-specific syntax or semantics
 
 ## JSON Serialization Clarification
 
@@ -310,21 +317,21 @@ Current JSON types serialize the domain model rather than GPIF transport types.
 
 ### Core Candidates
 
-* [ ] `GpioJsonContext.cs` (rename appropriately for Motif)
-* [ ] `GuitarProScoreJson.cs` / `ToJson()` extension if it serializes the domain model rather than GP-only transport state
+* [x] `MotifJsonContext.cs` (renamed from `GpioJsonContext.cs`)
+* [x] `GuitarProScoreJson.cs` / `ToJson()` extension if it serializes the domain model rather than GP-only transport state
 
 ### Required Work
 
-* [ ] Rename JSON serialization components to match Motif naming
-* [ ] Ensure JSON serialization targets the Core model, not GPIF implementation types
-* [ ] Keep JSON APIs in Core only if they represent serialization of the domain model itself
+* [x] Rename JSON serialization components to match Motif naming
+* [x] Ensure JSON serialization targets the Core model, not GPIF implementation types
+* [x] Keep JSON APIs in Core only if they represent serialization of the domain model itself
 
 ## Acceptance Criteria
 
-* [ ] `Motif.Core` has no dependency on GPIF/archive/XML implementation details
-* [ ] `Motif.Extensions.GuitarPro` fully owns `.gp` read/write behavior
-* [ ] JSON serialization of the domain model remains available from Core
-* [ ] Removing the GuitarPro package does not break Core
+* [x] `Motif.Core` has no dependency on GPIF/archive/XML implementation details
+* [x] `Motif.Extensions.GuitarPro` fully owns `.gp` read/write behavior
+* [x] JSON serialization of the domain model remains available from Core
+* [x] Removing the GuitarPro package does not break Core
 
 ---
 
@@ -398,15 +405,15 @@ Convert the CLI into a host for Core + extension packages rather than a GP-only 
 
 ## Requirements
 
-* [ ] Update project references to the new package layout
-* [ ] Rename namespaces and binary output to Motif naming
+* [x] Update project references to the new package layout
+* [x] Rename namespaces and binary output to Motif naming
 * [ ] Route format selection by file extension or explicit argument
 * [ ] Keep current `.gp` workflows simple while allowing future formats
 
 ## Acceptance Criteria
 
-* [ ] CLI works with `Motif.Core` + `Motif.Extensions.GuitarPro`
-* [ ] CLI defaults remain simple for `.gp`
+* [x] CLI works with `Motif.Core` + `Motif.Extensions.GuitarPro`
+* [x] CLI defaults remain simple for `.gp`
 * [ ] CLI architecture can accept future formats without redesign
 
 ---
@@ -429,25 +436,29 @@ Tests/
 * [ ] Domain model construction and invariants
 * [ ] Value object behavior
 * [ ] Extension retrieval contracts
-* [ ] JSON serialization of the Core model
+* [x] JSON serialization of the Core model
 * [ ] Navigation logic after GPIF decoupling
 * [ ] Mutation/fidelity policy tests that belong to Core behavior
 
 ## GuitarPro Tests
 
-* [ ] Read/write behavior
-* [ ] Round-trip fidelity
-* [ ] Source cache preservation behavior
-* [ ] Mapping/unmapping correctness
-* [ ] GP-specific diagnostics utilities
-* [ ] Mutation scenarios that preserve or intentionally invalidate fidelity state
-* [ ] Public API surface tests for the GuitarPro package
+* [x] Read/write behavior
+* [x] Round-trip fidelity
+* [x] Source cache preservation behavior
+* [x] Mapping/unmapping correctness
+* [x] GP-specific diagnostics utilities
+* [x] Mutation scenarios that preserve or intentionally invalidate fidelity state
+* [x] Public API surface tests for the GuitarPro package
 
 ## Acceptance Criteria
 
-* [ ] Core tests do not depend on GP-specific implementation details
-* [ ] Guitar Pro tests validate the existing fidelity guarantees
-* [ ] Public API approval/surface tests exist for each public package
+* [x] Core tests do not depend on GP-specific implementation details
+* [x] Guitar Pro tests validate the existing fidelity guarantees
+* [x] Public API approval/surface tests exist for each public package
+
+### Next Step After This Split
+
+Core coverage is intentionally light until Steps 0-6 settle the shape of the format-agnostic model and reader/writer contracts. The next concrete work item is to design those Core abstractions, then grow Core-only tests around the finalized API rather than around Guitar Pro behavior.
 
 ---
 

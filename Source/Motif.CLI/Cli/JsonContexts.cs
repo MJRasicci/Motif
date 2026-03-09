@@ -1,7 +1,7 @@
-namespace GPIO.NET.Tool.Cli;
+namespace Motif.CLI;
 
-using GPIO.NET.Models;
-using GPIO.NET.Models.Write;
+using Motif.Models;
+using Motif.Extensions.GuitarPro.Models.Write;
 using System.Text.Json.Serialization;
 
 [JsonSourceGenerationOptions(WriteIndented = true, PropertyNameCaseInsensitive = true)]

@@ -4,11 +4,4 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="..\Motif.Extensions.GuitarPro\Resources\DefaultTemplate.gp">
-      <Link>Resources\DefaultTemplate.gp</Link>
-      <LogicalName>Motif.Core.Resources.DefaultTemplate.gp</LogicalName>
-    </EmbeddedResource>
-  </ItemGroup>
-
 </Project>

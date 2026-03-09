@@ -1,0 +1,172 @@
+namespace Motif.Extensions.GuitarPro.UnitTests;
+
+using FluentAssertions;
+using Motif.Extensions.GuitarPro.Implementation;
+using Motif.Models;
+using System.IO.Compression;
+using System.Text;
+
+public class WriterRoundTripTests
+{
+    [Fact]
+    public async Task Writer_creates_gp_archive_that_reader_can_open()
+    {
+        var score = new GuitarProScore
+        {
+            Title = "RoundTrip",
+            Artist = "GPIO",
+            Album = "Tests",
+            Tracks =
+            [
+                new TrackModel
+                {
+                    Id = 0,
+                    Name = "Guitar",
+                    Measures =
+                    [
+                        new MeasureModel
+                        {
+                            Index = 0,
+                            TimeSignature = "4/4",
+                            Beats =
+                            [
+                                new BeatModel
+                                {
+                                    Id = 1,
+                                    Duration = 0.25m,
+                                    Notes =
+                                    [
+                                        new NoteModel
+                                        {
+                                            Id = 1,
+                                            MidiPitch = 64,
+                                            Articulation = new NoteArticulationModel { LetRing = true }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var outFile = Path.Combine(Path.GetTempPath(), $"gpio-roundtrip-{Guid.NewGuid():N}.gp");
+        try
+        {
+            var writer = new Motif.Extensions.GuitarPro.GuitarProWriter();
+            await writer.WriteAsync(score, outFile, TestContext.Current.CancellationToken);
+
+            File.Exists(outFile).Should().BeTrue();
+
+            var reader = new Motif.Extensions.GuitarPro.GuitarProReader();
+            var readBack = await reader.ReadAsync(outFile, cancellationToken: TestContext.Current.CancellationToken);
+
+            readBack.Title.Should().Be("RoundTrip");
+            readBack.Tracks.Should().HaveCount(1);
+            readBack.Tracks[0].Measures.Should().NotBeEmpty();
+            readBack.Tracks[0].Measures[0].Beats.Should().NotBeEmpty();
+        }
+        finally
+        {
+            if (File.Exists(outFile))
+            {
+                File.Delete(outFile);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Archive_writer_updates_existing_archive_without_losing_non_gpif_entries()
+    {
+        var source = Path.Combine(AppContext.BaseDirectory, "Fixtures", "test.gp");
+        File.Exists(source).Should().BeTrue();
+
+        var output = Path.Combine(Path.GetTempPath(), $"gpio-roundtrip-template-{Guid.NewGuid():N}.gp");
+        try
+        {
+            File.Copy(source, output, overwrite: true);
+
+            var replacementGpif = Encoding.UTF8.GetBytes("<GPIF><Score /></GPIF>");
+            await using var gpifContent = new MemoryStream(replacementGpif);
+
+            var archiveWriter = new ZipGpArchiveWriter();
+            await archiveWriter.WriteArchiveAsync(gpifContent, output, TestContext.Current.CancellationToken);
+
+            using var sourceZip = ZipFile.OpenRead(source);
+            using var outputZip = ZipFile.OpenRead(output);
+
+            var sourceEntryNames = sourceZip.Entries.Select(e => e.FullName).ToArray();
+            var outputEntryNames = outputZip.Entries.Select(e => e.FullName).ToArray();
+            outputEntryNames.Should().BeEquivalentTo(sourceEntryNames);
+
+            foreach (var entryName in new[] { "Content/PartConfiguration", "Content/LayoutConfiguration", "Content/Preferences.json" })
+            {
+                var sourceEntry = sourceZip.GetEntry(entryName);
+                var outputEntry = outputZip.GetEntry(entryName);
+                sourceEntry.Should().NotBeNull();
+                outputEntry.Should().NotBeNull();
+
+                var sourceBytes = await ReadAllBytesAsync(sourceEntry!, TestContext.Current.CancellationToken);
+                var outputBytes = await ReadAllBytesAsync(outputEntry!, TestContext.Current.CancellationToken);
+                outputBytes.Should().Equal(sourceBytes, $"entry '{entryName}' payload should be preserved");
+            }
+
+            var scoreEntry = outputZip.GetEntry("Content/score.gpif");
+            scoreEntry.Should().NotBeNull();
+            var writtenGpif = await ReadAllBytesAsync(scoreEntry!, TestContext.Current.CancellationToken);
+            writtenGpif.Should().Equal(replacementGpif);
+        }
+        finally
+        {
+            if (File.Exists(output))
+            {
+                File.Delete(output);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Archive_writer_seeds_new_archive_from_default_template_when_output_does_not_exist()
+    {
+        var output = Path.Combine(Path.GetTempPath(), $"gpio-roundtrip-default-template-{Guid.NewGuid():N}.gp");
+        try
+        {
+            var replacementGpif = Encoding.UTF8.GetBytes("<GPIF><Score /></GPIF>");
+            await using var gpifContent = new MemoryStream(replacementGpif);
+
+            var archiveWriter = new ZipGpArchiveWriter();
+            await archiveWriter.WriteArchiveAsync(gpifContent, output, TestContext.Current.CancellationToken);
+
+            using var outputZip = ZipFile.OpenRead(output);
+            outputZip.Entries.Count.Should().BeGreaterThan(1);
+            outputZip.GetEntry("VERSION").Should().NotBeNull();
+            outputZip.GetEntry("meta.json").Should().NotBeNull();
+            outputZip.GetEntry("Content/Preferences.json").Should().NotBeNull();
+            outputZip.GetEntry("Content/LayoutConfiguration").Should().NotBeNull();
+            outputZip.GetEntry("Content/PartConfiguration").Should().NotBeNull();
+            outputZip.GetEntry("Content/Stylesheets/score.gpss").Should().NotBeNull();
+            outputZip.GetEntry("Content/ScoreViews/0.gpsv").Should().NotBeNull();
+
+            var scoreEntry = outputZip.GetEntry("Content/score.gpif");
+            scoreEntry.Should().NotBeNull();
+            var writtenGpif = await ReadAllBytesAsync(scoreEntry!, TestContext.Current.CancellationToken);
+            writtenGpif.Should().Equal(replacementGpif);
+        }
+        finally
+        {
+            if (File.Exists(output))
+            {
+                File.Delete(output);
+            }
+        }
+    }
+
+    private static async Task<byte[]> ReadAllBytesAsync(ZipArchiveEntry entry, CancellationToken cancellationToken)
+    {
+        await using var stream = entry.Open();
+        using var buffer = new MemoryStream();
+        await stream.CopyToAsync(buffer, cancellationToken);
+        return buffer.ToArray();
+    }
+}

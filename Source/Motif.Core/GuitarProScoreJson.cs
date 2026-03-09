@@ -1,6 +1,6 @@
-namespace GPIO.NET;
+namespace Motif;
 
-using GPIO.NET.Models;
+using Motif.Models;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -18,7 +18,7 @@ public static class GuitarProScoreJson
 
         if (indented && !ignoreNullValues && !ignoreDefaultValues)
         {
-            return JsonSerializer.Serialize(score, GpioJsonContext.Default.GuitarProScore);
+            return JsonSerializer.Serialize(score, MotifJsonContext.Default.GuitarProScore);
         }
 
         var options = new JsonSerializerOptions(DefaultOptions)

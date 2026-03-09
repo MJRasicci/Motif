@@ -1,22 +1,36 @@
-namespace GPIO.NET.UnitTests;
+namespace Motif.Core.UnitTests;
 
 using FluentAssertions;
-using GPIO.NET.Abstractions;
-using GPIO.NET.Models;
-using GPIO.NET.Models.Raw;
+using Motif;
+using Motif.Models;
+using System.Text.Json;
 
 public class PublicApiSurfaceTests
 {
     [Fact]
-    public void Public_abstractions_and_models_are_available()
+    public void Core_domain_model_and_json_helpers_are_available()
     {
-        typeof(IGuitarProReader).Should().NotBeNull();
-        typeof(IGpArchiveReader).Should().NotBeNull();
-        typeof(IGpifDeserializer).Should().NotBeNull();
-        typeof(IScoreMapper).Should().NotBeNull();
+        var score = new GuitarProScore
+        {
+            Title = "Example",
+            Tracks =
+            [
+                new TrackModel
+                {
+                    Id = 1,
+                    Name = "Lead"
+                }
+            ]
+        };
 
-        new GpReadOptions().Should().NotBeNull();
         new GuitarProScore().Tracks.Should().BeEmpty();
-        new GpifDocument().Tracks.Should().BeEmpty();
+        new TrackModel().Measures.Should().BeEmpty();
+
+        var json = score.ToJson();
+        using var document = JsonDocument.Parse(json);
+        var properties = document.RootElement.EnumerateObject().ToDictionary(property => property.Name, property => property.Value, StringComparer.OrdinalIgnoreCase);
+
+        properties["title"].GetString().Should().Be("Example");
+        properties["tracks"].GetArrayLength().Should().Be(1);
     }
 }

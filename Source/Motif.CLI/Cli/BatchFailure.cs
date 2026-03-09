@@ -1,4 +1,4 @@
-namespace GPIO.NET.Tool.Cli;
+namespace Motif.CLI;
 
 internal sealed class BatchFailure
 {

@@ -1,9 +1,10 @@
-namespace GPIO.NET.Tool.Cli;
+namespace Motif.CLI;
 
-using GPIO.NET.Implementation;
-using GPIO.NET.Models;
-using GPIO.NET.Models.Raw;
-using GPIO.NET.Models.Write;
+using Motif.Extensions.GuitarPro;
+using Motif.Extensions.GuitarPro.Implementation;
+using Motif.Models;
+using Motif.Extensions.GuitarPro.Models.Raw;
+using Motif.Extensions.GuitarPro.Models.Write;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;

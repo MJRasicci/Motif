@@ -1,7 +1,8 @@
-using GPIO.NET;
-using GPIO.NET.Implementation;
-using GPIO.NET.Models;
-using GPIO.NET.Tool.Cli;
+using Motif;
+using Motif.Extensions.GuitarPro;
+using Motif.Extensions.GuitarPro.Implementation;
+using Motif.Models;
+using Motif.CLI;
 using System.IO.Compression;
 using System.Text.Json;
 
@@ -293,7 +294,7 @@ static async Task<byte[]> ReadScoreGpifBytesAsync(string gpPath)
     return buffer.ToArray();
 }
 
-static async Task<GPIO.NET.Models.Raw.GpifDocument> DeserializeRawGpifAsync(byte[] gpifBytes)
+static async Task<Motif.Extensions.GuitarPro.Models.Raw.GpifDocument> DeserializeRawGpifAsync(byte[] gpifBytes)
 {
     await using var stream = new MemoryStream(gpifBytes, writable: false);
     var deserializer = new XmlGpifDeserializer();
@@ -303,7 +304,7 @@ static async Task<GPIO.NET.Models.Raw.GpifDocument> DeserializeRawGpifAsync(byte
 static void PrintHelp()
 {
     var helpText = """
-GPIO.NET — Guitar Pro file parser and writer
+Motif CLI — Guitar Pro file parser and writer
 
 USAGE
   gpio <input> [output] [options]

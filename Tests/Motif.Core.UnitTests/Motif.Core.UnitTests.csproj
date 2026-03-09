@@ -19,8 +19,4 @@
     <ProjectReference Include="..\..\Source\Motif.Core\Motif.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="Fixtures\*.gp" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
 </Project>

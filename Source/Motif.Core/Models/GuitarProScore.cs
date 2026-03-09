@@ -1,4 +1,4 @@
-namespace GPIO.NET.Models;
+namespace Motif.Models;
 
 public sealed class GuitarProScore
 {
