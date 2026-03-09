@@ -239,7 +239,8 @@ public interface IModelExtension
 * Writers/converters must be able to inspect available extensions dynamically at runtime
 * Implemented in Core on 2026-03-09 via `IExtensibleModel`, `IModelExtension`, `ExtensibleModel`, and typed helper APIs such as `GetRequiredExtension<T>()`
 * Current extensible Core nodes: `GuitarProScore`, `TrackModel`, `MeasureModel`, `MeasureStaffModel`, `MeasureVoiceModel`, `BeatModel`, and `NoteModel`
-* Next step: start attaching concrete Guitar Pro extensions during import and consume them during the later Core/GP property split
+* Implemented in `Motif.Extensions.GuitarPro` on 2026-03-09: importer now attaches concrete `GpScoreExtension` and `GpTrackExtension` instances, and the package exposes ergonomic `.GetGuitarPro()` helpers
+* Next step: attach measure/voice/beat/note-level Guitar Pro extensions as GP fidelity moves out of the Core model
 
 ## Acceptance Criteria
 
@@ -299,6 +300,12 @@ A property belongs in a format extension if it represents:
 | `GpVoiceExtension`          | Voice source XML, source IDs, direction tags, GP-only properties                                                           |
 | `GpBeatExtension`           | Beat source XML, raw GP flags, source rhythm IDs, rhythm-source fidelity (including augmentation-dot preservation), GP-only beat state such as golpe/fadding/rasgueado/slap/pop flags        |
 | `GpNoteExtension`           | Source note XML, raw slide flags, source MIDI/transposed pitch/fret/string data, GP-specific articulation fidelity state   |
+
+### Progress Update — 2026-03-09
+
+* [x] `GpScoreExtension` is implemented and attached during Guitar Pro import
+* [x] `GpTrackExtension` is implemented and attached during Guitar Pro import
+* [ ] `GpStaffExtension`, `GpStaffMeasureExtension`, `GpVoiceExtension`, `GpBeatExtension`, and `GpNoteExtension` still need to be introduced as the remaining GP fidelity fields move out of Core
 
 ## Acceptance Criteria
 

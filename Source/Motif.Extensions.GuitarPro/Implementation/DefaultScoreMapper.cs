@@ -1,6 +1,7 @@
 namespace Motif.Extensions.GuitarPro.Implementation;
 
 using Motif.Extensions.GuitarPro.Abstractions;
+using Motif.Extensions.GuitarPro.Models;
 using Motif.Models;
 using Motif.Extensions.GuitarPro.Models.Raw;
 using Motif.Extensions.GuitarPro.Utilities;
@@ -41,7 +42,7 @@ public sealed class DefaultScoreMapper : IScoreMapper
                     isStringedTrack);
                 ApplyTieDurationStitching(measures);
 
-                return new TrackModel
+                var mappedTrack = new TrackModel
                 {
                     Id = track.Id,
                     Name = track.Name,
@@ -189,6 +190,13 @@ public sealed class DefaultScoreMapper : IScoreMapper
                     },
                     Measures = measures
                 };
+
+                mappedTrack.SetExtension(new GpTrackExtension
+                {
+                    Metadata = mappedTrack.Metadata
+                });
+
+                return mappedTrack;
             })
             .ToArray();
 
@@ -269,6 +277,12 @@ public sealed class DefaultScoreMapper : IScoreMapper
             Tracks = tracks,
             PlaybackMasterBarSequence = navigationResolver.BuildPlaybackSequence(source.MasterBars, source.MasterTrack.Anacrusis)
         };
+
+        score.SetExtension(new GpScoreExtension
+        {
+            Metadata = score.Metadata,
+            MasterTrack = score.MasterTrack
+        });
 
         return ValueTask.FromResult(score);
     }
