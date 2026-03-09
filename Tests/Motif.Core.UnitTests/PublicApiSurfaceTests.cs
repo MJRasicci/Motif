@@ -23,6 +23,9 @@ public class PublicApiSurfaceTests
             ]
         };
 
+        typeof(IExtensibleModel).Should().NotBeNull();
+        typeof(IModelExtension).Should().NotBeNull();
+
         new GuitarProScore().Tracks.Should().BeEmpty();
         new TrackModel().Measures.Should().BeEmpty();
 

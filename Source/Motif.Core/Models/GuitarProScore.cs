@@ -1,6 +1,6 @@
 namespace Motif.Models;
 
-public sealed class GuitarProScore
+public sealed class GuitarProScore : ExtensibleModel
 {
     public string Title { get; init; } = string.Empty;
 
@@ -20,7 +20,7 @@ public sealed class GuitarProScore
     public IReadOnlyList<int> PlaybackMasterBarSequence { get; init; } = Array.Empty<int>();
 }
 
-public sealed class TrackModel
+public sealed class TrackModel : ExtensibleModel
 {
     public int Id { get; init; }
 
@@ -471,7 +471,7 @@ public enum DynamicKind
     FFF = 8
 }
 
-public sealed class MeasureModel
+public sealed class MeasureModel : ExtensibleModel
 {
     public string MasterBarXml { get; init; } = string.Empty;
 
@@ -546,7 +546,7 @@ public sealed class MeasureModel
     public IReadOnlyList<BeatModel> Beats { get; init; } = Array.Empty<BeatModel>();
 }
 
-public sealed class MeasureStaffModel
+public sealed class MeasureStaffModel : ExtensibleModel
 {
     public string BarXml { get; init; } = string.Empty;
 
@@ -569,7 +569,7 @@ public sealed class MeasureStaffModel
     public IReadOnlyList<BeatModel> Beats { get; init; } = Array.Empty<BeatModel>();
 }
 
-public sealed class MeasureVoiceModel
+public sealed class MeasureVoiceModel : ExtensibleModel
 {
     public string Xml { get; init; } = string.Empty;
 
@@ -617,7 +617,7 @@ public sealed class FermataMetadata
     public decimal? Length { get; init; }
 }
 
-public sealed class BeatModel
+public sealed class BeatModel : ExtensibleModel
 {
     public string Xml { get; init; } = string.Empty;
 
@@ -720,7 +720,7 @@ public sealed class BeatModel
     public IReadOnlyList<int> MidiPitches { get; init; } = Array.Empty<int>();
 }
 
-public sealed class NoteModel
+public sealed class NoteModel : ExtensibleModel
 {
     public string Xml { get; init; } = string.Empty;
 

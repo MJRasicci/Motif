@@ -204,11 +204,11 @@ Replace string-keyed public extension access with typed retrieval APIs.
 
 ## Requirements
 
-- [ ] Add a format-agnostic extension abstraction to `Motif.Core`
-- [ ] Support typed retrieval of extensions attached to domain nodes
-- [ ] Avoid exposing string-keyed lookup as the primary public API
-- [ ] Permit extension packages to attach package-specific fidelity/format state at runtime
-- [ ] Support absent extensions gracefully, since not every score will originate from the same source format
+- [x] Add a format-agnostic extension abstraction to `Motif.Core`
+- [x] Support typed retrieval of extensions attached to domain nodes
+- [x] Avoid exposing string-keyed lookup as the primary public API
+- [x] Permit extension packages to attach package-specific fidelity/format state at runtime
+- [x] Support absent extensions gracefully, since not every score will originate from the same source format
 
 ## Proposed Shape
 
@@ -219,6 +219,12 @@ public interface IExtensibleModel
         where TExtension : class, IModelExtension;
 
     IReadOnlyCollection<IModelExtension> GetExtensions();
+
+    void SetExtension<TExtension>(TExtension extension)
+        where TExtension : class, IModelExtension;
+
+    bool RemoveExtension<TExtension>()
+        where TExtension : class, IModelExtension;
 }
 
 public interface IModelExtension
@@ -231,13 +237,16 @@ public interface IModelExtension
 * `Motif.Extensions.GuitarPro` should expose ergonomic helpers such as `.GetGuitarPro()`
 * Backing storage may still be dictionary-based internally, but that should not define the public API
 * Writers/converters must be able to inspect available extensions dynamically at runtime
+* Implemented in Core on 2026-03-09 via `IExtensibleModel`, `IModelExtension`, `ExtensibleModel`, and typed helper APIs such as `GetRequiredExtension<T>()`
+* Current extensible Core nodes: `GuitarProScore`, `TrackModel`, `MeasureModel`, `MeasureStaffModel`, `MeasureVoiceModel`, `BeatModel`, and `NoteModel`
+* Next step: start attaching concrete Guitar Pro extensions during import and consume them during the later Core/GP property split
 
 ## Acceptance Criteria
 
-* [ ] A consumer can query for a specific extension type without string keys
-* [ ] Missing extensions can be detected via `TryGetExtension`
-* [ ] Required extension access is explicit and predictable
-* [ ] `Motif.Core` references no format-specific extension types
+* [x] A consumer can query for a specific extension type without string keys
+* [x] Missing extensions can be detected via `TryGetExtension`
+* [x] Required extension access is explicit and predictable
+* [x] `Motif.Core` references no format-specific extension types
 
 ---
 
