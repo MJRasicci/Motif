@@ -6,12 +6,12 @@
     <Nullable>enable</Nullable>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>All</AnalysisMode>
-	<UseArtifactsOutput>true</UseArtifactsOutput>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('UnitTests'))">
     <IsTestProject>true</IsTestProject>
-	<IsPackable>false</IsPackable>
+    <IsPackable>false</IsPackable>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <NoWarn>CA1707;$(NoWarn)</NoWarn>
