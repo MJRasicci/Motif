@@ -70,15 +70,21 @@ These decisions define the target Core model shape. The design questions below a
 
 ### Implementation Work
 
-- [ ] Replace the remaining init-only/Core model patterns with mutation-friendly APIs that are consistent across score, track, staff, measure, beat, and note nodes
+- [x] Replace the remaining init-only/Core model patterns with mutation-friendly APIs that are consistent across score, track, staff, measure, beat, and note nodes
 - [ ] Define the extension lifecycle explicitly: import attachment, edit-time preservation/invalidation rules, and export-time synthesis/defaulting
 - [ ] Document the exporter fallback order: preserve extension data -> infer from core model -> infer from other extensions -> apply defaults -> emit diagnostics if fidelity degraded
 - [ ] Decide whether v1 needs explicit stable Core node IDs, or whether positional context plus source-format IDs stored in extensions is sufficient
 - [ ] Define and implement invalidation/recompute rules for derived navigation state after structural edits
 
+### Progress Update — 2026-03-09
+
+- [x] The current Core score/track/measure/staff/voice/beat/note/value objects now use settable properties instead of init-only setters, so direct post-construction mutation is supported while the hierarchy refactor is still pending
+- [x] Core tests now cover direct mutation of the current score -> track -> measure -> beat -> note object graph
+- [ ] The next mutation-model gap is behavioral rather than syntactic: extension/cache invalidation and regeneration rules still need to be implemented as edits begin moving GP fidelity fully out of Core
+
 ### Acceptance Criteria
 
-- [ ] The mutable editing model is documented
+- [x] The mutable editing model is documented
 - [ ] Exporters can still produce valid files when extension data must be inferred or defaulted
 - [ ] Mutation behavior does not leave extension state inconsistent
 - [ ] Derived navigation state is invalidated and recomputed predictably after traversal-affecting edits
