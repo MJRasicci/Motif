@@ -2,6 +2,7 @@ namespace Motif.Extensions.GuitarPro.UnitTests;
 
 using FluentAssertions;
 using Motif.Extensions.GuitarPro.Implementation;
+using Motif.Extensions.GuitarPro.Models;
 using Motif.Models;
 using Motif.Extensions.GuitarPro.Models.Raw;
 using System.Globalization;
@@ -10,6 +11,15 @@ using System.Text.Json;
 
 public class WriterReferenceReuseTests
 {
+    private static GpMeasureMetadata MeasureMetadataOf(MeasureModel measure)
+        => measure.GetRequiredGuitarPro().Metadata;
+
+    private static GpMeasureStaffMetadata StaffMetadataOf(MeasureStaffModel staff)
+        => staff.GetRequiredGuitarPro().Metadata;
+
+    private static GpVoiceMetadata VoiceMetadataOf(MeasureVoiceModel voice)
+        => voice.GetRequiredGuitarPro().Metadata;
+
     [Fact]
     public async Task Unmapper_preserves_shared_reference_counts_for_schema_reference_fixture()
     {
@@ -53,7 +63,6 @@ public class WriterReferenceReuseTests
                                 new MeasureVoiceModel
                                 {
                                     VoiceIndex = 0,
-                                    SourceVoiceId = 0,
                                     Beats =
                                     [
                                         CreateBeat(0, CreateNote(0, 48), CreateNote(1, 52)),
@@ -68,6 +77,7 @@ public class WriterReferenceReuseTests
                 }
             ]
         };
+        score.Tracks[0].Measures[0].Voices[0].GetOrCreateGuitarPro().Metadata.SourceVoiceId = 0;
 
         var unmapper = new DefaultScoreUnmapper();
         var result = await unmapper.UnmapAsync(score, TestContext.Current.CancellationToken);
@@ -106,7 +116,6 @@ public class WriterReferenceReuseTests
                                 new MeasureVoiceModel
                                 {
                                     VoiceIndex = 0,
-                                    SourceVoiceId = 0,
                                     Beats =
                                     [
                                         CreateBeat(10, CreateNote(0, 48)),
@@ -120,6 +129,7 @@ public class WriterReferenceReuseTests
                 }
             ]
         };
+        score.Tracks[0].Measures[0].Voices[0].GetOrCreateGuitarPro().Metadata.SourceVoiceId = 0;
 
         var unmapper = new DefaultScoreUnmapper();
         var result = await unmapper.UnmapAsync(score, TestContext.Current.CancellationToken);
@@ -155,7 +165,6 @@ public class WriterReferenceReuseTests
                                 new MeasureVoiceModel
                                 {
                                     VoiceIndex = 0,
-                                    SourceVoiceId = 0,
                                     Beats =
                                     [
                                         CreateBeatWithPalmMute(0, true, CreateNote(0, 48), CreateNote(1, 52, palmMuted: true)),
@@ -168,6 +177,7 @@ public class WriterReferenceReuseTests
                 }
             ]
         };
+        score.Tracks[0].Measures[0].Voices[0].GetOrCreateGuitarPro().Metadata.SourceVoiceId = 0;
 
         var unmapper = new DefaultScoreUnmapper();
         var result = await unmapper.UnmapAsync(score, TestContext.Current.CancellationToken);
@@ -198,7 +208,6 @@ public class WriterReferenceReuseTests
                         {
                             Index = 0,
                             TimeSignature = "4/4",
-                            SourceBarId = 5,
                             Voices = [],
                             Beats = []
                         }
@@ -206,6 +215,7 @@ public class WriterReferenceReuseTests
                 }
             ]
         };
+        score.Tracks[0].Measures[0].GetOrCreateGuitarPro().Metadata.SourceBarId = 5;
 
         var unmapper = new DefaultScoreUnmapper();
         var result = await unmapper.UnmapAsync(score, TestContext.Current.CancellationToken);
@@ -265,15 +275,15 @@ public class WriterReferenceReuseTests
         var drums = score.Tracks.Single(track => track.Name == "Drums");
 
         piano.Measures.Should().ContainSingle();
-        piano.Measures[0].SourceBarId.Should().Be(0);
+        MeasureMetadataOf(piano.Measures[0]).SourceBarId.Should().Be(0);
         piano.Measures[0].Clef.Should().Be("G2");
         piano.Measures[0].AdditionalStaffBars.Should().ContainSingle();
         piano.Measures[0].AdditionalStaffBars[0].StaffIndex.Should().Be(1);
-        piano.Measures[0].AdditionalStaffBars[0].SourceBarId.Should().Be(1);
+        StaffMetadataOf(piano.Measures[0].AdditionalStaffBars[0]).SourceBarId.Should().Be(1);
         piano.Measures[0].AdditionalStaffBars[0].Clef.Should().Be("F4");
 
         drums.Measures.Should().ContainSingle();
-        drums.Measures[0].SourceBarId.Should().Be(2);
+        MeasureMetadataOf(drums.Measures[0]).SourceBarId.Should().Be(2);
         drums.Measures[0].Clef.Should().Be("Neutral");
     }
 
@@ -395,6 +405,7 @@ public class WriterReferenceReuseTests
         });
 
         fromJson.Should().NotBeNull();
+        fromJson!.ReattachGuitarProExtensionsFrom(score);
 
         var unmapper = new DefaultScoreUnmapper();
         var writeResult = await unmapper.UnmapAsync(fromJson!, TestContext.Current.CancellationToken);

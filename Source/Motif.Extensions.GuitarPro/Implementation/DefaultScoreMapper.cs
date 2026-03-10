@@ -338,16 +338,13 @@ public sealed class DefaultScoreMapper : IScoreMapper
             var voices = primaryStaff?.Voices ?? Array.Empty<MeasureVoiceModel>();
             var beats = primaryStaff?.Beats ?? Array.Empty<BeatModel>();
 
-            measures.Add(new MeasureModel
+            var measure = new MeasureModel
             {
-                MasterBarXml = masterBar.Xml,
-                BarXml = primaryStaff?.BarXml ?? string.Empty,
                 Index = masterBar.Index,
                 TimeSignature = masterBar.Time,
                 DoubleBar = masterBar.DoubleBar,
                 FreeTime = masterBar.FreeTime,
                 TripletFeel = masterBar.TripletFeel,
-                SourceBarId = primaryStaff?.SourceBarId ?? -1,
                 Clef = primaryStaff?.Clef ?? string.Empty,
                 SimileMark = primaryStaff?.SimileMark ?? string.Empty,
                 RepeatStart = masterBar.RepeatStart,
@@ -363,7 +360,6 @@ public sealed class DefaultScoreMapper : IScoreMapper
                 Jump = masterBar.Jump,
                 Target = masterBar.Target,
                 DirectionProperties = masterBar.DirectionProperties,
-                DirectionsXml = masterBar.DirectionsXml,
                 KeyAccidentalCount = masterBar.KeyAccidentalCount,
                 KeyMode = masterBar.KeyMode,
                 KeyTransposeAs = masterBar.KeyTransposeAs,
@@ -374,14 +370,25 @@ public sealed class DefaultScoreMapper : IScoreMapper
                         Length = f.Length
                 }).ToArray(),
                 XProperties = masterBar.XProperties,
-                MasterBarXPropertiesXml = masterBar.XPropertiesXml,
                 BarProperties = primaryStaff?.BarProperties ?? new Dictionary<string, string>(),
                 BarXProperties = primaryStaff?.BarXProperties ?? new Dictionary<string, int>(),
-                BarXPropertiesXml = primaryStaff?.BarXPropertiesXml ?? string.Empty,
                 AdditionalStaffBars = additionalStaffBars,
                 Voices = voices,
                 Beats = beats
+            };
+            measure.SetExtension(new GpMeasureExtension
+            {
+                Metadata = new GpMeasureMetadata
+                {
+                    MasterBarXml = masterBar.Xml,
+                    BarXml = primaryStaff?.GetRequiredGuitarPro().Metadata.BarXml ?? string.Empty,
+                    SourceBarId = primaryStaff?.GetRequiredGuitarPro().Metadata.SourceBarId ?? -1,
+                    DirectionsXml = masterBar.DirectionsXml,
+                    MasterBarXPropertiesXml = masterBar.XPropertiesXml,
+                    BarXPropertiesXml = primaryStaff?.GetRequiredGuitarPro().Metadata.BarXPropertiesXml ?? string.Empty
+                }
             });
+            measures.Add(measure);
         }
 
         return measures;
@@ -410,34 +417,48 @@ public sealed class DefaultScoreMapper : IScoreMapper
             }
 
             var mappedBeats = MapVoiceBeats(source, track, voice, isStringedTrack);
-            voices.Add(new MeasureVoiceModel
+            var mappedVoice = new MeasureVoiceModel
             {
-                Xml = voice.Xml,
                 VoiceIndex = voiceIndex,
-                SourceVoiceId = voice.Id,
-                Properties = voice.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
-                DirectionTags = voice.DirectionTags.ToArray(),
                 Beats = mappedBeats
+            };
+            mappedVoice.SetExtension(new GpVoiceExtension
+            {
+                Metadata = new GpVoiceMetadata
+                {
+                    Xml = voice.Xml,
+                    SourceVoiceId = voice.Id,
+                    Properties = voice.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
+                    DirectionTags = voice.DirectionTags.ToArray()
+                }
             });
+            voices.Add(mappedVoice);
         }
 
         var beats = voices.FirstOrDefault(v => v.VoiceIndex == 0)?.Beats
             ?? voices.FirstOrDefault()?.Beats
             ?? Array.Empty<BeatModel>();
 
-        return new MeasureStaffModel
+        var staffMeasure = new MeasureStaffModel
         {
-            BarXml = bar.Xml,
             StaffIndex = staffIndex,
-            SourceBarId = bar.Id,
             Clef = bar.Clef,
             SimileMark = bar.SimileMark,
             BarProperties = bar.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
             BarXProperties = bar.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
-            BarXPropertiesXml = bar.XPropertiesXml,
             Voices = voices,
             Beats = beats
         };
+        staffMeasure.SetExtension(new GpMeasureStaffExtension
+        {
+            Metadata = new GpMeasureStaffMetadata
+            {
+                BarXml = bar.Xml,
+                SourceBarId = bar.Id,
+                BarXPropertiesXml = bar.XPropertiesXml
+            }
+        });
+        return staffMeasure;
     }
 
     private static IReadOnlyList<BeatModel> MapVoiceBeats(GpifDocument source, GpifTrack track, GpifVoice voice, bool isStringedTrack)

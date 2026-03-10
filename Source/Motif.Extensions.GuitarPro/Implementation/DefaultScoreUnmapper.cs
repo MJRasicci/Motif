@@ -176,8 +176,13 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
             })
             .ToArray();
 
-        var barId = NextIdAfter(score.Tracks.SelectMany(t => t.Measures).Select(m => m.SourceBarId));
-        var voiceId = NextIdAfter(score.Tracks.SelectMany(t => t.Measures).SelectMany(m => m.Voices).Select(v => v.SourceVoiceId));
+        var barId = NextIdAfter(score.Tracks
+            .SelectMany(track => track.Measures.SelectMany(measure => ResolveMeasureStaffBars(track, measure)))
+            .Select(staff => GetMeasureStaffMetadata(staff).SourceBarId));
+        var voiceId = NextIdAfter(score.Tracks
+            .SelectMany(t => t.Measures)
+            .SelectMany(m => m.Voices)
+            .Select(v => GetVoiceMetadata(v).SourceVoiceId));
         var beatId = NextIdAfter(score.Tracks.SelectMany(t => t.Measures).SelectMany(m => m.Voices.Count > 0 ? m.Voices.SelectMany(v => v.Beats) : m.Beats).Select(b => b.Id));
         var noteId = NextIdAfter(score.Tracks.SelectMany(t => t.Measures).SelectMany(m => m.Voices.Count > 0 ? m.Voices.SelectMany(v => v.Beats) : m.Beats).SelectMany(b => b.Notes).Select(n => n.Id));
         var rhythmId = 0;
@@ -215,7 +220,8 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
 
                 foreach (var staffBar in staffBars)
                 {
-                    var currentBarId = staffBar.SourceBarId;
+                    var staffMetadata = GetMeasureStaffMetadata(staffBar);
+                    var currentBarId = staffMetadata.SourceBarId;
                     var measureVoices = ResolveMeasureVoices(staffBar.Voices, staffBar.Beats);
                     var voiceSlots = CreateVoiceSlots(measureVoices);
 
@@ -454,17 +460,18 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                             beatIds.Add(currentBeatId);
                         }
 
+                        var voiceMetadata = GetVoiceMetadata(measureVoice);
                         var voiceCandidate = new GpifVoice
                         {
-                            Xml = measureVoice.Xml,
+                            Xml = voiceMetadata.Xml,
                             Id = 0,
                             BeatsReferenceList = ReferenceListFormatter.JoinRefs(beatIds),
-                            Properties = measureVoice.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
-                            DirectionTags = measureVoice.DirectionTags.ToArray()
+                            Properties = voiceMetadata.Properties,
+                            DirectionTags = voiceMetadata.DirectionTags.ToArray()
                         };
 
                         var currentVoiceId = AllocateId(
-                            measureVoice.SourceVoiceId,
+                            voiceMetadata.SourceVoiceId,
                             voiceCandidate,
                             voices,
                             ref voiceId,
@@ -473,7 +480,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                             diagnostics,
                             code: "VOICE_ID_CONFLICT",
                             category: "ReferenceReuse",
-                            message: $"Voice id {measureVoice.SourceVoiceId} appeared with different content; a new raw voice id was allocated.");
+                            message: $"Voice id {voiceMetadata.SourceVoiceId} appeared with different content; a new raw voice id was allocated.");
 
                         if (!voices.ContainsKey(currentVoiceId))
                         {
@@ -485,18 +492,18 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
 
                     var barCandidate = new GpifBar
                     {
-                        Xml = staffBar.BarXml,
+                        Xml = staffMetadata.BarXml,
                         Id = 0,
                         VoicesReferenceList = ReferenceListFormatter.JoinRefs(voiceSlots),
                         Clef = staffBar.Clef,
                         SimileMark = staffBar.SimileMark,
                         Properties = staffBar.BarProperties,
                         XProperties = staffBar.BarXProperties,
-                        XPropertiesXml = staffBar.BarXPropertiesXml
+                        XPropertiesXml = staffMetadata.BarXPropertiesXml
                     };
 
                     currentBarId = AllocateId(
-                        staffBar.SourceBarId,
+                        staffMetadata.SourceBarId,
                         barCandidate,
                         bars,
                         ref barId,
@@ -505,7 +512,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                         diagnostics,
                         code: "BAR_ID_CONFLICT",
                         category: "ReferenceReuse",
-                        message: $"Bar id {staffBar.SourceBarId} appeared with different content; a new raw bar id was allocated.");
+                        message: $"Bar id {staffMetadata.SourceBarId} appeared with different content; a new raw bar id was allocated.");
 
                     if (!bars.ContainsKey(currentBarId))
                     {
@@ -515,11 +522,12 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                     measureBarIds.Add(currentBarId);
                 }
 
+                var measureMetadata = GetMeasureMetadata(measure);
                 if (masterBars.Count <= m)
                 {
                     masterBars.Add(new GpifMasterBar
                     {
-                        Xml = measure.MasterBarXml,
+                        Xml = measureMetadata.MasterBarXml,
                         Index = m,
                         Time = measure.TimeSignature,
                         DoubleBar = measure.DoubleBar,
@@ -538,7 +546,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                         Jump = jump,
                         Target = target,
                         DirectionProperties = measure.DirectionProperties,
-                        DirectionsXml = measure.DirectionsXml,
+                        DirectionsXml = measureMetadata.DirectionsXml,
                         KeyAccidentalCount = measure.KeyAccidentalCount,
                         KeyMode = measure.KeyMode,
                         KeyTransposeAs = measure.KeyTransposeAs,
@@ -549,7 +557,7 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
                             Length = f.Length
                         }).ToArray(),
                         XProperties = measure.XProperties,
-                        XPropertiesXml = measure.MasterBarXPropertiesXml
+                        XPropertiesXml = measureMetadata.MasterBarXPropertiesXml
                     });
                 }
             }
@@ -798,6 +806,15 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
 
     private static TrackMetadata GetTrackMetadata(TrackModel track)
         => track.GetGuitarPro()?.Metadata ?? new TrackMetadata();
+
+    private static GpMeasureMetadata GetMeasureMetadata(MeasureModel measure)
+        => measure.GetGuitarPro()?.Metadata ?? new GpMeasureMetadata();
+
+    private static GpMeasureStaffMetadata GetMeasureStaffMetadata(MeasureStaffModel staff)
+        => staff.GetGuitarPro()?.Metadata ?? new GpMeasureStaffMetadata();
+
+    private static GpVoiceMetadata GetVoiceMetadata(MeasureVoiceModel voice)
+        => voice.GetGuitarPro()?.Metadata ?? new GpVoiceMetadata();
 
     private static int[] ResolveTuningPitches(TrackModel track, int staffIndex)
     {
@@ -1079,23 +1096,30 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
             ? -1
             : measure.AdditionalStaffBars.Max(s => s.StaffIndex);
         var totalStaffCount = Math.Max(expectedStaffCount, highestIndexedAdditionalStaff + 1);
+        var measureMetadata = GetMeasureMetadata(measure);
 
         var staffBars = new List<MeasureStaffModel>(Math.Max(1, totalStaffCount))
         {
             new()
             {
-                BarXml = measure.BarXml,
                 StaffIndex = 0,
-                SourceBarId = measure.SourceBarId,
                 Clef = measure.Clef,
                 SimileMark = measure.SimileMark,
                 BarProperties = measure.BarProperties,
                 BarXProperties = measure.BarXProperties,
-                BarXPropertiesXml = measure.BarXPropertiesXml,
                 Voices = measure.Voices,
                 Beats = measure.Beats
             }
         };
+        staffBars[0].SetExtension(new GpMeasureStaffExtension
+        {
+            Metadata = new GpMeasureStaffMetadata
+            {
+                BarXml = measureMetadata.BarXml,
+                SourceBarId = measureMetadata.SourceBarId,
+                BarXPropertiesXml = measureMetadata.BarXPropertiesXml
+            }
+        });
 
         var additionalStaffByIndex = measure.AdditionalStaffBars
             .Where(staff => staff.StaffIndex > 0)
@@ -1111,8 +1135,14 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
 
             staffBars.Add(new MeasureStaffModel
             {
-                StaffIndex = staffIndex,
-                SourceBarId = -1
+                StaffIndex = staffIndex
+            });
+            staffBars[^1].SetExtension(new GpMeasureStaffExtension
+            {
+                Metadata = new GpMeasureStaffMetadata
+                {
+                    SourceBarId = -1
+                }
             });
         }
 
@@ -1140,17 +1170,21 @@ public sealed class DefaultScoreUnmapper : IScoreUnmapper
             ? measureBeats[0].VoiceDirectionTags
             : Array.Empty<string>();
 
-        return
-        [
-            new MeasureVoiceModel
+        var voice = new MeasureVoiceModel
+        {
+            VoiceIndex = 0,
+            Beats = measureBeats
+        };
+        voice.SetExtension(new GpVoiceExtension
+        {
+            Metadata = new GpVoiceMetadata
             {
-                VoiceIndex = 0,
                 SourceVoiceId = 0,
                 Properties = fallbackProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
-                DirectionTags = fallbackDirectionTags.ToArray(),
-                Beats = measureBeats
+                DirectionTags = fallbackDirectionTags.ToArray()
             }
-        ];
+        });
+        return [voice];
     }
 
     private static List<int> CreateVoiceSlots(IReadOnlyList<MeasureVoiceModel> measureVoices)

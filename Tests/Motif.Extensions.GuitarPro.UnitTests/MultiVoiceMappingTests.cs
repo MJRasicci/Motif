@@ -1,6 +1,7 @@
 namespace Motif.Extensions.GuitarPro.UnitTests;
 
 using FluentAssertions;
+using Motif.Extensions.GuitarPro;
 using Motif.Models;
 
 public class MultiVoiceMappingTests
@@ -78,13 +79,11 @@ public class MultiVoiceMappingTests
                                 new MeasureVoiceModel
                                 {
                                     VoiceIndex = 0,
-                                    Properties = new Dictionary<string, string> { ["PartedSlur"] = "true" },
                                     Beats = [voice0Beat]
                                 },
                                 new MeasureVoiceModel
                                 {
                                     VoiceIndex = 1,
-                                    DirectionTags = ["Coda"],
                                     Beats = [voice1Beat]
                                 }
                             ],
@@ -94,6 +93,10 @@ public class MultiVoiceMappingTests
                 }
             ]
         };
+
+        score.Tracks[0].Measures[0].Voices[0].GetOrCreateGuitarPro().Metadata.Properties =
+            new Dictionary<string, string> { ["PartedSlur"] = "true" };
+        score.Tracks[0].Measures[0].Voices[1].GetOrCreateGuitarPro().Metadata.DirectionTags = ["Coda"];
 
         var outFile = Path.Combine(Path.GetTempPath(), $"gpio-voice-{Guid.NewGuid():N}.gp");
         try

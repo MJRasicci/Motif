@@ -41,7 +41,7 @@ The following are explicitly out of scope for v1:
   - CLI capabilities and limitations
 - [ ] Add/verify NuGet package metadata for all shipping packages
 
-### Progress Update — 2026-03-09
+### Progress Update — 2026-03-10
 
 - [x] Move the GP read/write pipeline out of `Motif.Core` and into `Motif.Extensions.GuitarPro`
 - [x] Move the GP-focused test suite into `Motif.Extensions.GuitarPro.UnitTests`
@@ -82,8 +82,8 @@ These decisions define the target Core model shape. The design questions below a
 - [x] Core tests now cover direct mutation of the current score -> track -> measure -> beat -> note object graph
 - [x] Score/master-track/track Guitar Pro fidelity now attaches through `GpScoreExtension` and `GpTrackExtension` instead of direct Core-owned properties
 - [x] Core JSON serialization is now explicitly Core-only for this layer; GP extensions are not serialized and must be reattached or regenerated during export if fidelity needs to be preserved
-- [x] The CLI no-op `--from-json --source-gp` flow now reattaches imported score/track GP extensions before export so empty optional `<Score>` nodes and current GP metadata survive an untouched JSON round trip
-- [ ] The next mutation-model gap is behavioral rather than syntactic: extension/cache invalidation and regeneration rules still need to be implemented as edits begin moving GP fidelity fully out of Core
+- [x] The CLI no-op `--from-json --source-gp` flow now reattaches imported score/track/measure/staff/voice GP extensions before export so untouched JSON round trips can preserve current GP fidelity where source context is available
+- [ ] The next mutation-model gap is behavioral rather than syntactic: beat/note fidelity still needs the same extraction, and extension/cache invalidation plus regeneration rules still need to be implemented for post-import edits
 
 ### Acceptance Criteria
 
@@ -248,8 +248,8 @@ public interface IModelExtension
 * Writers/converters must be able to inspect available extensions dynamically at runtime
 * Implemented in Core on 2026-03-09 via `IExtensibleModel`, `IModelExtension`, `ExtensibleModel`, and typed helper APIs such as `GetRequiredExtension<T>()`
 * Current extensible Core nodes: `GuitarProScore`, `TrackModel`, `MeasureModel`, `MeasureStaffModel`, `MeasureVoiceModel`, `BeatModel`, and `NoteModel`
-* Implemented in `Motif.Extensions.GuitarPro` on 2026-03-09: importer now attaches concrete `GpScoreExtension` and `GpTrackExtension` instances, and the package exposes ergonomic `.GetGuitarPro()` helpers
-* Next step: attach measure/voice/beat/note-level Guitar Pro extensions as GP fidelity moves out of the Core model
+* Implemented in `Motif.Extensions.GuitarPro` on 2026-03-09/2026-03-10: importer now attaches concrete `GpScoreExtension`, `GpTrackExtension`, `GpMeasureExtension`, `GpMeasureStaffExtension`, and `GpVoiceExtension` instances, and the package exposes ergonomic `.GetGuitarPro()` helpers plus score-to-score extension reattachment helpers for GP-aware write paths
+* Next step: attach beat/note-level Guitar Pro extensions as the remaining GP fidelity moves out of the Core model
 
 ## Acceptance Criteria
 
@@ -310,14 +310,18 @@ A property belongs in a format extension if it represents:
 | `GpBeatExtension`           | Beat source XML, raw GP flags, source rhythm IDs, rhythm-source fidelity (including augmentation-dot preservation), GP-only beat state such as golpe/fadding/rasgueado/slap/pop flags        |
 | `GpNoteExtension`           | Source note XML, raw slide flags, source MIDI/transposed pitch/fret/string data, GP-specific articulation fidelity state   |
 
-### Progress Update — 2026-03-09
+### Progress Update — 2026-03-10
 
 * [x] `GpScoreExtension` is implemented and attached during Guitar Pro import
 * [x] `GpTrackExtension` is implemented and attached during Guitar Pro import
+* [x] `GpMeasureExtension`, `GpMeasureStaffExtension`, and `GpVoiceExtension` are implemented and attached during Guitar Pro import
 * [x] `GuitarProScore.Metadata`, `GuitarProScore.MasterTrack`, and `TrackModel.Metadata` have been removed from the direct Core surface; that fidelity now lives behind GP extensions
 * [x] The score/track/master-track GP metadata model types themselves now live in `Motif.Extensions.GuitarPro.Models` instead of `Motif.Core`
+* [x] `MeasureModel`, `MeasureStaffModel`, and `MeasureVoiceModel` raw GP XML/source-ID/property-bag fidelity now lives behind GP extensions instead of direct Core-owned properties
 * [x] Core JSON round-trips intentionally drop GP score/track extensions, and the CLI now rehydrates them from `--source-gp` for verified no-op writes
-* [ ] `GpStaffExtension`, `GpStaffMeasureExtension`, `GpVoiceExtension`, `GpBeatExtension`, and `GpNoteExtension` still need to be introduced as the remaining GP fidelity fields move out of Core
+* [x] GP-specific JSON/write-path tests now explicitly reattach source score/track/measure/staff/voice extensions before asserting no-op GP fidelity
+* [ ] `GpBeatExtension` and `GpNoteExtension` still need to absorb the remaining beat/note raw caches, source IDs, and GP-only fidelity fields
+* [ ] `GpStaffExtension` remains planned for the later `Track -> Staff -> StaffMeasure` hierarchy refactor rather than the current migration shape
 
 ## Acceptance Criteria
 
@@ -346,13 +350,14 @@ For edits that invalidate cached source fragments, define whether the system wil
 * [x] regenerate or synthesize the affected output from the Core model and any other usable extension data during export
 * [x] apply sensible defaults when required extension state cannot be inferred, while recording diagnostics when fidelity is necessarily degraded
 
-### Progress Update — 2026-03-09
+### Progress Update — 2026-03-10
 
 * [x] Score/track/master-track raw fidelity state no longer lives on direct Core properties; it now rides on GP extensions
 * [x] The score/track/master-track GP metadata/cache model types now live in the Guitar Pro extension project rather than the Core assembly
 * [x] When score-level GP master-track metadata is absent, the writer now infers `MasterTrack.TrackIds` from the current Core track list so export still produces a valid file
-* [x] The CLI no-op JSON round-trip path now reattaches source score/track GP extensions before export when `--source-gp` is available
-* [ ] Measure/staff/voice/beat/note raw XML caches and source IDs still remain on Core types and are the next migration target
+* [x] The CLI no-op JSON round-trip path now reattaches source score/track/measure/staff/voice GP extensions before export when `--source-gp` is available
+* [x] Measure/staff/voice raw XML caches and source IDs no longer live on direct Core properties; they now ride on `GpMeasureExtension`, `GpMeasureStaffExtension`, and `GpVoiceExtension`
+* [ ] Beat/note raw XML caches, source rhythm/note IDs, and note source pitch/string/fret fidelity still remain on Core types and are the next migration target
 
 ## Acceptance Criteria
 

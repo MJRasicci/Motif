@@ -27,10 +27,6 @@ public sealed class TrackModel : ExtensibleModel
 
 public sealed class MeasureModel : ExtensibleModel
 {
-    public string MasterBarXml { get; set; } = string.Empty;
-
-    public string BarXml { get; set; } = string.Empty;
-
     public int Index { get; set; }
 
     public string TimeSignature { get; set; } = string.Empty;
@@ -40,8 +36,6 @@ public sealed class MeasureModel : ExtensibleModel
     public bool FreeTime { get; set; }
 
     public string TripletFeel { get; set; } = string.Empty;
-
-    public int SourceBarId { get; set; }
 
     public string Clef { get; set; } = string.Empty;
 
@@ -73,8 +67,6 @@ public sealed class MeasureModel : ExtensibleModel
 
     public IReadOnlyDictionary<string, string> DirectionProperties { get; set; } = new Dictionary<string, string>();
 
-    public string DirectionsXml { get; set; } = string.Empty;
-
     public int? KeyAccidentalCount { get; set; }
 
     public string KeyMode { get; set; } = string.Empty;
@@ -85,13 +77,9 @@ public sealed class MeasureModel : ExtensibleModel
 
     public IReadOnlyDictionary<string, int> XProperties { get; set; } = new Dictionary<string, int>();
 
-    public string MasterBarXPropertiesXml { get; set; } = string.Empty;
-
     public IReadOnlyDictionary<string, string> BarProperties { get; set; } = new Dictionary<string, string>();
 
     public IReadOnlyDictionary<string, int> BarXProperties { get; set; } = new Dictionary<string, int>();
-
-    public string BarXPropertiesXml { get; set; } = string.Empty;
 
     public IReadOnlyList<MeasureStaffModel> AdditionalStaffBars { get; set; } = Array.Empty<MeasureStaffModel>();
 
@@ -102,11 +90,7 @@ public sealed class MeasureModel : ExtensibleModel
 
 public sealed class MeasureStaffModel : ExtensibleModel
 {
-    public string BarXml { get; set; } = string.Empty;
-
     public int StaffIndex { get; set; }
-
-    public int SourceBarId { get; set; }
 
     public string Clef { get; set; } = string.Empty;
 
@@ -116,8 +100,6 @@ public sealed class MeasureStaffModel : ExtensibleModel
 
     public IReadOnlyDictionary<string, int> BarXProperties { get; set; } = new Dictionary<string, int>();
 
-    public string BarXPropertiesXml { get; set; } = string.Empty;
-
     public IReadOnlyList<MeasureVoiceModel> Voices { get; set; } = Array.Empty<MeasureVoiceModel>();
 
     public IReadOnlyList<BeatModel> Beats { get; set; } = Array.Empty<BeatModel>();
@@ -125,15 +107,7 @@ public sealed class MeasureStaffModel : ExtensibleModel
 
 public sealed class MeasureVoiceModel : ExtensibleModel
 {
-    public string Xml { get; set; } = string.Empty;
-
     public int VoiceIndex { get; set; }
-
-    public int SourceVoiceId { get; set; }
-
-    public IReadOnlyDictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
-
-    public IReadOnlyList<string> DirectionTags { get; set; } = Array.Empty<string>();
 
     public IReadOnlyList<BeatModel> Beats { get; set; } = Array.Empty<BeatModel>();
 }

@@ -120,6 +120,7 @@ public class WriterNotationFidelityTests
         });
 
         fromJson.Should().NotBeNull();
+        fromJson!.ReattachGuitarProExtensionsFrom(score);
         return await RoundTripThroughWrite(fromJson!);
     }
 
