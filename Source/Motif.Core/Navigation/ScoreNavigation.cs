@@ -49,6 +49,25 @@ public static class ScoreNavigation
         return unroller.Build();
     }
 
+    public static IReadOnlyList<int> BuildPlaybackSequence(IReadOnlyList<TimelineBarModel> timelineBars, bool anacrusis = false)
+    {
+        ArgumentNullException.ThrowIfNull(timelineBars);
+
+        var ordered = timelineBars
+            .OrderBy(timelineBar => timelineBar.Index)
+            .Select(MeasureState.From)
+            .ToArray();
+
+        if (ordered.Length == 0)
+        {
+            return Array.Empty<int>();
+        }
+
+        var directions = DirectionMap.From(ordered);
+        var unroller = new AndroidParityUnroller(ordered, directions, anacrusis);
+        return unroller.Build();
+    }
+
     /// <summary>
     /// Returns the current playback traversal, recomputing it when the cached sequence is stale.
     /// </summary>
@@ -68,10 +87,12 @@ public static class ScoreNavigation
     {
         ArgumentNullException.ThrowIfNull(score);
 
-        // Until Score.MeasurePositions lands, use the first populated track as the timeline source.
-        var measures = score.Tracks.FirstOrDefault(track => track.Measures.Count > 0)?.Measures
-            ?? Array.Empty<MeasureModel>();
-        var sequence = BuildPlaybackSequence(measures, score.Anacrusis);
+        var sequence = score.TimelineBars.Count > 0
+            ? BuildPlaybackSequence(score.TimelineBars, score.Anacrusis)
+            : BuildPlaybackSequence(
+                score.Tracks.FirstOrDefault(track => track.Measures.Count > 0)?.Measures
+                    ?? Array.Empty<MeasureModel>(),
+                score.Anacrusis);
         score.PlaybackMasterBarSequence = sequence;
         SetPlaybackSequenceState(score, isCurrent: true);
         return sequence;
@@ -838,6 +859,17 @@ public static class ScoreNavigation
         public bool HasAlternateEndings => AlternateEndingMask != 0;
 
         public static MeasureState From(MeasureModel source)
+            => new(
+                MeasureIndex: source.Index,
+                RepeatStart: source.RepeatStart,
+                RepeatEnd: source.RepeatEnd,
+                RepeatCount: Math.Max(0, source.RepeatCount),
+                AlternateEndingMask: ParseAlternateEndingMask(source.AlternateEndings),
+                Jump: source.Jump,
+                Target: source.Target,
+                DirectionProperties: source.DirectionProperties);
+
+        public static MeasureState From(TimelineBarModel source)
             => new(
                 MeasureIndex: source.Index,
                 RepeatStart: source.RepeatStart,

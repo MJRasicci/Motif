@@ -15,6 +15,7 @@ public class EndToEndReaderTests
 
         score.Should().NotBeNull();
         score.Tracks.Should().NotBeEmpty();
+        score.TimelineBars.Should().NotBeEmpty();
         score.PlaybackMasterBarSequence.Should().NotBeEmpty();
 
         var firstTrack = score.Tracks[0];
@@ -24,6 +25,7 @@ public class EndToEndReaderTests
 
         var json = score.ToJson();
         json.Should().Contain("\"Tracks\"");
+        json.Should().Contain("\"TimelineBars\"");
         json.Should().Contain("\"PlaybackMasterBarSequence\"");
     }
 }

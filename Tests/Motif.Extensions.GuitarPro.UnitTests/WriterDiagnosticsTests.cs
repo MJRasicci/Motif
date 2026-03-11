@@ -153,6 +153,116 @@ public class WriterDiagnosticsTests
     }
 
     [Fact]
+    public async Task Unmapper_warns_when_source_track_staves_xml_is_regenerated()
+    {
+        var score = await DeserializeAndMapAsync(BuildSingleNoteGpif(
+            trackBody: """
+                <Staves>
+                  <Staff>
+                    <Properties>
+                      <Property name="Tuning">
+                        <Pitches>40 45 50 55 59 64</Pitches>
+                        <Flat />
+                        <Instrument>Guitar</Instrument>
+                        <Label>Std</Label>
+                        <LabelVisible>true</LabelVisible>
+                      </Property>
+                    </Properties>
+                  </Staff>
+                </Staves>
+                """));
+
+        score.Tracks[0].GetRequiredGuitarPro().Metadata.Staffs[0].CapoFret = 2;
+
+        var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
+
+        result.Diagnostics.Warnings.Should().Contain(entry =>
+            entry.Code == "TRACK_STAVES_XML_REGENERATED"
+            && entry.Category == "RawFidelity");
+    }
+
+    [Fact]
+    public async Task Unmapper_warns_when_source_note_string_and_fret_are_regenerated()
+    {
+        var score = await DeserializeAndMapAsync(BuildSingleNoteGpif(
+            trackBody: """
+                <Staves>
+                  <Staff>
+                    <Properties>
+                      <Property name="Tuning">
+                        <Pitches>40 45 50 55 59 64</Pitches>
+                        <Flat />
+                        <Instrument>Guitar</Instrument>
+                        <Label>Std</Label>
+                        <LabelVisible>true</LabelVisible>
+                      </Property>
+                    </Properties>
+                  </Staff>
+                </Staves>
+                """,
+            noteBody: """
+                <Note id="200">
+                  <Properties>
+                    <Property name="Fret"><Fret>0</Fret></Property>
+                    <Property name="Midi"><Number>45</Number></Property>
+                    <Property name="String"><String>1</String></Property>
+                  </Properties>
+                </Note>
+                """));
+
+        score.Tracks[0].Measures[0].Beats[0].Notes[0].MidiPitch = 47;
+
+        var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
+
+        result.Diagnostics.Warnings.Should().Contain(entry =>
+            entry.Code == "NOTE_STRING_FRET_REGENERATED"
+            && entry.Category == "RawFidelity");
+    }
+
+    [Fact]
+    public async Task Unmapper_warns_when_source_pitch_payloads_are_regenerated()
+    {
+        var score = await DeserializeAndMapAsync(BuildSingleNoteGpif(
+            noteBody: """
+                <Note id="200">
+                  <Properties>
+                    <Property name="ConcertPitch">
+                      <Pitch><Step>C</Step><Accidental></Accidental><Octave>-1</Octave></Pitch>
+                    </Property>
+                    <Property name="Midi"><Number>36</Number></Property>
+                    <Property name="TransposedPitch">
+                      <Pitch><Step>C</Step><Accidental></Accidental><Octave>-1</Octave></Pitch>
+                    </Property>
+                  </Properties>
+                </Note>
+                """));
+
+        score.Tracks[0].Measures[0].Beats[0].Notes[0].MidiPitch = 38;
+
+        var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
+
+        result.Diagnostics.Warnings.Should().Contain(entry =>
+            entry.Code == "NOTE_CONCERT_PITCH_REGENERATED"
+            && entry.Category == "RawFidelity");
+        result.Diagnostics.Warnings.Should().Contain(entry =>
+            entry.Code == "NOTE_TRANSPOSED_PITCH_REGENERATED"
+            && entry.Category == "RawFidelity");
+    }
+
+    [Fact]
+    public async Task Unmapper_warns_when_source_rhythm_shape_is_regenerated()
+    {
+        var score = await DeserializeAndMapAsync(BuildSingleNoteGpif());
+        score.Tracks[0].Measures[0].Beats[0].Duration = 0.5m;
+
+        var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
+
+        result.Diagnostics.Warnings.Should().Contain(entry =>
+            entry.Code == "RHYTHM_SOURCE_SHAPE_REGENERATED"
+            && entry.Category == "RawFidelity");
+    }
+
+    [Fact]
     public void No_op_source_fidelity_diagnostics_warn_for_raw_count_and_slot_drift()
     {
         var sourceRaw = new GpifDocument
@@ -457,6 +567,48 @@ public class WriterDiagnosticsTests
         await using var stream = new MemoryStream();
         await new XmlGpifSerializer().SerializeAsync(raw, stream, TestContext.Current.CancellationToken);
         return stream.ToArray();
+    }
+
+    private static string BuildSingleNoteGpif(
+        string trackBody = "",
+        string rhythmBody = """<Rhythm id="1000"><NoteValue>Quarter</NoteValue></Rhythm>""",
+        string beatBody = """
+            <Beat id="100">
+              <Rhythm ref="1000" />
+              <Notes>200</Notes>
+            </Beat>
+            """,
+        string noteBody = """
+            <Note id="200">
+              <Properties>
+                <Property name="Midi"><Number>60</Number></Property>
+              </Properties>
+            </Note>
+            """)
+        => $"""
+        <GPIF>
+          <Score><Title>T</Title><Artist>A</Artist><Album>B</Album></Score>
+          <MasterTrack><Tracks>0</Tracks></MasterTrack>
+          <Tracks>
+            <Track id="0">
+              <Name>Guitar</Name>
+              {trackBody}
+            </Track>
+          </Tracks>
+          <MasterBars><MasterBar><Time>4/4</Time><Bars>1</Bars></MasterBar></MasterBars>
+          <Bars><Bar id="1"><Voices>10</Voices></Bar></Bars>
+          <Voices><Voice id="10"><Beats>100</Beats></Voice></Voices>
+          <Rhythms>{rhythmBody}</Rhythms>
+          <Beats>{beatBody}</Beats>
+          <Notes>{noteBody}</Notes>
+        </GPIF>
+        """;
+
+    private static async Task<Score> DeserializeAndMapAsync(string gpif)
+    {
+        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(gpif));
+        var raw = await new XmlGpifDeserializer().DeserializeAsync(stream, TestContext.Current.CancellationToken);
+        return await new DefaultScoreMapper().MapAsync(raw, TestContext.Current.CancellationToken);
     }
 
     private static BeatModel CloneBeat(BeatModel beat)

@@ -249,6 +249,37 @@ public class ScoreNavigationTests
     }
 
     [Fact]
+    public void RebuildPlaybackSequence_prefers_score_timeline_bars_when_present()
+    {
+        var score = new Score
+        {
+            Tracks =
+            [
+                new TrackModel
+                {
+                    Measures =
+                    [
+                        Measure(0),
+                        Measure(1),
+                        Measure(2)
+                    ]
+                }
+            ],
+            TimelineBars =
+            [
+                TimelineBar(0),
+                TimelineBar(1, repeatEnd: true, repeatCount: 2),
+                TimelineBar(2)
+            ]
+        };
+
+        var sequence = ScoreNavigation.RebuildPlaybackSequence(score);
+
+        sequence.Should().Equal(0, 1, 0, 1, 2);
+        score.PlaybackMasterBarSequence.Should().Equal(0, 1, 0, 1, 2);
+    }
+
+    [Fact]
     public void InvalidatePlaybackSequence_clears_cached_sequence_and_marks_it_stale()
     {
         var score = new Score
@@ -319,6 +350,28 @@ public class ScoreNavigationTests
         => new()
         {
             Index = index,
+            RepeatStart = repeatStart,
+            RepeatEnd = repeatEnd,
+            RepeatCount = repeatCount,
+            AlternateEndings = alternateEndings,
+            Jump = jump,
+            Target = target,
+            DirectionProperties = directionProperties ?? new Dictionary<string, string>()
+        };
+
+    private static TimelineBarModel TimelineBar(
+        int index,
+        bool repeatStart = false,
+        bool repeatEnd = false,
+        int repeatCount = 0,
+        string alternateEndings = "",
+        string jump = "",
+        string target = "",
+        IReadOnlyDictionary<string, string>? directionProperties = null)
+        => new()
+        {
+            Index = index,
+            TimeSignature = "4/4",
             RepeatStart = repeatStart,
             RepeatEnd = repeatEnd,
             RepeatCount = repeatCount,

@@ -17,6 +17,11 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         var orderedTracks = source.Tracks
             .OrderBy(t => t.Id)
             .ToArray();
+        var timelineBars = source.MasterBars
+            .OrderBy(masterBar => masterBar.Index)
+            .Select(MapTimelineBar)
+            .ToArray();
+        var timelineBarsByIndex = timelineBars.ToDictionary(timelineBar => timelineBar.Index);
         var barSlotStartByTrackId = BuildBarSlotStartByTrackId(orderedTracks);
 
         var tracks = orderedTracks
@@ -28,6 +33,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                     track,
                     barSlotStartByTrackId[track.Id],
                     GetTrackStaffCount(track),
+                    timelineBarsByIndex,
                     isStringedTrack);
                 ApplyTieDurationStitching(measures);
                 var trackMetadata = new TrackMetadata
@@ -264,6 +270,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             Artist = source.Score.Artist,
             Album = source.Score.Album,
             Tracks = tracks,
+            TimelineBars = timelineBars,
             Anacrusis = source.MasterTrack.Anacrusis
         };
 
@@ -300,6 +307,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         GpifTrack track,
         int trackBarSlotStart,
         int staffCount,
+        IReadOnlyDictionary<int, TimelineBarModel> timelineBarsByIndex,
         bool isStringedTrack)
     {
         var measures = new List<MeasureModel>(source.MasterBars.Count);
@@ -328,39 +336,42 @@ internal sealed class DefaultScoreMapper : IScoreMapper
 
             var voices = primaryStaff?.Voices ?? Array.Empty<MeasureVoiceModel>();
             var beats = primaryStaff?.Beats ?? Array.Empty<BeatModel>();
+            var timelineBar = timelineBarsByIndex.TryGetValue(masterBar.Index, out var existingTimelineBar)
+                ? existingTimelineBar
+                : MapTimelineBar(masterBar);
 
             var measure = new MeasureModel
             {
-                Index = masterBar.Index,
-                TimeSignature = masterBar.Time,
-                DoubleBar = masterBar.DoubleBar,
-                FreeTime = masterBar.FreeTime,
-                TripletFeel = masterBar.TripletFeel,
+                Index = timelineBar.Index,
+                TimeSignature = timelineBar.TimeSignature,
+                DoubleBar = timelineBar.DoubleBar,
+                FreeTime = timelineBar.FreeTime,
+                TripletFeel = timelineBar.TripletFeel,
                 Clef = primaryStaff?.Clef ?? string.Empty,
                 SimileMark = primaryStaff?.SimileMark ?? string.Empty,
-                RepeatStart = masterBar.RepeatStart,
-                RepeatStartAttributePresent = masterBar.RepeatStartAttributePresent,
-                RepeatEnd = masterBar.RepeatEnd,
-                RepeatEndAttributePresent = masterBar.RepeatEndAttributePresent,
-                RepeatCount = masterBar.RepeatCount,
-                RepeatCountAttributePresent = masterBar.RepeatCountAttributePresent,
-                AlternateEndings = masterBar.AlternateEndings,
-                SectionLetter = masterBar.SectionLetter,
-                SectionText = masterBar.SectionText,
-                HasExplicitEmptySection = masterBar.HasExplicitEmptySection,
-                Jump = masterBar.Jump,
-                Target = masterBar.Target,
-                DirectionProperties = masterBar.DirectionProperties,
-                KeyAccidentalCount = masterBar.KeyAccidentalCount,
-                KeyMode = masterBar.KeyMode,
-                KeyTransposeAs = masterBar.KeyTransposeAs,
-                Fermatas = masterBar.Fermatas.Select(f => new FermataMetadata
+                RepeatStart = timelineBar.RepeatStart,
+                RepeatStartAttributePresent = timelineBar.RepeatStartAttributePresent,
+                RepeatEnd = timelineBar.RepeatEnd,
+                RepeatEndAttributePresent = timelineBar.RepeatEndAttributePresent,
+                RepeatCount = timelineBar.RepeatCount,
+                RepeatCountAttributePresent = timelineBar.RepeatCountAttributePresent,
+                AlternateEndings = timelineBar.AlternateEndings,
+                SectionLetter = timelineBar.SectionLetter,
+                SectionText = timelineBar.SectionText,
+                HasExplicitEmptySection = timelineBar.HasExplicitEmptySection,
+                Jump = timelineBar.Jump,
+                Target = timelineBar.Target,
+                DirectionProperties = timelineBar.DirectionProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
+                KeyAccidentalCount = timelineBar.KeyAccidentalCount,
+                KeyMode = timelineBar.KeyMode,
+                KeyTransposeAs = timelineBar.KeyTransposeAs,
+                Fermatas = timelineBar.Fermatas.Select(f => new FermataMetadata
                 {
                     Type = f.Type,
                     Offset = f.Offset,
-                        Length = f.Length
+                    Length = f.Length
                 }).ToArray(),
-                XProperties = masterBar.XProperties,
+                XProperties = timelineBar.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
                 BarProperties = primaryStaff?.BarProperties ?? new Dictionary<string, string>(),
                 BarXProperties = primaryStaff?.BarXProperties ?? new Dictionary<string, int>(),
                 AdditionalStaffBars = additionalStaffBars,
@@ -384,6 +395,39 @@ internal sealed class DefaultScoreMapper : IScoreMapper
 
         return measures;
     }
+
+    private static TimelineBarModel MapTimelineBar(GpifMasterBar masterBar)
+        => new()
+        {
+            Index = masterBar.Index,
+            TimeSignature = masterBar.Time,
+            DoubleBar = masterBar.DoubleBar,
+            FreeTime = masterBar.FreeTime,
+            TripletFeel = masterBar.TripletFeel,
+            RepeatStart = masterBar.RepeatStart,
+            RepeatStartAttributePresent = masterBar.RepeatStartAttributePresent,
+            RepeatEnd = masterBar.RepeatEnd,
+            RepeatEndAttributePresent = masterBar.RepeatEndAttributePresent,
+            RepeatCount = masterBar.RepeatCount,
+            RepeatCountAttributePresent = masterBar.RepeatCountAttributePresent,
+            AlternateEndings = masterBar.AlternateEndings,
+            SectionLetter = masterBar.SectionLetter,
+            SectionText = masterBar.SectionText,
+            HasExplicitEmptySection = masterBar.HasExplicitEmptySection,
+            Jump = masterBar.Jump,
+            Target = masterBar.Target,
+            DirectionProperties = masterBar.DirectionProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
+            KeyAccidentalCount = masterBar.KeyAccidentalCount,
+            KeyMode = masterBar.KeyMode,
+            KeyTransposeAs = masterBar.KeyTransposeAs,
+            Fermatas = masterBar.Fermatas.Select(f => new FermataMetadata
+            {
+                Type = f.Type,
+                Offset = f.Offset,
+                Length = f.Length
+            }).ToArray(),
+            XProperties = masterBar.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value)
+        };
 
     private static MeasureStaffModel? MapStaffBar(
         GpifDocument source,
@@ -533,6 +577,8 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                             Xml = n.Xml,
                             SourceMidiPitch = n.MidiPitch,
                             SourceTransposedMidiPitch = ResolveSourceTransposedMidiPitch(n.MidiPitch, track.Transpose),
+                            HadSourceConcertPitch = n.ConcertPitch is not null,
+                            HadSourceTransposedPitch = n.TransposedPitch is not null,
                             SourceFret = n.SourceFret,
                             SourceStringNumber = n.SourceStringNumber,
                             SourceSlideFlags = n.Articulation.SlideFlags,

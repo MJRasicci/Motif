@@ -17,18 +17,34 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
 
         var diagnostics = new WriteDiagnostics();
         AppendGuitarProFidelityDiagnostics(score, diagnostics);
+        var hasScoreLevelSourceContext = HasScoreLevelSourceContext(score);
+        var regenerationDiagnostics = hasScoreLevelSourceContext
+            ? new RegenerationDiagnostics()
+            : null;
         var scoreExtension = score.GetGuitarPro();
         var scoreMetadata = scoreExtension?.Metadata ?? new ScoreMetadata();
         var masterTrackMetadata = scoreExtension?.MasterTrack ?? new MasterTrackMetadata();
+        var orderedTracks = score.Tracks
+            .OrderBy(t => t.Id)
+            .ToArray();
+        var orderedTimelineBars = score.TimelineBars
+            .OrderBy(timelineBar => timelineBar.Index)
+            .ToArray();
         var masterTrackIds = masterTrackMetadata.TrackIds.Length > 0
             ? masterTrackMetadata.TrackIds
-            : score.Tracks.OrderBy(t => t.Id).Select(t => t.Id).ToArray();
+            : orderedTracks.Select(t => t.Id).ToArray();
 
-        var tracks = score.Tracks
-            .OrderBy(t => t.Id)
+        var tracks = orderedTracks
             .Select(t =>
             {
                 var metadata = GetTrackMetadata(t);
+                var stavesXml = ResolveStavesXml(metadata);
+                if (regenerationDiagnostics is not null
+                    && HasSourceStavesXml(metadata)
+                    && string.IsNullOrEmpty(stavesXml))
+                {
+                    regenerationDiagnostics.RecordTrackStavesXml(FormatTrackPath(t));
+                }
 
                 return new GpifTrack
                 {
@@ -56,7 +72,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                     HasTrackTuningProperty = metadata.HasTrackTuningProperty,
                     Properties = metadata.Properties,
                     InstrumentSetXml = metadata.InstrumentSetXml,
-                    StavesXml = ResolveStavesXml(metadata),
+                    StavesXml = stavesXml,
                     SoundsXml = metadata.SoundsXml,
                     RseXml = metadata.RseXml,
                     NotationPatchXml = metadata.NotationPatchXml,
@@ -177,15 +193,15 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             })
             .ToArray();
 
-        var barId = NextIdAfter(score.Tracks
+        var barId = NextIdAfter(orderedTracks
             .SelectMany(track => track.Measures.SelectMany(measure => ResolveMeasureStaffBars(track, measure)))
             .Select(staff => GetMeasureStaffMetadata(staff).SourceBarId));
-        var voiceId = NextIdAfter(score.Tracks
+        var voiceId = NextIdAfter(orderedTracks
             .SelectMany(t => t.Measures)
             .SelectMany(m => m.Voices)
             .Select(v => GetVoiceMetadata(v).SourceVoiceId));
-        var beatId = NextIdAfter(score.Tracks.SelectMany(t => t.Measures).SelectMany(m => m.Voices.Count > 0 ? m.Voices.SelectMany(v => v.Beats) : m.Beats).Select(b => b.Id));
-        var noteId = NextIdAfter(score.Tracks.SelectMany(t => t.Measures).SelectMany(m => m.Voices.Count > 0 ? m.Voices.SelectMany(v => v.Beats) : m.Beats).SelectMany(b => b.Notes).Select(n => n.Id));
+        var beatId = NextIdAfter(orderedTracks.SelectMany(t => t.Measures).SelectMany(m => m.Voices.Count > 0 ? m.Voices.SelectMany(v => v.Beats) : m.Beats).Select(b => b.Id));
+        var noteId = NextIdAfter(orderedTracks.SelectMany(t => t.Measures).SelectMany(m => m.Voices.Count > 0 ? m.Voices.SelectMany(v => v.Beats) : m.Beats).SelectMany(b => b.Notes).Select(n => n.Id));
         var rhythmId = 0;
 
         var bars = new Dictionary<int, GpifBar>();
@@ -201,13 +217,27 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         var rhythmIdsBySignature = new Dictionary<RhythmSignature, int>();
         var masterBars = new List<GpifMasterBar>();
 
-        var maxMeasures = score.Tracks.Select(t => t.Measures.Count).DefaultIfEmpty(0).Max();
+        var maxMeasures = Math.Max(
+            orderedTracks.Select(t => t.Measures.Count).DefaultIfEmpty(0).Max(),
+            orderedTimelineBars.Length);
 
         for (var m = 0; m < maxMeasures; m++)
         {
             var measureBarIds = new List<int>();
+            var primaryTimelineTrack = orderedTracks.FirstOrDefault(track => m < track.Measures.Count);
+            var fallbackMeasure = primaryTimelineTrack is null
+                ? null
+                : primaryTimelineTrack.Measures[m];
+            var timelineBar = m < orderedTimelineBars.Length
+                ? orderedTimelineBars[m]
+                : null;
+            var masterBar = CreateMasterBar(timelineBar, fallbackMeasure);
+            if (masterBar is not null)
+            {
+                masterBars.Add(masterBar);
+            }
 
-            foreach (var track in score.Tracks.OrderBy(t => t.Id))
+            foreach (var track in orderedTracks)
             {
                 if (m >= track.Measures.Count)
                 {
@@ -215,8 +245,6 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                 }
 
                 var measure = track.Measures[m];
-                var jump = ResolveDirectionValue(measure.Jump, measure.DirectionProperties, "Jump");
-                var target = ResolveDirectionValue(measure.Target, measure.DirectionProperties, "Target");
                 var staffBars = ResolveMeasureStaffBars(track, measure);
 
                 foreach (var staffBar in staffBars)
@@ -230,8 +258,9 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                     {
                         var beatIds = new List<int>();
 
-                        foreach (var beat in measureVoice.Beats)
+                        for (var beatIndex = 0; beatIndex < measureVoice.Beats.Count; beatIndex++)
                         {
+                            var beat = measureVoice.Beats[beatIndex];
                             var noteRefs = new List<int>();
                             var encodedWhammy = ArticulationDecoders.EncodeWhammyBar(beat.WhammyBar);
                             var beatXProperties = beat.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value);
@@ -261,12 +290,41 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                             }
                             if (beat.Notes.Count > 0)
                             {
-                                foreach (var note in beat.Notes)
+                                for (var noteIndex = 0; noteIndex < beat.Notes.Count; noteIndex++)
                                 {
+                                    var note = beat.Notes[noteIndex];
                                     var bend = ArticulationDecoders.EncodeBend(note.Articulation.Bend);
                                     var harmonic = ArticulationDecoders.EncodeHarmonic(note.Articulation.Harmonic);
-                                    var (resolvedStringNumber, resolvedFret) = ResolveStringAndFret(note, track, staffBar.StaffIndex);
+                                    var noteMetadata = GetNoteMetadata(note);
+                                    var preserveSourceStringAndFret = ShouldPreserveSourceStringAndFret(note, track, staffBar.StaffIndex);
+                                    if (regenerationDiagnostics is not null
+                                        && HasSourceStringAndFret(noteMetadata)
+                                        && !preserveSourceStringAndFret)
+                                    {
+                                        regenerationDiagnostics.RecordNoteStringFret(
+                                            FormatNotePath(track, measure, staffBar, measureVoice, beatIndex, noteIndex));
+                                    }
+
+                                    var (resolvedStringNumber, resolvedFret) = ResolveStringAndFret(note, track, staffBar.StaffIndex, preserveSourceStringAndFret);
                                     var transposedMidiPitch = ResolveTransposedMidiPitch(note, track);
+                                    var preserveSourceConcertPitch = ShouldPreserveSourceConcertPitch(note);
+                                    if (regenerationDiagnostics is not null
+                                        && noteMetadata.HadSourceConcertPitch
+                                        && !preserveSourceConcertPitch)
+                                    {
+                                        regenerationDiagnostics.RecordNoteConcertPitch(
+                                            FormatNotePath(track, measure, staffBar, measureVoice, beatIndex, noteIndex));
+                                    }
+
+                                    var preserveSourceTransposedPitch = ShouldPreserveSourceTransposedPitch(note, transposedMidiPitch);
+                                    if (regenerationDiagnostics is not null
+                                        && noteMetadata.HadSourceTransposedPitch
+                                        && !preserveSourceTransposedPitch)
+                                    {
+                                        regenerationDiagnostics.RecordNoteTransposedPitch(
+                                            FormatNotePath(track, measure, staffBar, measureVoice, beatIndex, noteIndex));
+                                    }
+
                                     var noteXProperties = note.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value);
                                     noteXProperties.Remove("688062467");
                                     var encodedTrillSpeed = ResolveTrillSpeedXPropertyValue(note);
@@ -275,8 +333,6 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                         noteXProperties["688062467"] = encodedTrillSpeed.Value;
                                     }
 
-                                    var noteMetadata = GetNoteMetadata(note);
-
                                     var noteCandidate = new GpifNote
                                     {
                                         Xml = noteMetadata.Xml,
@@ -284,10 +340,10 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                         Velocity = note.Velocity,
                                         MidiPitch = note.MidiPitch,
                                         TransposedMidiPitch = transposedMidiPitch,
-                                        ConcertPitch = ShouldPreserveSourceConcertPitch(note)
+                                        ConcertPitch = preserveSourceConcertPitch
                                             ? ToRawPitchValue(note.ConcertPitch)
                                             : null,
-                                        TransposedPitch = ShouldPreserveSourceTransposedPitch(note, transposedMidiPitch)
+                                        TransposedPitch = preserveSourceTransposedPitch
                                             ? ToRawPitchValue(note.TransposedPitch)
                                             : null,
                                         SourceFret = noteMetadata.SourceFret,
@@ -352,7 +408,16 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                 }
                             }
 
-                            var rhythmCandidate = TryPreserveSourceRhythmShape(beat)
+                            var preservedSourceRhythm = TryPreserveSourceRhythmShape(beat);
+                            if (regenerationDiagnostics is not null
+                                && beatMetadata.SourceRhythm is not null
+                                && preservedSourceRhythm is null)
+                            {
+                                regenerationDiagnostics.RecordRhythmSourceShape(
+                                    FormatBeatPath(track, measure, staffBar, measureVoice, beatIndex));
+                            }
+
+                            var rhythmCandidate = preservedSourceRhythm
                                 ?? ToRhythm(beat.Duration, id: 0, diagnostics);
                             var rhythmSignature = new RhythmSignature(
                                 rhythmCandidate.NoteValue,
@@ -526,44 +591,6 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                     measureBarIds.Add(currentBarId);
                 }
 
-                var measureMetadata = GetMeasureMetadata(measure);
-                if (masterBars.Count <= m)
-                {
-                    masterBars.Add(new GpifMasterBar
-                    {
-                        Xml = measureMetadata.MasterBarXml,
-                        Index = m,
-                        Time = measure.TimeSignature,
-                        DoubleBar = measure.DoubleBar,
-                        FreeTime = measure.FreeTime,
-                        TripletFeel = measure.TripletFeel,
-                        RepeatStart = measure.RepeatStart,
-                        RepeatStartAttributePresent = measure.RepeatStartAttributePresent,
-                        RepeatEnd = measure.RepeatEnd,
-                        RepeatEndAttributePresent = measure.RepeatEndAttributePresent,
-                        RepeatCount = measure.RepeatCount,
-                        RepeatCountAttributePresent = measure.RepeatCountAttributePresent,
-                        AlternateEndings = measure.AlternateEndings,
-                        SectionLetter = measure.SectionLetter,
-                        SectionText = measure.SectionText,
-                        HasExplicitEmptySection = measure.HasExplicitEmptySection,
-                        Jump = jump,
-                        Target = target,
-                        DirectionProperties = measure.DirectionProperties,
-                        DirectionsXml = measureMetadata.DirectionsXml,
-                        KeyAccidentalCount = measure.KeyAccidentalCount,
-                        KeyMode = measure.KeyMode,
-                        KeyTransposeAs = measure.KeyTransposeAs,
-                        Fermatas = measure.Fermatas.Select(f => new GpifFermata
-                        {
-                            Type = f.Type,
-                            Offset = f.Offset,
-                            Length = f.Length
-                        }).ToArray(),
-                        XProperties = measure.XProperties,
-                        XPropertiesXml = measureMetadata.MasterBarXPropertiesXml
-                    });
-                }
             }
 
             if (masterBars.Count > m)
@@ -678,6 +705,8 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             ScoreViewsXml = scoreMetadata.ScoreViewsXml
         };
 
+        regenerationDiagnostics?.AppendTo(diagnostics);
+
         return ValueTask.FromResult(new WriteResult
         {
             RawDocument = doc,
@@ -685,15 +714,105 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         });
     }
 
+    private static GpifMasterBar? CreateMasterBar(TimelineBarModel? timelineBar, MeasureModel? fallbackMeasure)
+    {
+        if (timelineBar is not null)
+        {
+            var measureMetadata = fallbackMeasure is null
+                ? new GpMeasureMetadata()
+                : GetMeasureMetadata(fallbackMeasure);
+            var jump = ResolveDirectionValue(timelineBar.Jump, timelineBar.DirectionProperties, "Jump");
+            var target = ResolveDirectionValue(timelineBar.Target, timelineBar.DirectionProperties, "Target");
+
+            return new GpifMasterBar
+            {
+                Xml = measureMetadata.MasterBarXml,
+                Index = timelineBar.Index,
+                Time = timelineBar.TimeSignature,
+                DoubleBar = timelineBar.DoubleBar,
+                FreeTime = timelineBar.FreeTime,
+                TripletFeel = timelineBar.TripletFeel,
+                RepeatStart = timelineBar.RepeatStart,
+                RepeatStartAttributePresent = timelineBar.RepeatStartAttributePresent,
+                RepeatEnd = timelineBar.RepeatEnd,
+                RepeatEndAttributePresent = timelineBar.RepeatEndAttributePresent,
+                RepeatCount = timelineBar.RepeatCount,
+                RepeatCountAttributePresent = timelineBar.RepeatCountAttributePresent,
+                AlternateEndings = timelineBar.AlternateEndings,
+                SectionLetter = timelineBar.SectionLetter,
+                SectionText = timelineBar.SectionText,
+                HasExplicitEmptySection = timelineBar.HasExplicitEmptySection,
+                Jump = jump,
+                Target = target,
+                DirectionProperties = timelineBar.DirectionProperties,
+                DirectionsXml = measureMetadata.DirectionsXml,
+                KeyAccidentalCount = timelineBar.KeyAccidentalCount,
+                KeyMode = timelineBar.KeyMode,
+                KeyTransposeAs = timelineBar.KeyTransposeAs,
+                Fermatas = timelineBar.Fermatas.Select(f => new GpifFermata
+                {
+                    Type = f.Type,
+                    Offset = f.Offset,
+                    Length = f.Length
+                }).ToArray(),
+                XProperties = timelineBar.XProperties,
+                XPropertiesXml = measureMetadata.MasterBarXPropertiesXml
+            };
+        }
+
+        if (fallbackMeasure is null)
+        {
+            return null;
+        }
+
+        var fallbackMetadata = GetMeasureMetadata(fallbackMeasure);
+        var fallbackJump = ResolveDirectionValue(fallbackMeasure.Jump, fallbackMeasure.DirectionProperties, "Jump");
+        var fallbackTarget = ResolveDirectionValue(fallbackMeasure.Target, fallbackMeasure.DirectionProperties, "Target");
+
+        return new GpifMasterBar
+        {
+            Xml = fallbackMetadata.MasterBarXml,
+            Index = fallbackMeasure.Index,
+            Time = fallbackMeasure.TimeSignature,
+            DoubleBar = fallbackMeasure.DoubleBar,
+            FreeTime = fallbackMeasure.FreeTime,
+            TripletFeel = fallbackMeasure.TripletFeel,
+            RepeatStart = fallbackMeasure.RepeatStart,
+            RepeatStartAttributePresent = fallbackMeasure.RepeatStartAttributePresent,
+            RepeatEnd = fallbackMeasure.RepeatEnd,
+            RepeatEndAttributePresent = fallbackMeasure.RepeatEndAttributePresent,
+            RepeatCount = fallbackMeasure.RepeatCount,
+            RepeatCountAttributePresent = fallbackMeasure.RepeatCountAttributePresent,
+            AlternateEndings = fallbackMeasure.AlternateEndings,
+            SectionLetter = fallbackMeasure.SectionLetter,
+            SectionText = fallbackMeasure.SectionText,
+            HasExplicitEmptySection = fallbackMeasure.HasExplicitEmptySection,
+            Jump = fallbackJump,
+            Target = fallbackTarget,
+            DirectionProperties = fallbackMeasure.DirectionProperties,
+            DirectionsXml = fallbackMetadata.DirectionsXml,
+            KeyAccidentalCount = fallbackMeasure.KeyAccidentalCount,
+            KeyMode = fallbackMeasure.KeyMode,
+            KeyTransposeAs = fallbackMeasure.KeyTransposeAs,
+            Fermatas = fallbackMeasure.Fermatas.Select(f => new GpifFermata
+            {
+                Type = f.Type,
+                Offset = f.Offset,
+                Length = f.Length
+            }).ToArray(),
+            XProperties = fallbackMeasure.XProperties,
+            XPropertiesXml = fallbackMetadata.MasterBarXPropertiesXml
+        };
+    }
+
     private static void AppendGuitarProFidelityDiagnostics(Score score, WriteDiagnostics diagnostics)
     {
-        var fidelityState = score.GetGuitarProFidelityState();
-        var hasScoreLevelSourceContext = fidelityState?.HasSourceContext == true || score.GetGuitarPro() is not null;
-        if (!hasScoreLevelSourceContext)
+        if (!HasScoreLevelSourceContext(score))
         {
             return;
         }
 
+        var fidelityState = score.GetGuitarProFidelityState();
         if (fidelityState?.FidelityInvalidated == true)
         {
             diagnostics.Warn(
@@ -727,6 +846,12 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             code: "GP_EXTENSION_GRAPH_PARTIAL",
             category: "RawFidelity",
             message: $"Guitar Pro source fidelity is only attached to part of the score tree; writer will regenerate missing raw metadata for {string.Join(", ", partialCoverage)}.");
+    }
+
+    private static bool HasScoreLevelSourceContext(Score score)
+    {
+        var fidelityState = score.GetGuitarProFidelityState();
+        return fidelityState?.HasSourceContext == true || score.GetGuitarPro() is not null;
     }
 
     private static ExtensionCoverage MeasureGuitarProExtensionCoverage(Score score)
@@ -879,6 +1004,113 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             => total > 0 && attached < total;
     }
 
+    private sealed class RegenerationDiagnostics
+    {
+        private readonly List<string> trackStavesXmlPaths = [];
+        private readonly List<string> noteStringFretPaths = [];
+        private readonly List<string> noteConcertPitchPaths = [];
+        private readonly List<string> noteTransposedPitchPaths = [];
+        private readonly List<string> rhythmSourceShapePaths = [];
+
+        public void RecordTrackStavesXml(string path)
+            => trackStavesXmlPaths.Add(path);
+
+        public void RecordNoteStringFret(string path)
+            => noteStringFretPaths.Add(path);
+
+        public void RecordNoteConcertPitch(string path)
+            => noteConcertPitchPaths.Add(path);
+
+        public void RecordNoteTransposedPitch(string path)
+            => noteTransposedPitchPaths.Add(path);
+
+        public void RecordRhythmSourceShape(string path)
+            => rhythmSourceShapePaths.Add(path);
+
+        public void AppendTo(WriteDiagnostics diagnostics)
+        {
+            AppendWarning(
+                diagnostics,
+                trackStavesXmlPaths,
+                code: "TRACK_STAVES_XML_REGENERATED",
+                message: "Writer regenerated track <Staves> XML from structured staff metadata because the imported source staff XML no longer matched the current track state.");
+            AppendWarning(
+                diagnostics,
+                noteStringFretPaths,
+                code: "NOTE_STRING_FRET_REGENERATED",
+                message: "Writer regenerated note string/fret properties because the imported source string placement no longer matched the current pitch or string context.");
+            AppendWarning(
+                diagnostics,
+                noteConcertPitchPaths,
+                code: "NOTE_CONCERT_PITCH_REGENERATED",
+                message: "Writer regenerated note ConcertPitch payloads from current MIDI values because the imported source spelling was no longer reusable.");
+            AppendWarning(
+                diagnostics,
+                noteTransposedPitchPaths,
+                code: "NOTE_TRANSPOSED_PITCH_REGENERATED",
+                message: "Writer regenerated note TransposedPitch payloads from current MIDI/transpose values because the imported source spelling was no longer reusable.");
+            AppendWarning(
+                diagnostics,
+                rhythmSourceShapePaths,
+                code: "RHYTHM_SOURCE_SHAPE_REGENERATED",
+                message: "Writer regenerated rhythm shapes from beat durations because the imported source rhythm shape was no longer reusable.");
+        }
+
+        private static void AppendWarning(
+            WriteDiagnostics diagnostics,
+            IReadOnlyList<string> paths,
+            string code,
+            string message)
+        {
+            if (paths.Count == 0)
+            {
+                return;
+            }
+
+            diagnostics.Warn(
+                code: code,
+                category: "RawFidelity",
+                message: $"{message} Affected nodes: {paths.Count}. Samples: {FormatSamplePaths(paths)}.",
+                path: paths[0]);
+        }
+    }
+
+    private static string FormatSamplePaths(IReadOnlyList<string> paths)
+    {
+        const int maxSamples = 3;
+        var samples = paths.Take(maxSamples).ToArray();
+        return paths.Count > maxSamples
+            ? $"{string.Join(", ", samples)}, ..."
+            : string.Join(", ", samples);
+    }
+
+    private static string FormatTrackPath(TrackModel track)
+        => $"/Score/Tracks[@id='{track.Id}']";
+
+    private static string FormatVoicePath(
+        TrackModel track,
+        MeasureModel measure,
+        MeasureStaffModel staffBar,
+        MeasureVoiceModel measureVoice)
+        => $"{FormatTrackPath(track)}/Measures[@index='{measure.Index}']/StaffBars[@index='{staffBar.StaffIndex}']/Voices[@index='{measureVoice.VoiceIndex}']";
+
+    private static string FormatBeatPath(
+        TrackModel track,
+        MeasureModel measure,
+        MeasureStaffModel staffBar,
+        MeasureVoiceModel measureVoice,
+        int beatIndex)
+        => $"{FormatVoicePath(track, measure, staffBar, measureVoice)}/Beats[{beatIndex}]";
+
+    private static string FormatNotePath(
+        TrackModel track,
+        MeasureModel measure,
+        MeasureStaffModel staffBar,
+        MeasureVoiceModel measureVoice,
+        int beatIndex,
+        int noteIndex)
+        => $"{FormatBeatPath(track, measure, staffBar, measureVoice, beatIndex)}/Notes[{noteIndex}]";
+
     private static IReadOnlyList<GpifNoteProperty> BuildCoreNoteProperties(int? midiPitch, int? stringNumber, int? fret)
     {
         var properties = new List<GpifNoteProperty>(3);
@@ -913,10 +1145,14 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return properties;
     }
 
-    private static (int? StringNumber, int? Fret) ResolveStringAndFret(NoteModel note, TrackModel track, int staffIndex)
+    private static (int? StringNumber, int? Fret) ResolveStringAndFret(
+        NoteModel note,
+        TrackModel track,
+        int staffIndex,
+        bool preserveSourceStringAndFret)
     {
         var noteMetadata = GetNoteMetadata(note);
-        if (ShouldPreserveSourceStringAndFret(note, track, staffIndex))
+        if (preserveSourceStringAndFret)
         {
             return (noteMetadata.SourceStringNumber ?? note.StringNumber, noteMetadata.SourceFret);
         }
@@ -1041,7 +1277,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
     private static bool ShouldPreserveSourceStringAndFret(NoteModel note, TrackModel track, int staffIndex)
     {
         var noteMetadata = GetNoteMetadata(note);
-        if (!noteMetadata.SourceFret.HasValue && !noteMetadata.SourceStringNumber.HasValue)
+        if (!HasSourceStringAndFret(noteMetadata))
         {
             return false;
         }
@@ -1055,6 +1291,9 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
 
         return SourceStringContextMatches(track, staffIndex);
     }
+
+    private static bool HasSourceStringAndFret(GpNoteMetadata noteMetadata)
+        => noteMetadata.SourceFret.HasValue || noteMetadata.SourceStringNumber.HasValue;
 
     private static bool SourceStringContextMatches(TrackModel track, int staffIndex)
     {
@@ -1121,6 +1360,9 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         => ShouldPreserveSourceStavesXml(metadata)
             ? metadata.StavesXml
             : string.Empty;
+
+    private static bool HasSourceStavesXml(TrackMetadata metadata)
+        => !string.IsNullOrWhiteSpace(metadata.StavesXml);
 
     private static bool ShouldPreserveSourceStavesXml(TrackMetadata metadata)
     {

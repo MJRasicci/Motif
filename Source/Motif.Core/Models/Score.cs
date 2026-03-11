@@ -11,6 +11,11 @@ public sealed class Score : ExtensibleModel
     public IReadOnlyList<TrackModel> Tracks { get; set; } = Array.Empty<TrackModel>();
 
     /// <summary>
+    /// Score-owned master-bar timeline used for playback/navigation and other timeline-global state.
+    /// </summary>
+    public IReadOnlyList<TimelineBarModel> TimelineBars { get; set; } = Array.Empty<TimelineBarModel>();
+
+    /// <summary>
     /// True when playback should treat the score as beginning with a pickup bar.
     /// </summary>
     public bool Anacrusis { get; set; }
@@ -22,6 +27,55 @@ public sealed class Score : ExtensibleModel
     /// when reading the cached value.
     /// </summary>
     public IReadOnlyList<int> PlaybackMasterBarSequence { get; set; } = Array.Empty<int>();
+}
+
+public sealed class TimelineBarModel
+{
+    public int Index { get; set; }
+
+    public string TimeSignature { get; set; } = string.Empty;
+
+    public bool DoubleBar { get; set; }
+
+    public bool FreeTime { get; set; }
+
+    public string TripletFeel { get; set; } = string.Empty;
+
+    public bool RepeatStart { get; set; }
+
+    public bool RepeatStartAttributePresent { get; set; }
+
+    public bool RepeatEnd { get; set; }
+
+    public bool RepeatEndAttributePresent { get; set; }
+
+    public int RepeatCount { get; set; }
+
+    public bool RepeatCountAttributePresent { get; set; }
+
+    public string AlternateEndings { get; set; } = string.Empty;
+
+    public string SectionLetter { get; set; } = string.Empty;
+
+    public string SectionText { get; set; } = string.Empty;
+
+    public bool HasExplicitEmptySection { get; set; }
+
+    public string Jump { get; set; } = string.Empty;
+
+    public string Target { get; set; } = string.Empty;
+
+    public IReadOnlyDictionary<string, string> DirectionProperties { get; set; } = new Dictionary<string, string>();
+
+    public int? KeyAccidentalCount { get; set; }
+
+    public string KeyMode { get; set; } = string.Empty;
+
+    public string KeyTransposeAs { get; set; } = string.Empty;
+
+    public IReadOnlyList<FermataMetadata> Fermatas { get; set; } = Array.Empty<FermataMetadata>();
+
+    public IReadOnlyDictionary<string, int> XProperties { get; set; } = new Dictionary<string, int>();
 }
 
 public sealed class TrackModel : ExtensibleModel

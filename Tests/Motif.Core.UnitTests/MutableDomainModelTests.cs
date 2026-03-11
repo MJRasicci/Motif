@@ -11,6 +11,7 @@ public class MutableDomainModelTests
     {
         var score = new Score();
         var track = new TrackModel();
+        var timelineBar = new TimelineBarModel();
         var measure = new MeasureModel();
         var beat = new BeatModel();
         var note = new NoteModel();
@@ -19,9 +20,13 @@ public class MutableDomainModelTests
         score.Artist = "Artist";
         score.Anacrusis = true;
         score.PlaybackMasterBarSequence = [0, 1];
+        score.TimelineBars = [timelineBar];
 
         track.Id = 1;
         track.Name = "Lead";
+
+        timelineBar.Index = 0;
+        timelineBar.TimeSignature = "4/4";
 
         measure.Index = 0;
         measure.TimeSignature = "4/4";
@@ -53,6 +58,8 @@ public class MutableDomainModelTests
         score.Title = "Mutable Motif";
         score.Anacrusis = false;
         score.PlaybackMasterBarSequence = [0, 1, 2];
+        timelineBar.TimeSignature = "7/8";
+        timelineBar.SectionLetter = "A";
 
         track.Name = "Rhythm";
 
@@ -84,6 +91,9 @@ public class MutableDomainModelTests
         score.Title.Should().Be("Mutable Motif");
         score.Anacrusis.Should().BeFalse();
         score.PlaybackMasterBarSequence.Should().Equal(0, 1, 2);
+        score.TimelineBars.Should().ContainSingle().Which.Should().BeSameAs(timelineBar);
+        timelineBar.TimeSignature.Should().Be("7/8");
+        timelineBar.SectionLetter.Should().Be("A");
         score.Tracks.Should().ContainSingle().Which.Should().BeSameAs(track);
 
         track.Name.Should().Be("Rhythm");

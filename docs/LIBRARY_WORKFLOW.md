@@ -40,6 +40,15 @@ Typical traversal-affecting edits include:
 - Adding, removing, or reordering measures
 - Editing repeat starts/ends, alternate endings, jump targets, or direction properties
 
+## Score Timeline
+
+`Score.TimelineBars` is the score-owned master-bar timeline.
+
+- The Guitar Pro reader populates it from source `MasterBar` data.
+- `ScoreNavigation` and the Guitar Pro writer use it when it is present.
+- The measure-level duplicates on `Track.Measures` still exist temporarily for compatibility and will be removed as the full hierarchy refactor lands.
+- Prefer editing timeline-global state such as repeats, sections, jump targets, key changes, and fermatas through `Score.TimelineBars`.
+
 ## Guitar Pro Fidelity Workflow
 
 Scores read from `.gp` carry Guitar Pro extensions that preserve raw-format fidelity where possible.
@@ -89,5 +98,10 @@ Common `RawFidelity` warnings include:
 - `GP_SOURCE_FIDELITY_INVALIDATED`
 - `GP_EXTENSION_REATTACHMENT_PARTIAL`
 - `GP_EXTENSION_GRAPH_PARTIAL`
+- `TRACK_STAVES_XML_REGENERATED`
+- `NOTE_STRING_FRET_REGENERATED`
+- `NOTE_CONCERT_PITCH_REGENERATED`
+- `NOTE_TRANSPOSED_PITCH_REGENERATED`
+- `RHYTHM_SOURCE_SHAPE_REGENERATED`
 
 These warnings mean the writer produced a valid GP output, but some raw XML or reference fidelity had to be regenerated instead of preserved exactly.

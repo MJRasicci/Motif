@@ -174,6 +174,10 @@ public sealed class GpNoteMetadata
 
     public int? SourceTransposedMidiPitch { get; set; }
 
+    public bool HadSourceConcertPitch { get; set; }
+
+    public bool HadSourceTransposedPitch { get; set; }
+
     public int? SourceFret { get; set; }
 
     public int? SourceStringNumber { get; set; }

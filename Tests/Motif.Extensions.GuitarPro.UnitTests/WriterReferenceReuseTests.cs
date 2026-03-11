@@ -229,6 +229,50 @@ public class WriterReferenceReuseTests
     }
 
     [Fact]
+    public async Task Unmapper_uses_score_timeline_bars_for_master_bar_state_when_present()
+    {
+        var score = new Score
+        {
+            TimelineBars =
+            [
+                new TimelineBarModel
+                {
+                    Index = 0,
+                    TimeSignature = "7/8",
+                    RepeatStart = true,
+                    SectionLetter = "A",
+                    SectionText = "Verse"
+                }
+            ],
+            Tracks =
+            [
+                new TrackModel
+                {
+                    Id = 0,
+                    Name = "Guitar",
+                    Measures =
+                    [
+                        new MeasureModel
+                        {
+                            Index = 0,
+                            TimeSignature = "4/4",
+                            Beats = []
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
+
+        result.RawDocument.MasterBars.Should().ContainSingle();
+        result.RawDocument.MasterBars[0].Time.Should().Be("7/8");
+        result.RawDocument.MasterBars[0].RepeatStart.Should().BeTrue();
+        result.RawDocument.MasterBars[0].SectionLetter.Should().Be("A");
+        result.RawDocument.MasterBars[0].SectionText.Should().Be("Verse");
+    }
+
+    [Fact]
     public async Task Unmapper_does_not_copy_master_bar_xproperties_onto_written_bars()
     {
         var score = new Score
