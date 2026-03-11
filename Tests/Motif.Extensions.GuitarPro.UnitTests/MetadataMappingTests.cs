@@ -18,6 +18,12 @@ public class MetadataMappingTests
     private static TrackMetadata TrackMetadataOf(Track track)
         => track.GetRequiredGuitarPro().Metadata;
 
+    private static GpTimelineBarMetadata TimelineMetadataOf(TimelineBar timelineBar)
+        => timelineBar.GetRequiredGuitarPro().Metadata;
+
+    private static GpMeasureStaffMetadata MeasureMetadataOf(StaffMeasure measure)
+        => measure.GetRequiredGuitarPro().Metadata;
+
     private static GpVoiceMetadata VoiceMetadataOf(Voice voice)
         => voice.GetRequiredGuitarPro().Metadata;
 
@@ -89,8 +95,7 @@ public class MetadataMappingTests
                     KeyMode = "Major",
                     KeyTransposeAs = "C",
                     DirectionProperties = new Dictionary<string, string> { ["Jump"] = "DaCapo", ["Target"] = "Segno", ["Fine"] = "1" },
-                    Fermatas = [new FermataMetadata { Type = "Short", Offset = "Middle", Length = 1.2m }],
-                    XProperties = new Dictionary<string, int> { ["1124204545"] = 2 }
+                    Fermatas = [new FermataMetadata { Type = "Short", Offset = "Middle", Length = 1.2m }]
                 }
             ],
             Tracks =
@@ -103,12 +108,14 @@ public class MetadataMappingTests
                         Index = 0,
                         StaffIndex = 0,
                         Clef = "G2",
-                        BarProperties = new Dictionary<string, string> { ["BarDisplay"] = "Both" },
                         Voices = [ voice ],
                         Beats = [ beat ]
                     })
             ]
         };
+        score.TimelineBars[0].GetOrCreateGuitarPro().Metadata.XProperties = new Dictionary<string, int> { ["1124204545"] = 2 };
+        score.Tracks[0].PrimaryMeasure(0).GetOrCreateGuitarPro().Metadata.Properties =
+            new Dictionary<string, string> { ["BarDisplay"] = "Both" };
         score.GetOrCreateGuitarPro().Metadata = new ScoreMetadata
         {
             ExplicitEmptyOptionalElements = ["WordsAndMusic", "PageHeader"],
@@ -372,9 +379,9 @@ public class MetadataMappingTests
             timelineBar.KeyMode.Should().Be("Major");
             timelineBar.KeyTransposeAs.Should().Be("C");
             timelineBar.Fermatas.Should().ContainSingle();
-            timelineBar.XProperties.Should().ContainKey("1124204545");
+            TimelineMetadataOf(timelineBar).XProperties.Should().ContainKey("1124204545");
             measure.Clef.Should().Be("G2");
-            measure.BarProperties.Should().ContainKey("BarDisplay");
+            MeasureMetadataOf(measure).Properties.Should().ContainKey("BarDisplay");
             timelineBar.DirectionProperties.Should().ContainKey("Fine");
             timelineBar.Jump.Should().Be("DaCapo");
             timelineBar.Target.Should().Be("Segno");

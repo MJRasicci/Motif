@@ -415,8 +415,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 Type = f.Type,
                 Offset = f.Offset,
                 Length = f.Length
-            }).ToArray(),
-            XProperties = masterBar.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value)
+            }).ToArray()
         };
         timelineBar.SetExtension(new GpTimelineBarExtension
         {
@@ -424,6 +423,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             {
                 MasterBarXml = masterBar.Xml,
                 DirectionsXml = masterBar.DirectionsXml,
+                XProperties = masterBar.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
                 MasterBarXPropertiesXml = masterBar.XPropertiesXml
             }
         });
@@ -482,8 +482,6 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             StaffIndex = staffIndex,
             Clef = bar.Clef,
             SimileMark = bar.SimileMark,
-            BarProperties = bar.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
-            BarXProperties = bar.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
             Voices = voices,
             Beats = beats
         };
@@ -493,6 +491,8 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             {
                 BarXml = bar.Xml,
                 SourceBarId = bar.Id,
+                Properties = bar.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
+                XProperties = bar.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
                 BarXPropertiesXml = bar.XPropertiesXml
             }
         });
@@ -543,7 +543,6 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                         TransposedPitch = MapPitchValue(n.TransposedPitch),
                         ShowStringNumber = n.ShowStringNumber,
                         StringNumber = stringNumber,
-                        XProperties = n.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
                         Duration = duration,
                         Articulation = new NoteArticulation
                         {
@@ -558,7 +557,6 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                             TrillSpeed = ArticulationDecoders.DecodeTrillSpeed(n.XProperties),
                             Accent = n.Articulation.Accent,
                             AntiAccent = n.Articulation.AntiAccent,
-                            AntiAccentValue = n.Articulation.AntiAccentValue,
                             PalmMuted = n.Articulation.PalmMuted,
                             Muted = n.Articulation.Muted,
                             Tapped = n.Articulation.Tapped,
@@ -586,6 +584,8 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                             SourceStringNumber = n.SourceStringNumber,
                             SourceSlideFlags = n.Articulation.SlideFlags,
                             InstrumentArticulation = n.Articulation.InstrumentArticulation,
+                            AntiAccentValue = n.Articulation.AntiAccentValue,
+                            XProperties = n.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
                             XPropertiesXml = n.XPropertiesXml
                         }
                     });
@@ -603,7 +603,6 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 Id = beat.Id,
                 GraceType = beat.GraceType,
                 Dynamic = beat.Dynamic,
-                Wah = beat.Wah,
                 Golpe = beat.Golpe,
                 Slashed = beat.Slashed,
                 Hairpin = beat.Hairpin,
@@ -611,7 +610,6 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 LegatoOrigin = beat.LegatoOrigin,
                 LegatoDestination = beat.LegatoDestination,
                 PickStrokeDirection = beat.PickStrokeDirection,
-                VibratoWithTremBarStrength = beat.VibratoWithTremBarStrength,
                 Slapped = beat.Slapped,
                 Popped = beat.Popped,
                 PalmMuted = notes.Any(n => n.Articulation.PalmMuted),
@@ -626,8 +624,6 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 TremoloValue = beat.TremoloValue,
                 FreeText = beat.FreeText,
                 WhammyBar = ArticulationDecoders.DecodeWhammyBar(beat),
-                Properties = beat.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
-                XProperties = beat.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
                 Offset = offset,
                 Duration = duration,
                 Notes = notes,
@@ -646,8 +642,12 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                     ConcertPitchStemOrientation = beat.ConcertPitchStemOrientation,
                     Fadding = beat.Fadding,
                     Variation = beat.Variation,
+                    Wah = beat.Wah,
                     ChordId = beat.ChordId,
                     LyricsXml = beat.LyricsXml,
+                    VibratoWithTremBarStrength = beat.VibratoWithTremBarStrength,
+                    Properties = beat.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
+                    XProperties = beat.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
                     BrushDurationXPropertyId = beat.BrushDurationXPropertyId,
                     HasExplicitBrushDurationXProperty = beat.HasExplicitBrushDurationXProperty,
                     WhammyUsesElement = beat.WhammyUsesElement,

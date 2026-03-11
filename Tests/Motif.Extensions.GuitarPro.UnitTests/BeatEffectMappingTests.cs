@@ -13,6 +13,9 @@ public class BeatEffectMappingTests
     private static GpBeatMetadata BeatMetadataOf(Beat beat)
         => beat.GetRequiredGuitarPro().Metadata;
 
+    private static GpNoteMetadata NoteMetadataOf(Note note)
+        => note.GetRequiredGuitarPro().Metadata;
+
     private static string BuildGpif(string beatBody, string noteBody = "", string noteXProperties = "")
     {
         var notesRef = string.IsNullOrEmpty(noteBody) ? "" : "<Notes>200</Notes>";
@@ -126,10 +129,10 @@ public class BeatEffectMappingTests
 
         var score = await DeserializeAndMap(gpif);
         var beat = score.Tracks[0].PrimaryMeasure(0).Beats[0];
-        beat.Properties.Should().ContainKey("PrimaryPickupVolume");
-        beat.Properties["PrimaryPickupVolume"].Should().Be("0.500000");
-        beat.Properties.Should().ContainKey("PrimaryPickupTone");
-        beat.Properties["PrimaryPickupTone"].Should().Be("0.500000");
+        BeatMetadataOf(beat).Properties.Should().ContainKey("PrimaryPickupVolume");
+        BeatMetadataOf(beat).Properties["PrimaryPickupVolume"].Should().Be("0.500000");
+        BeatMetadataOf(beat).Properties.Should().ContainKey("PrimaryPickupTone");
+        BeatMetadataOf(beat).Properties["PrimaryPickupTone"].Should().Be("0.500000");
 
         var roundTrip = await RoundTripThroughWrite(gpif);
         var outputBeat = roundTrip.Root!.Element("Beats")!.Element("Beat")!;
@@ -186,7 +189,7 @@ public class BeatEffectMappingTests
         var score = await DeserializeAndMap(gpif);
         var note = score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0];
         note.Articulation.AntiAccent.Should().BeTrue();
-        note.Articulation.AntiAccentValue.Should().Be("Normal");
+        NoteMetadataOf(note).AntiAccentValue.Should().Be("Normal");
 
         var roundTrip = await RoundTripThroughWrite(gpif);
         roundTrip.Root!
@@ -302,14 +305,14 @@ public class BeatEffectMappingTests
         var beat = score.Tracks[0].PrimaryMeasure(0).Beats[0];
 
         BeatMetadataOf(beat).HasTransposedPitchStemOrientationUserDefinedElement.Should().BeTrue();
-        beat.Wah.Should().Be("Open");
+        BeatMetadataOf(beat).Wah.Should().Be("Open");
         beat.Golpe.Should().Be("Finger");
         BeatMetadataOf(beat).Fadding.Should().Be("FadeIn");
         beat.Slashed.Should().BeTrue();
         beat.Rasgueado.Should().BeTrue();
         beat.RasgueadoPattern.Should().Be("mii_1");
-        beat.Properties["BarreFret"].Should().Be("7");
-        beat.Properties["BarreString"].Should().Be("0");
+        BeatMetadataOf(beat).Properties["BarreFret"].Should().Be("7");
+        BeatMetadataOf(beat).Properties["BarreString"].Should().Be("0");
 
         var roundTrip = await RoundTripThroughWrite(gpif);
         var outputBeat = roundTrip.Root!.Element("Beats")!.Element("Beat")!;

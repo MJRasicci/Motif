@@ -1,10 +1,15 @@
 namespace Motif.Extensions.GuitarPro.UnitTests;
 
 using FluentAssertions;
+using Motif.Extensions.GuitarPro;
+using Motif.Extensions.GuitarPro.Models;
 using Motif.Models;
 
 public class WriterArticulationParityTests
 {
+    private static GpBeatMetadata BeatMetadataOf(Beat beat)
+        => beat.GetRequiredGuitarPro().Metadata;
+
     [Fact]
     public async Task Writer_round_trip_preserves_core_articulation_fields()
     {
@@ -26,7 +31,6 @@ public class WriterArticulationParityTests
                                 Id = 1,
                                 GraceType = "BeforeBeat",
                                 PickStrokeDirection = "Up",
-                                VibratoWithTremBarStrength = "Slight",
                                 Slapped = true,
                                 Popped = true,
                                 PalmMuted = true,
@@ -76,6 +80,7 @@ public class WriterArticulationParityTests
                     })
             ]
         };
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].GetOrCreateGuitarPro().Metadata.VibratoWithTremBarStrength = "Slight";
 
         var outFile = Path.Combine(Path.GetTempPath(), $"gpio-articulation-{Guid.NewGuid():N}.gp");
         try
@@ -90,7 +95,7 @@ public class WriterArticulationParityTests
             var note = beat.Notes[0];
             beat.GraceType.Should().Be("BeforeBeat");
             beat.PickStrokeDirection.Should().Be("Up");
-            beat.VibratoWithTremBarStrength.Should().Be("Slight");
+            BeatMetadataOf(beat).VibratoWithTremBarStrength.Should().Be("Slight");
             beat.Slapped.Should().BeTrue();
             beat.Popped.Should().BeTrue();
             beat.PalmMuted.Should().BeTrue();

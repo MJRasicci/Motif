@@ -65,17 +65,15 @@ public sealed class TimelineBar : ExtensibleModel
 
     public string Target { get; set; } = string.Empty;
 
-    public IReadOnlyDictionary<string, string> DirectionProperties { get; set; } = new Dictionary<string, string>();
-
     public int? KeyAccidentalCount { get; set; }
 
     public string KeyMode { get; set; } = string.Empty;
 
     public string KeyTransposeAs { get; set; } = string.Empty;
 
-    public IReadOnlyList<FermataMetadata> Fermatas { get; set; } = Array.Empty<FermataMetadata>();
+    public IReadOnlyDictionary<string, string> DirectionProperties { get; set; } = new Dictionary<string, string>();
 
-    public IReadOnlyDictionary<string, int> XProperties { get; set; } = new Dictionary<string, int>();
+    public IReadOnlyList<FermataMetadata> Fermatas { get; set; } = Array.Empty<FermataMetadata>();
 }
 
 public sealed class Track : ExtensibleModel
@@ -103,10 +101,6 @@ public sealed class StaffMeasure : ExtensibleModel
     public string Clef { get; set; } = string.Empty;
 
     public string SimileMark { get; set; } = string.Empty;
-
-    public IReadOnlyDictionary<string, string> BarProperties { get; set; } = new Dictionary<string, string>();
-
-    public IReadOnlyDictionary<string, int> BarXProperties { get; set; } = new Dictionary<string, int>();
 
     public IReadOnlyList<Voice> Voices { get; set; } = Array.Empty<Voice>();
 
@@ -144,8 +138,6 @@ public sealed class Beat : ExtensibleModel
 
     public string Dynamic { get; set; } = string.Empty;
 
-    public string Wah { get; set; } = string.Empty;
-
     public string Golpe { get; set; } = string.Empty;
 
     public bool Slashed { get; set; }
@@ -159,8 +151,6 @@ public sealed class Beat : ExtensibleModel
     public bool? LegatoDestination { get; set; }
 
     public string PickStrokeDirection { get; set; } = string.Empty;
-
-    public string VibratoWithTremBarStrength { get; set; } = string.Empty;
 
     public bool Slapped { get; set; }
 
@@ -190,10 +180,6 @@ public sealed class Beat : ExtensibleModel
 
     public WhammyBar? WhammyBar { get; set; }
 
-    public IReadOnlyDictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
-
-    public IReadOnlyDictionary<string, int> XProperties { get; set; } = new Dictionary<string, int>();
-
     public decimal Offset { get; set; }
 
     public decimal Duration { get; set; }
@@ -218,8 +204,6 @@ public sealed class Note : ExtensibleModel
     public bool ShowStringNumber { get; set; }
 
     public int? StringNumber { get; set; }
-
-    public IReadOnlyDictionary<string, int> XProperties { get; set; } = new Dictionary<string, int>();
 
     public decimal Duration { get; set; }
 
@@ -260,8 +244,6 @@ public sealed class NoteArticulation
     public int? Accent { get; set; }
 
     public bool AntiAccent { get; set; }
-
-    public string AntiAccentValue { get; set; } = string.Empty;
 
     public bool PalmMuted { get; set; }
 

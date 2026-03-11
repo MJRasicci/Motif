@@ -269,13 +269,13 @@ public class WriterReferenceReuseTests
             new TimelineBar
             {
                 Index = 0,
-                TimeSignature = "4/4",
-                XProperties = new Dictionary<string, int>
-                {
-                    ["687931393"] = 60
-                }
+                TimeSignature = "4/4"
             }
         ];
+        score.TimelineBars[0].GetOrCreateGuitarPro().Metadata.XProperties = new Dictionary<string, int>
+        {
+            ["687931393"] = 60
+        };
 
         var unmapper = new DefaultScoreUnmapper();
         var result = await unmapper.UnmapAsync(score, TestContext.Current.CancellationToken);

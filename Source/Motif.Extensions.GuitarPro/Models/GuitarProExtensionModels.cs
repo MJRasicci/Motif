@@ -90,6 +90,8 @@ public sealed class GpTimelineBarMetadata
 
     public string DirectionsXml { get; set; } = string.Empty;
 
+    public IReadOnlyDictionary<string, int> XProperties { get; set; } = new Dictionary<string, int>();
+
     public string MasterBarXPropertiesXml { get; set; } = string.Empty;
 }
 
@@ -98,6 +100,10 @@ public sealed class GpMeasureStaffMetadata
     public string BarXml { get; set; } = string.Empty;
 
     public int SourceBarId { get; set; } = -1;
+
+    public IReadOnlyDictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
+
+    public IReadOnlyDictionary<string, int> XProperties { get; set; } = new Dictionary<string, int>();
 
     public string BarXPropertiesXml { get; set; } = string.Empty;
 }
@@ -133,9 +139,17 @@ public sealed class GpBeatMetadata
 
     public string Variation { get; set; } = string.Empty;
 
+    public string Wah { get; set; } = string.Empty;
+
     public string ChordId { get; set; } = string.Empty;
 
     public string LyricsXml { get; set; } = string.Empty;
+
+    public string VibratoWithTremBarStrength { get; set; } = string.Empty;
+
+    public IReadOnlyDictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
+
+    public IReadOnlyDictionary<string, int> XProperties { get; set; } = new Dictionary<string, int>();
 
     public string BrushDurationXPropertyId { get; set; } = string.Empty;
 
@@ -184,6 +198,10 @@ public sealed class GpNoteMetadata
     public int? SourceSlideFlags { get; set; }
 
     public int? InstrumentArticulation { get; set; }
+
+    public string AntiAccentValue { get; set; } = string.Empty;
+
+    public IReadOnlyDictionary<string, int> XProperties { get; set; } = new Dictionary<string, int>();
 
     public string XPropertiesXml { get; set; } = string.Empty;
 }

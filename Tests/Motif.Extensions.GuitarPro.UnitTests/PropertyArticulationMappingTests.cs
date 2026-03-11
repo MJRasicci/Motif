@@ -9,6 +9,9 @@ using System.Text;
 
 public class PropertyArticulationMappingTests
 {
+    private static GpBeatMetadata BeatMetadataOf(Beat beat)
+        => beat.GetRequiredGuitarPro().Metadata;
+
     private static GpNoteMetadata NoteMetadataOf(Note note)
         => note.GetRequiredGuitarPro().Metadata;
 
@@ -80,7 +83,7 @@ public class PropertyArticulationMappingTests
 
         beat.GraceType.Should().Be("BeforeBeat");
         beat.PickStrokeDirection.Should().Be("Down");
-        beat.VibratoWithTremBarStrength.Should().Be("Slight");
+        BeatMetadataOf(beat).VibratoWithTremBarStrength.Should().Be("Slight");
         beat.Slapped.Should().BeTrue();
         beat.Popped.Should().BeTrue();
         beat.PalmMuted.Should().BeTrue();

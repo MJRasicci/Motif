@@ -259,19 +259,19 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                             var beat = measureVoice.Beats[beatIndex];
                             var noteRefs = new List<int>();
                             var encodedWhammy = ArticulationDecoders.EncodeWhammyBar(beat.WhammyBar);
-                            var beatXProperties = beat.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value);
+                            var beatMetadata = GetBeatMetadata(beat);
+                            var beatXProperties = beatMetadata.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value);
                             if (!BrushDurationXPropertiesMatch(beat, beatXProperties))
                             {
                                 beatXProperties.Remove("687931393");
                                 beatXProperties.Remove("687935489");
                             }
 
-                            var beatMetadata = GetBeatMetadata(beat);
                             if (beat.BrushDurationTicks.HasValue)
                             {
                                 var shouldWriteBrushDurationXProperty = beatMetadata.HasExplicitBrushDurationXProperty
-                                    || beat.XProperties.ContainsKey("687931393")
-                                    || beat.XProperties.ContainsKey("687935489")
+                                    || beatMetadata.XProperties.ContainsKey("687931393")
+                                    || beatMetadata.XProperties.ContainsKey("687935489")
                                     || beat.BrushDurationTicks.Value != 60;
 
                                 if (shouldWriteBrushDurationXProperty)
@@ -321,7 +321,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                             FormatNotePath(track, timelineIndex, staffBar, measureVoice, beatIndex, noteIndex));
                                     }
 
-                                    var noteXProperties = note.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value);
+                                    var noteXProperties = noteMetadata.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value);
                                     noteXProperties.Remove("688062467");
                                     var encodedTrillSpeed = ResolveTrillSpeedXPropertyValue(note);
                                     if (encodedTrillSpeed.HasValue)
@@ -360,7 +360,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                             Trill = note.Articulation.Trill,
                                             Accent = note.Articulation.Accent,
                                             AntiAccent = note.Articulation.AntiAccent,
-                                            AntiAccentValue = note.Articulation.AntiAccentValue,
+                                            AntiAccentValue = noteMetadata.AntiAccentValue,
                                             InstrumentArticulation = noteMetadata.InstrumentArticulation,
                                             PalmMuted = ResolveNotePalmMuted(note, beat),
                                             Muted = note.Articulation.Muted,
@@ -462,7 +462,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                 UserTransposedPitchStemOrientation = beatMetadata.UserTransposedPitchStemOrientation,
                                 HasTransposedPitchStemOrientationUserDefinedElement = beatMetadata.HasTransposedPitchStemOrientationUserDefinedElement,
                                 ConcertPitchStemOrientation = beatMetadata.ConcertPitchStemOrientation,
-                                Wah = beat.Wah,
+                                Wah = beatMetadata.Wah,
                                 Golpe = beat.Golpe,
                                 Fadding = beatMetadata.Fadding,
                                 Slashed = beat.Slashed,
@@ -473,7 +473,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                 LegatoDestination = beat.LegatoDestination,
                                 LyricsXml = beatMetadata.LyricsXml,
                                 PickStrokeDirection = beat.PickStrokeDirection,
-                                VibratoWithTremBarStrength = beat.VibratoWithTremBarStrength,
+                                VibratoWithTremBarStrength = beatMetadata.VibratoWithTremBarStrength,
                                 Slapped = beat.Slapped,
                                 Popped = beat.Popped,
                                 Brush = beat.Brush,
@@ -500,7 +500,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                 WhammyBarDestinationOffset = encodedWhammy.DestinationOffset,
                                 WhammyUsesElement = beatMetadata.WhammyUsesElement,
                                 WhammyExtendUsesElement = beatMetadata.WhammyExtendUsesElement,
-                                Properties = beat.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
+                                Properties = beatMetadata.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
                                 XProperties = beatXProperties,
                                 XPropertiesXml = beatMetadata.XPropertiesXml
                             };
@@ -562,8 +562,8 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                         VoicesReferenceList = ReferenceListFormatter.JoinRefs(voiceSlots),
                         Clef = staffBar.Clef,
                         SimileMark = staffBar.SimileMark,
-                        Properties = staffBar.BarProperties,
-                        XProperties = staffBar.BarXProperties,
+                        Properties = staffMetadata.Properties,
+                        XProperties = staffMetadata.XProperties,
                         XPropertiesXml = staffMetadata.BarXPropertiesXml
                     };
 
@@ -747,7 +747,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                 Offset = f.Offset,
                 Length = f.Length
             }).ToArray(),
-            XProperties = timelineBar.XProperties,
+            XProperties = timelineMetadata.XProperties,
             XPropertiesXml = timelineMetadata.MasterBarXPropertiesXml
         };
     }
@@ -1427,7 +1427,8 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             return null;
         }
 
-        if (note.XProperties.TryGetValue("688062467", out var sourceValue)
+        var noteMetadata = GetNoteMetadata(note);
+        if (noteMetadata.XProperties.TryGetValue("688062467", out var sourceValue)
             && ArticulationDecoders.DecodeTrillSpeed(
                 new Dictionary<string, int>
                 {

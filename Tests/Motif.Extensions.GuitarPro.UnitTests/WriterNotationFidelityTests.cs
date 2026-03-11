@@ -10,6 +10,12 @@ using System.Xml.Linq;
 
 public class WriterNotationFidelityTests
 {
+    private static GpTimelineBarMetadata TimelineMetadataOf(TimelineBar timelineBar)
+        => timelineBar.GetRequiredGuitarPro().Metadata;
+
+    private static GpMeasureStaffMetadata MeasureMetadataOf(StaffMeasure measure)
+        => measure.GetRequiredGuitarPro().Metadata;
+
     private static GpBeatMetadata BeatMetadataOf(Beat beat)
         => beat.GetRequiredGuitarPro().Metadata;
 
@@ -150,8 +156,8 @@ public class WriterNotationFidelityTests
         timelineBar.RepeatEndAttributePresent.Should().BeTrue();
         timelineBar.RepeatCount.Should().Be(0);
         timelineBar.RepeatCountAttributePresent.Should().BeTrue();
-        timelineBar.XProperties.Should().Contain("1124073985", 2);
-        measure.BarXProperties.Should().Contain("1124139521", 7);
+        TimelineMetadataOf(timelineBar).XProperties.Should().Contain("1124073985", 2);
+        MeasureMetadataOf(measure).XProperties.Should().Contain("1124139521", 7);
         beat.Hairpin.Should().Be("Crescendo");
         BeatMetadataOf(beat).Variation.Should().Be("2");
         beat.Ottavia.Should().Be("8va");
@@ -161,10 +167,10 @@ public class WriterNotationFidelityTests
         BeatMetadataOf(beat).WhammyUsesElement.Should().BeTrue();
         BeatMetadataOf(beat).WhammyExtendUsesElement.Should().BeTrue();
         beat.WhammyBar.Should().NotBeNull();
-        beat.XProperties.Should().Contain("687931393", 234);
+        BeatMetadataOf(beat).XProperties.Should().Contain("687931393", 234);
         NoteMetadataOf(note).SourceFret.Should().Be(5);
         NoteMetadataOf(note).SourceStringNumber.Should().Be(0);
-        note.XProperties.Should().Contain("688062467", 480);
+        NoteMetadataOf(note).XProperties.Should().Contain("688062467", 480);
         NoteMetadataOf(note).XPropertiesXml.Should().Contain("688062468");
         note.Articulation.TrillSpeed.Should().Be(TrillSpeedKind.Sixteenth);
 
@@ -228,14 +234,12 @@ public class WriterNotationFidelityTests
                                 Id = beat.Id,
                                 Duration = 0.25m,
                                 BrushDurationTicks = 120,
-                                XProperties = beat.XProperties,
                                 Notes =
                                 [
                                     new Note
                                     {
                                         Id = note.Id,
                                         MidiPitch = 69,
-                                        XProperties = note.XProperties,
                                         Articulation = new NoteArticulation
                                         {
                                             TrillSpeed = TrillSpeedKind.ThirtySecond
@@ -247,9 +251,13 @@ public class WriterNotationFidelityTests
                     })
             ]
         };
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].GetOrCreateGuitarPro().Metadata.BrushDurationXPropertyId = BeatMetadataOf(beat).BrushDurationXPropertyId;
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].GetOrCreateGuitarPro().Metadata.XPropertiesXml = BeatMetadataOf(beat).XPropertiesXml;
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].GetOrCreateGuitarPro().Metadata.XPropertiesXml = NoteMetadataOf(note).XPropertiesXml;
+        var createdBeat = score.Tracks[0].PrimaryMeasure(0).Beats[0];
+        var createdNote = createdBeat.Notes[0];
+        createdBeat.GetOrCreateGuitarPro().Metadata.XProperties = BeatMetadataOf(beat).XProperties;
+        createdBeat.GetRequiredGuitarPro().Metadata.BrushDurationXPropertyId = BeatMetadataOf(beat).BrushDurationXPropertyId;
+        createdBeat.GetRequiredGuitarPro().Metadata.XPropertiesXml = BeatMetadataOf(beat).XPropertiesXml;
+        createdNote.GetOrCreateGuitarPro().Metadata.XProperties = NoteMetadataOf(note).XProperties;
+        createdNote.GetRequiredGuitarPro().Metadata.XPropertiesXml = NoteMetadataOf(note).XPropertiesXml;
 
         var roundTrip = await RoundTripThroughWrite(score);
         var outputBeatXProperties = roundTrip.Root!.Element("Beats")!.Element("Beat")!.Element("XProperties")!;

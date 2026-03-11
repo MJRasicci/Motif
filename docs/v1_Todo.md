@@ -45,9 +45,8 @@
 - `[x]` Step 1 - Extensibility contracts in Core
   Landed: `IModelExtension` / `IExtensibleModel`, typed helpers, GP extension attachments, Core-only JSON.
 
-- `[~]` Step 2 - Split Core domain vs Guitar Pro fidelity
-  Landed: score-owned timeline ownership via `Score.TimelineBars`; navigation and GP master-bar export now consume that score-level timeline instead of implicitly depending on the first populated track; GP master-bar fidelity metadata now attaches to `TimelineBar`; the compatibility `Track.Measures` + `Measure.AdditionalStaffBars` shape is gone; mapper, unmapper, GP fidelity diagnostics, reattachment, and hierarchy tests now operate on `Track.Staves` / `StaffMeasure` only.
-  Remaining: move surviving Core property/XProperty bags behind GP extensions or normalize them as typed semantics, remove the `*Model` suffix from Core types, keep genuinely cross-format semantics such as golpe in Core.
+- `[x]` Step 2 - Split Core domain vs Guitar Pro fidelity
+  Landed: score-owned timeline ownership via `Score.TimelineBars`; navigation and GP master-bar export now consume that score-level timeline instead of implicitly depending on the first populated track; GP master-bar fidelity metadata now attaches to `TimelineBar`; the compatibility `Track.Measures` + `Measure.AdditionalStaffBars` shape is gone; mapper, unmapper, GP fidelity diagnostics, reattachment, and hierarchy tests now operate on `Track.Staves` / `StaffMeasure` only; Core `*Model` suffixes are gone; GP-only property/XProperty bags plus beat/note fidelity-only values now live behind GP extensions instead of `Motif.Core`; cross-format/navigation semantics such as golpe and direction matching remain in Core.
 
 - `[x]` Step 3 - Raw cache invariants
   Landed: explicit GP cache workflow via `InvalidateGuitarProExtensions`, reattachment result reporting from `ReattachGuitarProExtensionsFrom`, unmapper diagnostics for invalidated source fidelity, partial source reattachment, and mixed attached/missing GP fidelity within a source-derived score tree, plus specific regeneration warnings for track staves XML, note string/fret payloads, note pitch spellings, and source rhythm shapes, with workflow guidance in `docs/LIBRARY_WORKFLOW.md`.
@@ -68,21 +67,15 @@
 - `[x]` Step 8 - Tests
   Landed: Core/GP test split, API surface tests, Core navigation coverage, explicit navigation invalidation tests, GP extension invalidation/reattachment tests, writer coverage for specific regeneration diagnostics plus score timeline master-bar export, and hierarchy coverage for staff-first mapping/unmap, staff-level fidelity reattachment, JSON round-trips, and empty-slot synthesis for sparse staff trees.
 
-- `[ ]` Step 9 - Public API review
-  Remaining: rename Core `*Model` types, trim remaining GP leakage from `Motif.Core`, remove Core property/XProperty bags that are only preserving GP fidelity, rerun API surface tests after each cleanup pass.
+- `[x]` Step 9 - Public API review
+  Landed: Core `*Model` types were renamed to suffix-free public names; remaining GP-only Core leakage was trimmed from `Motif.Core`; raw property/XProperty fidelity moved behind GP metadata; API surface tests now enforce the cleaned Core contract.
 
 - `[ ]` Step 10 - Packaging and release prep
   Remaining: package metadata, Source Link/symbols/license/readme metadata, dependency validation, release builds, final docs verification, ship `Motif.Core` + `Motif.Extensions.GuitarPro` + `Motif` as the v1 package set.
 
 ## Next Up
 
-1. Run the public API cleanup pass.
-   - Rename Core `*Model` types
-   - Move measure/bar/beat/note property/XProperty bags out of Core unless they become typed cross-format semantics
-   - Audit remaining GP-shaped Core properties such as `Beat.Wah`, `Beat.VibratoWithTremBarStrength`, and `NoteArticulation.AntiAccentValue`
-   - Keep cross-format semantics such as golpe in Core while remapping GP-specific representations behind the GP package
-
-2. Finish packaging and release docs.
+1. Finish packaging and release docs.
    - NuGet metadata, Source Link, symbols, readme/license metadata
    - Final package/dependency review for `Motif.Core`, `Motif.Extensions.GuitarPro`, and the `Motif` metapackage
    - Release builds and docs verification
@@ -90,6 +83,6 @@
 ## Release Gate
 
 - Core hierarchy and derived-state policy are finalized.
-- Remaining GP-shaped Core/API seams are intentionally resolved.
+- GP-shaped Core/API seams are intentionally resolved.
 - Public API review, packaging, docs, and release builds are complete.
 - Tests match the finalized architecture and pass.
