@@ -47,13 +47,11 @@ Typical traversal-affecting edits include:
 - The Guitar Pro reader populates it from source `MasterBar` data.
 - `ScoreNavigation` and the Guitar Pro writer consume it as the canonical timeline source.
 - `ScoreNavigation.EnsureTimelineBars(score)` returns the current score-owned timeline when you need a non-null list.
-- `ScoreNavigation.BuildTimelineBars(legacyMeasures)` explicitly promotes legacy measure-local timeline data during migration.
-- When a track exposes `Track.Staves`, the Guitar Pro writer and GP fidelity workflows now prefer that staff hierarchy over the compatibility `Track.Measures` shape.
-- The measure-level duplicates on `Track.Measures` still exist temporarily for compatibility and will be removed as the full hierarchy refactor lands.
+- Structural edits now flow through `Track.Staves[staffIndex].Measures[measureIndex]`; there is no compatibility `Track.Measures` path anymore.
 - Prefer editing timeline-global state such as repeats, sections, jump targets, key changes, and fermatas through `Score.TimelineBars`.
 
-Navigation no longer promotes legacy measure-local timeline fields implicitly. If you still mutate compatibility
-measure timeline fields, rebuild or replace `Score.TimelineBars` explicitly before recomputing playback.
+Navigation no longer mirrors or promotes measure-local timeline fields. Update `Score.TimelineBars`
+directly, then rebuild playback traversal when those edits affect navigation.
 
 ## Guitar Pro Fidelity Workflow
 
@@ -93,7 +91,7 @@ var editedScore = /* JSON-deserialized or otherwise rebuilt score */;
 var reattachment = editedScore.ReattachGuitarProExtensionsFrom(sourceScore);
 ```
 
-- `ReattachGuitarProExtensionsFrom` matches by track id, measure index, voice index, beat id, and note id where applicable.
+- `ReattachGuitarProExtensionsFrom` matches by track id, staff index, measure index, voice index, beat id, and note id where applicable.
 - The returned result reports how much of the source fidelity was reusable.
 - If reattachment is partial, the writer will emit `GP_EXTENSION_REATTACHMENT_PARTIAL`.
 
