@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
 
     <!-- Single-file trimmed executable -->
     <AssemblyName>motif-cli</AssemblyName>

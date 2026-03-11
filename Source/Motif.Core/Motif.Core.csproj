@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <Description>Format-agnostic mutable music score domain model and reader/writer abstractions for Motif.</Description>
   </PropertyGroup>
 
 </Project>

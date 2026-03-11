@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <Description>Guitar Pro GP/GPIF read-write support for Motif with high-fidelity mapping and round-trip workflows.</Description>
   </PropertyGroup>
 
   <ItemGroup>

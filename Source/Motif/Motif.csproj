@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <Description>Convenience package that references Motif.Core and Motif.Extensions.GuitarPro.</Description>
   </PropertyGroup>
 
   <ItemGroup>

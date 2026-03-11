@@ -239,9 +239,6 @@ internal static class CliParser
             "JSON" => CliFormat.Json,
             "GP" or "GUITARPRO" => CliFormat.GuitarPro,
             "GPIF" => CliFormat.Gpif,
-            "MXL" => CliFormat.Mxl,
-            "MUSICXML" => CliFormat.MusicXml,
-            "MIDI" or "MID" => CliFormat.Midi,
             _ => throw new ArgumentException($"Unknown format '{value}'.")
         };
     }
@@ -287,7 +284,7 @@ internal static class CliParser
         if (inferred is null)
         {
             throw new ArgumentException(
-                $"Unable to infer input format from '{inputPath}'. Pass --input-format <json|gp|gpif|mxl|musicxml|midi>.");
+                $"Unable to infer input format from '{inputPath}'. Pass --input-format <json|gp|gpif>.");
         }
 
         return inferred.Value;
@@ -317,6 +314,12 @@ internal static class CliParser
             return inferred.Value;
         }
 
+        if (!string.IsNullOrWhiteSpace(outputPath))
+        {
+            throw new ArgumentException(
+                $"Unable to infer output format from '{outputPath}'. Pass --output-format <json|gp|gpif>.");
+        }
+
         if (batchMode)
         {
             return CliFormat.Json;
@@ -327,9 +330,6 @@ internal static class CliParser
             CliFormat.GuitarPro => CliFormat.Json,
             CliFormat.Gpif => CliFormat.Json,
             CliFormat.Json => CliFormat.GuitarPro,
-            CliFormat.Mxl => CliFormat.Json,
-            CliFormat.MusicXml => CliFormat.Json,
-            CliFormat.Midi => CliFormat.Json,
             _ => throw new ArgumentException(
                 $"Unable to infer an output format for {FormatToken(inputFormat)} input. Pass --output-format explicitly.")
         };
@@ -359,9 +359,6 @@ internal static class CliParser
             ".JSON" => CliFormat.Json,
             ".GP" => CliFormat.GuitarPro,
             ".GPIF" => CliFormat.Gpif,
-            ".MXL" => CliFormat.Mxl,
-            ".MUSICXML" => CliFormat.MusicXml,
-            ".MIDI" or ".MID" => CliFormat.Midi,
             _ => null
         };
     }
@@ -372,9 +369,6 @@ internal static class CliParser
             CliFormat.Json => "json",
             CliFormat.GuitarPro => "gp",
             CliFormat.Gpif => "gpif",
-            CliFormat.Mxl => "mxl",
-            CliFormat.MusicXml => "musicxml",
-            CliFormat.Midi => "midi",
             _ => throw new ArgumentOutOfRangeException(nameof(format))
         };
 }

@@ -30,8 +30,12 @@ public class PublicApiSurfaceTests
 
         new GuitarProReader().Should().BeAssignableTo<IScoreReader>().And.BeAssignableTo<IGuitarProReader>();
         new GuitarProWriter().Should().BeAssignableTo<IScoreWriter>().And.BeAssignableTo<IGuitarProWriter>();
-        new GpReadOptions().Should().NotBeNull();
         new Score().Tracks.Should().BeEmpty();
+
+        typeof(IGuitarProReader).GetMethod(nameof(IGuitarProReader.ReadAsync), [typeof(Stream), typeof(CancellationToken)])
+            .Should().NotBeNull();
+        typeof(IGuitarProReader).GetMethod(nameof(IGuitarProReader.ReadAsync), [typeof(string), typeof(CancellationToken)])
+            .Should().NotBeNull();
 
         typeof(IGpArchiveReader).IsNotPublic.Should().BeTrue();
         typeof(IGpifDeserializer).IsNotPublic.Should().BeTrue();

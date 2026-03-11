@@ -20,6 +20,6 @@ using System.Text.Json.Serialization;
 [JsonSerializable(typeof(BatchPathSummary[]))]
 [JsonSerializable(typeof(BatchFileHeadline))]
 [JsonSerializable(typeof(BatchFileHeadline[]))]
-internal partial class CliJsonContext : JsonSerializerContext
+internal sealed partial class CliJsonContext : JsonSerializerContext
 {
 }

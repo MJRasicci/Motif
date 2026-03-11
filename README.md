@@ -33,10 +33,12 @@ Motif provides:
 - Extracts and deserializes `Content/score.gpif`
 - Preserves full musical semantics:
   - Tracks
-  - Measures (Bars)
+  - Staves
+  - Staff measures (Bars)
   - Voices
   - Beats
   - Notes
+  - Score timeline bars
   - Rhythms, articulations, and properties
 
 ### 2. Clean Domain Model
@@ -46,12 +48,13 @@ GPIF uses cross-referenced IDs and indirect relationships.
 Motif transforms this into a natural object graph:
 
 ```
-Score -> Tracks -> Measures -> Voices -> Beats -> Notes
+Score -> Tracks -> Staves -> StaffMeasures -> Voices -> Beats -> Notes
 ```
 
 - Eliminates manual reference resolution
 - Enables intuitive iteration and traversal
 - Retains links to original metadata where needed
+- Keeps timeline-global playback/navigation state on score-owned `TimelineBars`
 
 ### 3. Deterministic Mapping Layer
 
@@ -138,8 +141,10 @@ dotnet run --project Source/Motif.CLI -- score.json output.gp \
 | Format | Description | Status |
 |------|--------|--------|
 | `json` | Mapped domain model | Supported |
+| `gp` | Guitar Pro archive read/write | Supported |
 | `gpif` | Raw GPIF XML | Supported |
-| `midi` | MIDI export | Planned |
+| `musicxml` / `mxl` | MusicXML import/export | Planned post-v1 |
+| `midi` | MIDI export | Planned post-v1 |
 
 ---
 
@@ -147,9 +152,9 @@ dotnet run --project Source/Motif.CLI -- score.json output.gp \
 
 ### General
 
-- `--input-format json|gp|gpif|musicxml|midi`
-- `--output-format json|gp|gpif|musicxml|midi`
-- `--format json|gp|gpif|musicxml|midi` (alias for `--output-format`)
+- `--input-format json|gp|gpif`
+- `--output-format json|gp|gpif`
+- `--format json|gp|gpif` (alias for `--output-format`)
 - `--out <path>`
 
 ### JSON Options
@@ -218,4 +223,5 @@ See `docs/v1_Todo.md` for the v1 release plan.
 
 ## License
 
+[MIT](LICENSE.md)
 MIT — see `LICENSE.md`.

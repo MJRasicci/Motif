@@ -70,15 +70,6 @@ try
                         }
                         break;
 
-                    case CliFormat.Mxl:
-                        throw new NotImplementedException("MXL output is recognized but not implemented yet.");
-
-                    case CliFormat.MusicXml:
-                        throw new NotImplementedException("MusicXML output is recognized but not implemented yet.");
-
-                    case CliFormat.Midi:
-                        throw new NotImplementedException("MIDI output is recognized but not implemented yet.");
-
                     default:
                         throw new InvalidOperationException($"Unsupported batch conversion gp -> {FormatToken(options.OutputFormat)}.");
                 }
@@ -162,15 +153,6 @@ try
             await WriteGpifAsync(score, options, outputPath).ConfigureAwait(false);
             return 0;
 
-        case CliFormat.Mxl:
-            throw new NotImplementedException("MXL output is recognized but not implemented yet.");
-
-        case CliFormat.MusicXml:
-            throw new NotImplementedException("MusicXML output is recognized but not implemented yet.");
-
-        case CliFormat.Midi:
-            throw new NotImplementedException("MIDI output is recognized but not implemented yet.");
-
         default:
             throw new InvalidOperationException(
                 $"Unsupported conversion {FormatToken(options.InputFormat)} -> {FormatToken(options.OutputFormat)}.");
@@ -212,15 +194,6 @@ static async Task<Score> ReadScoreAsync(string inputPath, CliFormat inputFormat)
             var mapper = new DefaultScoreMapper();
             return await mapper.MapAsync(raw).ConfigureAwait(false);
         }
-
-        case CliFormat.Mxl:
-            throw new NotImplementedException("MXL input is recognized but not implemented yet.");
-
-        case CliFormat.MusicXml:
-            throw new NotImplementedException("MusicXML input is recognized but not implemented yet.");
-
-        case CliFormat.Midi:
-            throw new NotImplementedException("MIDI input is recognized but not implemented yet.");
 
         default:
             throw new InvalidOperationException($"Unsupported input format {FormatToken(inputFormat)}.");
@@ -374,9 +347,6 @@ static string BuildDefaultOutputPath(string inputPath, CliFormat outputFormat)
         CliFormat.Json => ".mapped.json",
         CliFormat.GuitarPro => ".gp",
         CliFormat.Gpif => ".score.gpif",
-        CliFormat.Mxl => ".mxl",
-        CliFormat.MusicXml => ".musicxml",
-        CliFormat.Midi => ".mid",
         _ => ".out"
     };
 
@@ -391,9 +361,6 @@ static string BuildBatchOutputRelativePath(string relativeInputPath, CliFormat o
         CliFormat.Json => Path.ChangeExtension(relativeInputPath, ".json"),
         CliFormat.GuitarPro => Path.ChangeExtension(relativeInputPath, ".gp"),
         CliFormat.Gpif => Path.ChangeExtension(relativeInputPath, ".score.gpif"),
-        CliFormat.Mxl => Path.ChangeExtension(relativeInputPath, ".mxl"),
-        CliFormat.MusicXml => Path.ChangeExtension(relativeInputPath, ".musicxml"),
-        CliFormat.Midi => Path.ChangeExtension(relativeInputPath, ".mid"),
         _ => throw new InvalidOperationException($"Unsupported batch output format {FormatToken(outputFormat)}.")
     };
 
@@ -448,9 +415,6 @@ static string FormatToken(CliFormat format)
         CliFormat.Json => "json",
         CliFormat.GuitarPro => "gp",
         CliFormat.Gpif => "gpif",
-        CliFormat.Mxl => "mxl",
-        CliFormat.MusicXml => "musicxml",
-        CliFormat.Midi => "midi",
         _ => throw new ArgumentOutOfRangeException(nameof(format))
     };
 
@@ -523,11 +487,11 @@ BATCH EXPORT
     (default: <batch-output-dir>/batch-failures.jsonl).
 
 OPTIONS
-  --input-format <json|gp|gpif|mxl|musicxml|midi>
+  --input-format <json|gp|gpif>
                                 Explicit input format
-  --output-format <json|gp|gpif|mxl|musicxml|midi>
+  --output-format <json|gp|gpif>
                                 Explicit output format
-  --format <json|gp|gpif|mxl|musicxml|midi>
+  --format <json|gp|gpif>
                                 Alias for --output-format
   --out <path>                  Explicit output file path
   --from-json                   Compatibility alias for --input-format json

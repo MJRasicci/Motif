@@ -232,7 +232,7 @@ public class CliRoundTripRegressionTests
     }
 
     [Fact]
-    public async Task Cli_reports_not_implemented_for_recognized_mxl_musicxml_and_midi_routes()
+    public async Task Cli_rejects_non_v1_formats_and_unknown_output_extensions()
     {
         var sourceGp = FixturePath("schema-reference.gp");
         File.Exists(sourceGp).Should().BeTrue();
@@ -261,12 +261,14 @@ public class CliRoundTripRegressionTests
 
             var failureCases = new (string Arguments, string ExpectedMessage)[]
             {
-                ($"run --project \"{toolProject}\" -- \"{musicXmlInputPath}\" \"{Path.Combine(tempDir, "musicxml.json")}\"", "MusicXML input is recognized but not implemented yet."),
-                ($"run --project \"{toolProject}\" -- \"{mxlInputPath}\" \"{Path.Combine(tempDir, "mxl.json")}\"", "MXL input is recognized but not implemented yet."),
-                ($"run --project \"{toolProject}\" -- \"{midiInputPath}\" \"{Path.Combine(tempDir, "midi.json")}\"", "MIDI input is recognized but not implemented yet."),
-                ($"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{Path.Combine(tempDir, "score.musicxml")}\"", "MusicXML output is recognized but not implemented yet."),
-                ($"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{Path.Combine(tempDir, "score.mxl")}\"", "MXL output is recognized but not implemented yet."),
-                ($"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{Path.Combine(tempDir, "score.mid")}\"", "MIDI output is recognized but not implemented yet.")
+                ($"run --project \"{toolProject}\" -- \"{musicXmlInputPath}\" \"{Path.Combine(tempDir, "musicxml.json")}\"", "Unable to infer input format"),
+                ($"run --project \"{toolProject}\" -- \"{mxlInputPath}\" \"{Path.Combine(tempDir, "mxl.json")}\"", "Unable to infer input format"),
+                ($"run --project \"{toolProject}\" -- \"{midiInputPath}\" \"{Path.Combine(tempDir, "midi.json")}\"", "Unable to infer input format"),
+                ($"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{Path.Combine(tempDir, "score.musicxml")}\"", "Unable to infer output format"),
+                ($"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{Path.Combine(tempDir, "score.mxl")}\"", "Unable to infer output format"),
+                ($"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{Path.Combine(tempDir, "score.mid")}\"", "Unable to infer output format"),
+                ($"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{Path.Combine(tempDir, "score.gp")}\" --output-format musicxml", "Unknown format 'musicxml'."),
+                ($"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{Path.Combine(tempDir, "score.gp")}\" --output-format midi", "Unknown format 'midi'.")
             };
 
             foreach (var failureCase in failureCases)

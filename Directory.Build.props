@@ -9,6 +9,23 @@
     <UseArtifactsOutput>true</UseArtifactsOutput>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(IsPackable)' != 'false' and '$(IsTestProject)' != 'true'">
+    <Authors>MJRasicci</Authors>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/MJRasicci/Motif</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/MJRasicci/Motif</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageTags>music;score;notation;guitarpro;gpif</PackageTags>
+    <NoWarn>CS1591;$(NoWarn)</NoWarn>
+  </PropertyGroup>
+
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('UnitTests'))">
     <IsTestProject>true</IsTestProject>
     <IsPackable>false</IsPackable>
@@ -16,5 +33,10 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <NoWarn>CA1707;$(NoWarn)</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsPackable)' != 'false' and '$(IsTestProject)' != 'true'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="" Link="README.md" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)LICENSE.md" Pack="true" PackagePath="" Link="LICENSE.md" Visible="false" />
+  </ItemGroup>
 
 </Project>

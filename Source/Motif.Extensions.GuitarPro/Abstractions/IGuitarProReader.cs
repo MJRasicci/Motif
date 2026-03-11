@@ -1,7 +1,6 @@
 namespace Motif.Extensions.GuitarPro.Abstractions;
 
 using Motif;
-using Motif.Extensions.GuitarPro.Models;
 using Motif.Models;
 
 /// <summary>
@@ -9,7 +8,7 @@ using Motif.Models;
 /// </summary>
 public interface IGuitarProReader : IScoreReader
 {
-    ValueTask<Score> ReadAsync(Stream source, GpReadOptions? options = null, CancellationToken cancellationToken = default);
+    new ValueTask<Score> ReadAsync(Stream source, CancellationToken cancellationToken = default);
 
-    ValueTask<Score> ReadAsync(string filePath, GpReadOptions? options = null, CancellationToken cancellationToken = default);
+    ValueTask<Score> ReadAsync(string filePath, CancellationToken cancellationToken = default);
 }

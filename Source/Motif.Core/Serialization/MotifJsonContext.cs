@@ -8,6 +8,6 @@ using System.Text.Json.Serialization;
 [JsonSerializable(typeof(TimelineBar))]
 [JsonSerializable(typeof(PitchValue))]
 [JsonSerializable(typeof(TupletRatio))]
-internal partial class MotifJsonContext : JsonSerializerContext
+internal sealed partial class MotifJsonContext : JsonSerializerContext
 {
 }
