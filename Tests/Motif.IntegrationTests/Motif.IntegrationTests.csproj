@@ -15,8 +15,4 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\Source\Motif.Extensions.GuitarPro\Motif.Extensions.GuitarPro.csproj" />
-  </ItemGroup>
-
 </Project>

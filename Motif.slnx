@@ -17,5 +17,6 @@
   <Folder Name="/Tests/">
     <Project Path="Tests/Motif.Core.UnitTests/Motif.Core.UnitTests.csproj" />
     <Project Path="Tests/Motif.Extensions.GuitarPro.UnitTests/Motif.Extensions.GuitarPro.UnitTests.csproj" />
+    <Project Path="Tests/Motif.IntegrationTests/Motif.IntegrationTests.csproj" />
   </Folder>
 </Solution>

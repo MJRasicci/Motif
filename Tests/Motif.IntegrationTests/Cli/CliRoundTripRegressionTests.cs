@@ -1,4 +1,4 @@
-namespace Motif.Extensions.GuitarPro.UnitTests;
+namespace Motif.IntegrationTests;
 
 using FluentAssertions;
 using System.Diagnostics;

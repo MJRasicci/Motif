@@ -1,4 +1,4 @@
-namespace Motif.Extensions.GuitarPro.UnitTests;
+namespace Motif.IntegrationTests;
 
 internal static class GuitarProFixture
 {
