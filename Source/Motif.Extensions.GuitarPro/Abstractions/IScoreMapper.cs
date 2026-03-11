@@ -6,7 +6,7 @@ using Motif.Extensions.GuitarPro.Models.Raw;
 /// <summary>
 /// Maps raw GPIF structures into the public, traversal-friendly domain model.
 /// </summary>
-public interface IScoreMapper
+internal interface IScoreMapper
 {
     ValueTask<Score> MapAsync(GpifDocument source, CancellationToken cancellationToken = default);
 }

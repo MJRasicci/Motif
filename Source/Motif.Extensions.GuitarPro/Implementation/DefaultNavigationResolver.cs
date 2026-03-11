@@ -4,7 +4,7 @@ using Motif.Extensions.GuitarPro.Abstractions;
 using Motif.Extensions.GuitarPro.Models.Raw;
 using Motif.Extensions.GuitarPro.Utilities;
 
-public sealed class DefaultNavigationResolver : INavigationResolver
+internal sealed class DefaultNavigationResolver : INavigationResolver
 {
     public IReadOnlyList<int> BuildPlaybackSequence(IReadOnlyList<GpifMasterBar> masterBars, bool anacrusis = false)
     {

@@ -6,7 +6,7 @@ using Motif.Models;
 using Motif.Extensions.GuitarPro.Models.Raw;
 using Motif.Extensions.GuitarPro.Utilities;
 
-public sealed class DefaultScoreMapper : IScoreMapper
+internal sealed class DefaultScoreMapper : IScoreMapper
 {
     private readonly INavigationResolver navigationResolver;
 

@@ -1,6 +1,6 @@
 namespace Motif.Extensions.GuitarPro.Models.Raw;
 
-public sealed class GpifMasterTrack
+internal sealed class GpifMasterTrack
 {
     public string Xml { get; init; } = string.Empty;
 
@@ -17,7 +17,7 @@ public sealed class GpifMasterTrack
     public GpifMasterRse Rse { get; init; } = new();
 }
 
-public sealed class GpifMasterRse
+internal sealed class GpifMasterRse
 {
     public IReadOnlyList<GpifRseEffect> MasterEffects { get; init; } = Array.Empty<GpifRseEffect>();
 }

@@ -1,6 +1,6 @@
 namespace Motif.Extensions.GuitarPro.Abstractions;
 
-public interface IGpArchiveWriter
+internal interface IGpArchiveWriter
 {
     ValueTask WriteArchiveAsync(Stream gpifContent, Stream destination, CancellationToken cancellationToken = default);
 

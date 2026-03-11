@@ -146,19 +146,15 @@ Structural extraction is mostly done. Policy work remains.
 
 ## Status
 
-Mostly done.
+Done.
 
 ## Landed
 
 - GPIF raw models, archive readers/writers, XML serializer/deserializer, mapper/unmapper, diagnostics helpers, `GuitarProReader`, `GuitarProWriter`, and `GpReadOptions` live in `Motif.Extensions.GuitarPro`
 - `Motif.Core` no longer depends on GPIF/archive/XML implementation details
 - Core JSON serialization lives in `Motif.Core.Serialization`
-
-## Remaining
-
-- Decide whether `IScoreMapper` / `IScoreUnmapper` should remain public in the GP package or be internalized/removed
-- Decide whether `WriteResult`, `WriteDiagnostics`, and `WriteDiagnosticEntry` should stay GP-package types or be generalized later
-- Keep cleaning up folder placement/internal visibility as APIs settle
+- Low-level GPIF pipeline seams (`IScoreMapper`, `IScoreUnmapper`, archive/XML helpers, raw GPIF models) are internal implementation details rather than supported package API
+- Public GP write diagnostics stay in the GP package through the supported `GuitarProWriter` surface instead of leaking the raw unmapper pipeline
 
 # Step 5 - Format-Agnostic Reader/Writer Contracts
 
@@ -238,8 +234,7 @@ Not done.
 ## Remaining
 
 - Audit `Motif.Core` for a minimal format-agnostic public surface
-- Audit `Motif.Extensions.GuitarPro` for accidental leakage of GPIF/raw implementation details
-- Internalize migration scaffolding and incidental helpers where possible
+- Continue trimming any remaining accidental leakage from `Motif.Extensions.GuitarPro` as new seams are identified
 - Decide whether legacy `*Model` type names stay for v1
 - Re-run API surface tests after each public cleanup pass
 

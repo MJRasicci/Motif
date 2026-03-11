@@ -3,7 +3,7 @@ namespace Motif.Extensions.GuitarPro.Models.Raw;
 /// <summary>
 /// Raw GPIF data model intentionally mirrors source indirection patterns.
 /// </summary>
-public sealed class GpifDocument
+internal sealed class GpifDocument
 {
     public string GpVersion { get; init; } = string.Empty;
 
@@ -38,7 +38,7 @@ public sealed class GpifDocument
     public string ScoreViewsXml { get; init; } = string.Empty;
 }
 
-public sealed class GpifRevisionInfo
+internal sealed class GpifRevisionInfo
 {
     public string Xml { get; init; } = string.Empty;
 
@@ -49,7 +49,7 @@ public sealed class GpifRevisionInfo
     public string Value { get; init; } = string.Empty;
 }
 
-public sealed class ScoreInfo
+internal sealed class ScoreInfo
 {
     public string Xml { get; init; } = string.Empty;
 
@@ -98,7 +98,7 @@ public sealed class ScoreInfo
     public string MultiVoice { get; init; } = string.Empty;
 }
 
-public sealed class GpifTrack
+internal sealed class GpifTrack
 {
     public string Xml { get; init; } = string.Empty;
 
@@ -189,7 +189,7 @@ public sealed class GpifTrack
     public IReadOnlyList<GpifStaff> Staffs { get; init; } = Array.Empty<GpifStaff>();
 }
 
-public sealed class GpifStaff
+internal sealed class GpifStaff
 {
     public int? Id { get; init; }
 
@@ -204,7 +204,7 @@ public sealed class GpifStaff
     public string Xml { get; init; } = string.Empty;
 }
 
-public sealed class GpifMasterBar
+internal sealed class GpifMasterBar
 {
     public string Xml { get; init; } = string.Empty;
 
@@ -261,7 +261,7 @@ public sealed class GpifMasterBar
     public string XPropertiesXml { get; init; } = string.Empty;
 }
 
-public sealed class GpifFermata
+internal sealed class GpifFermata
 {
     public string Type { get; init; } = string.Empty;
 
@@ -270,7 +270,7 @@ public sealed class GpifFermata
     public decimal? Length { get; init; }
 }
 
-public sealed class GpifBar
+internal sealed class GpifBar
 {
     public string Xml { get; init; } = string.Empty;
 
@@ -289,7 +289,7 @@ public sealed class GpifBar
     public IReadOnlyDictionary<string, string> Properties { get; init; } = new Dictionary<string, string>();
 }
 
-public sealed class GpifVoice
+internal sealed class GpifVoice
 {
     public string Xml { get; init; } = string.Empty;
 
@@ -302,7 +302,7 @@ public sealed class GpifVoice
     public string[] DirectionTags { get; init; } = Array.Empty<string>();
 }
 
-public sealed class GpifBeat
+internal sealed class GpifBeat
 {
     public string Xml { get; init; } = string.Empty;
 
@@ -407,7 +407,7 @@ public sealed class GpifBeat
     public string XPropertiesXml { get; init; } = string.Empty;
 }
 
-public sealed class GpifNote
+internal sealed class GpifNote
 {
     public string Xml { get; init; } = string.Empty;
 
@@ -438,7 +438,7 @@ public sealed class GpifNote
     public string XPropertiesXml { get; init; } = string.Empty;
 }
 
-public sealed class GpifPitchValue
+internal sealed class GpifPitchValue
 {
     public string Step { get; init; } = string.Empty;
 
@@ -447,7 +447,7 @@ public sealed class GpifPitchValue
     public int? Octave { get; init; }
 }
 
-public sealed class GpifNoteProperty
+internal sealed class GpifNoteProperty
 {
     public string Name { get; init; } = string.Empty;
 
@@ -468,7 +468,7 @@ public sealed class GpifNoteProperty
     public decimal? Float { get; init; }
 }
 
-public sealed class GpifNoteArticulation
+internal sealed class GpifNoteArticulation
 {
     public string LeftFingering { get; init; } = string.Empty;
 
@@ -533,7 +533,7 @@ public sealed class GpifNoteArticulation
     public decimal? HarmonicFret { get; init; }
 }
 
-public sealed class GpifRhythm
+internal sealed class GpifRhythm
 {
     public string Xml { get; init; } = string.Empty;
 
@@ -552,7 +552,7 @@ public sealed class GpifRhythm
     public TupletRatio? SecondaryTuplet { get; init; }
 }
 
-public sealed class TupletRatio
+internal sealed class TupletRatio
 {
     public int Numerator { get; init; }
 

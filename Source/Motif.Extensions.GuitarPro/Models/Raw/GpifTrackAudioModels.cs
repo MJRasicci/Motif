@@ -1,6 +1,6 @@
 namespace Motif.Extensions.GuitarPro.Models.Raw;
 
-public sealed class GpifInstrumentSet
+internal sealed class GpifInstrumentSet
 {
     public string Name { get; init; } = string.Empty;
 
@@ -11,7 +11,7 @@ public sealed class GpifInstrumentSet
     public IReadOnlyList<GpifInstrumentElement> Elements { get; init; } = Array.Empty<GpifInstrumentElement>();
 }
 
-public sealed class GpifInstrumentElement
+internal sealed class GpifInstrumentElement
 {
     public string Name { get; init; } = string.Empty;
 
@@ -22,7 +22,7 @@ public sealed class GpifInstrumentElement
     public IReadOnlyList<GpifInstrumentArticulation> Articulations { get; init; } = Array.Empty<GpifInstrumentArticulation>();
 }
 
-public sealed class GpifInstrumentArticulation
+internal sealed class GpifInstrumentArticulation
 {
     public string Name { get; init; } = string.Empty;
 
@@ -41,7 +41,7 @@ public sealed class GpifInstrumentArticulation
     public int? OutputMidiNumber { get; init; }
 }
 
-public sealed class GpifSound
+internal sealed class GpifSound
 {
     public string Name { get; init; } = string.Empty;
 
@@ -60,7 +60,7 @@ public sealed class GpifSound
     public GpifSoundRse Rse { get; init; } = new();
 }
 
-public sealed class GpifSoundRse
+internal sealed class GpifSoundRse
 {
     public string SoundbankPatch { get; init; } = string.Empty;
 
@@ -73,7 +73,7 @@ public sealed class GpifSoundRse
     public IReadOnlyList<GpifRseEffect> EffectChain { get; init; } = Array.Empty<GpifRseEffect>();
 }
 
-public sealed class GpifSoundRsePickups
+internal sealed class GpifSoundRsePickups
 {
     public string OverloudPosition { get; init; } = string.Empty;
 
@@ -82,7 +82,7 @@ public sealed class GpifSoundRsePickups
     public string Tones { get; init; } = string.Empty;
 }
 
-public sealed class GpifRse
+internal sealed class GpifRse
 {
     public string Bank { get; init; } = string.Empty;
 
@@ -93,7 +93,7 @@ public sealed class GpifRse
     public IReadOnlyList<GpifAutomation> Automations { get; init; } = Array.Empty<GpifAutomation>();
 }
 
-public sealed class GpifRseEffect
+internal sealed class GpifRseEffect
 {
     public string Id { get; init; } = string.Empty;
 

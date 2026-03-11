@@ -3,7 +3,7 @@ namespace Motif.Extensions.GuitarPro.Abstractions;
 /// <summary>
 /// Responsible for opening a .gp archive and exposing the GPIF score stream.
 /// </summary>
-public interface IGpArchiveReader
+internal interface IGpArchiveReader
 {
     ValueTask<Stream> OpenScoreStreamAsync(Stream archiveStream, CancellationToken cancellationToken = default);
 

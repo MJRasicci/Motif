@@ -7,7 +7,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 
-public sealed class XmlGpifSerializer : IGpifSerializer
+internal sealed class XmlGpifSerializer : IGpifSerializer
 {
     private const string DefaultGpVersion = "8.1.0";
     private const string DefaultGpRevisionRequired = "12024";

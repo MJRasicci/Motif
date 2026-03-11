@@ -1,16 +1,16 @@
 namespace Motif.Extensions.GuitarPro.Models.Raw;
 
-public sealed class GpifPlaybackState
+internal sealed class GpifPlaybackState
 {
     public string Value { get; init; } = string.Empty;
 }
 
-public sealed class GpifAudioEngineState
+internal sealed class GpifAudioEngineState
 {
     public string Value { get; init; } = string.Empty;
 }
 
-public sealed class GpifMidiConnection
+internal sealed class GpifMidiConnection
 {
     public int? Port { get; init; }
 
@@ -21,28 +21,28 @@ public sealed class GpifMidiConnection
     public bool? ForceOneChannelPerString { get; init; }
 }
 
-public sealed class GpifLyrics
+internal sealed class GpifLyrics
 {
     public bool? Dispatched { get; init; }
 
     public IReadOnlyList<GpifLyricsLine> Lines { get; init; } = Array.Empty<GpifLyricsLine>();
 }
 
-public sealed class GpifLyricsLine
+internal sealed class GpifLyricsLine
 {
     public string Text { get; init; } = string.Empty;
 
     public int? Offset { get; init; }
 }
 
-public sealed class GpifTranspose
+internal sealed class GpifTranspose
 {
     public int? Chromatic { get; init; }
 
     public int? Octave { get; init; }
 }
 
-public sealed class GpifAutomation
+internal sealed class GpifAutomation
 {
     public string Type { get; init; } = string.Empty;
 

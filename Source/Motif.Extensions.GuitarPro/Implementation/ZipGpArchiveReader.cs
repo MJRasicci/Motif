@@ -3,7 +3,7 @@ namespace Motif.Extensions.GuitarPro.Implementation;
 using Motif.Extensions.GuitarPro.Abstractions;
 using System.IO.Compression;
 
-public sealed class ZipGpArchiveReader : IGpArchiveReader
+internal sealed class ZipGpArchiveReader : IGpArchiveReader
 {
     public async ValueTask<Stream> OpenScoreStreamAsync(Stream archiveStream, CancellationToken cancellationToken = default)
     {

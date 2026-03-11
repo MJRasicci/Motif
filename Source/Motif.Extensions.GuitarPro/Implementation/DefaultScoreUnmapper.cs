@@ -8,7 +8,7 @@ using Motif.Extensions.GuitarPro.Models.Write;
 using Motif.Extensions.GuitarPro.Utilities;
 using System.Xml.Linq;
 
-public sealed class DefaultScoreUnmapper : IScoreUnmapper
+internal sealed class DefaultScoreUnmapper : IScoreUnmapper
 {
     public ValueTask<WriteResult> UnmapAsync(Score score, CancellationToken cancellationToken = default)
     {

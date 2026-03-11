@@ -2,6 +2,7 @@ namespace Motif.Extensions.GuitarPro.UnitTests;
 
 using FluentAssertions;
 using Motif;
+using Motif.Extensions.GuitarPro.Abstractions;
 using Motif.Extensions.GuitarPro.Implementation;
 using Motif.Models;
 using System.IO.Compression;
@@ -61,6 +62,20 @@ public class WriterRoundTripTests
         readBack.Tracks.Should().HaveCount(1);
         readBack.Tracks[0].Measures.Should().HaveCount(1);
         readBack.Tracks[0].Measures[0].Beats.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task Writer_exposes_supported_public_diagnostics_api()
+    {
+        var score = CreateRoundTripScore();
+
+        IGuitarProWriter writer = new Motif.Extensions.GuitarPro.GuitarProWriter();
+        await using var archiveBuffer = new MemoryStream();
+        var diagnostics = await writer.WriteWithDiagnosticsAsync(score, archiveBuffer, TestContext.Current.CancellationToken);
+
+        diagnostics.Should().NotBeNull();
+        diagnostics.Entries.Should().NotBeNull();
+        archiveBuffer.Length.Should().BeGreaterThan(0);
     }
 
     [Fact]

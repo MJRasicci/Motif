@@ -3,7 +3,7 @@ namespace Motif.Extensions.GuitarPro.Implementation;
 using Motif.Extensions.GuitarPro.Abstractions;
 using System.IO.Compression;
 
-public sealed class ZipGpArchiveWriter : IGpArchiveWriter
+internal sealed class ZipGpArchiveWriter : IGpArchiveWriter
 {
     private const string ScoreEntryPath = "Content/score.gpif";
     private const string DefaultTemplateResourceName = "Motif.Extensions.GuitarPro.Resources.DefaultTemplate.gp";

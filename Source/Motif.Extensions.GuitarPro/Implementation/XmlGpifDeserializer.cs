@@ -4,7 +4,7 @@ using Motif.Extensions.GuitarPro.Abstractions;
 using Motif.Extensions.GuitarPro.Models.Raw;
 using System.Xml.Linq;
 
-public sealed class XmlGpifDeserializer : IGpifDeserializer
+internal sealed class XmlGpifDeserializer : IGpifDeserializer
 {
     public ValueTask<GpifDocument> DeserializeAsync(Stream scoreStream, CancellationToken cancellationToken = default)
     {

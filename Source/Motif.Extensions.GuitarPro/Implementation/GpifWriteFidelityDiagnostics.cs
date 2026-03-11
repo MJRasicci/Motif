@@ -5,7 +5,7 @@ using Motif.Extensions.GuitarPro.Models.Write;
 using Motif.Extensions.GuitarPro.Utilities;
 using System.Xml.Linq;
 
-public static class GpifWriteFidelityDiagnostics
+internal static class GpifWriteFidelityDiagnostics
 {
     private static readonly string[] OptionalScoreElementNames =
     [

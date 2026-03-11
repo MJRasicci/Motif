@@ -3,6 +3,7 @@ namespace Motif.Extensions.GuitarPro;
 using Motif;
 using Motif.Extensions.GuitarPro.Abstractions;
 using Motif.Extensions.GuitarPro.Implementation;
+using Motif.Extensions.GuitarPro.Models.Write;
 using Motif.Models;
 
 public sealed class GuitarProWriter : IGuitarProWriter
@@ -16,7 +17,7 @@ public sealed class GuitarProWriter : IGuitarProWriter
     {
     }
 
-    public GuitarProWriter(IScoreUnmapper unmapper, IGpifSerializer serializer, IGpArchiveWriter archiveWriter)
+    internal GuitarProWriter(IScoreUnmapper unmapper, IGpifSerializer serializer, IGpArchiveWriter archiveWriter)
     {
         this.unmapper = unmapper;
         this.serializer = serializer;
@@ -24,24 +25,31 @@ public sealed class GuitarProWriter : IGuitarProWriter
     }
 
     public async ValueTask WriteAsync(Score score, string filePath, CancellationToken cancellationToken = default)
+        => _ = await WriteWithDiagnosticsAsync(score, filePath, cancellationToken).ConfigureAwait(false);
+
+    public async ValueTask<WriteDiagnostics> WriteWithDiagnosticsAsync(Score score, string filePath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
-        await using var buffer = await SerializeToGpifBufferAsync(score, cancellationToken).ConfigureAwait(false);
+        var result = await unmapper.UnmapAsync(score, cancellationToken).ConfigureAwait(false);
+        await using var buffer = await SerializeToGpifBufferAsync(result, cancellationToken).ConfigureAwait(false);
         await archiveWriter.WriteArchiveAsync(buffer, filePath, cancellationToken).ConfigureAwait(false);
+        return result.Diagnostics;
     }
 
     public async ValueTask WriteAsync(Score score, Stream destination, CancellationToken cancellationToken = default)
+        => _ = await WriteWithDiagnosticsAsync(score, destination, cancellationToken).ConfigureAwait(false);
+
+    public async ValueTask<WriteDiagnostics> WriteWithDiagnosticsAsync(Score score, Stream destination, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(destination);
-        await using var buffer = await SerializeToGpifBufferAsync(score, cancellationToken).ConfigureAwait(false);
+        var result = await unmapper.UnmapAsync(score, cancellationToken).ConfigureAwait(false);
+        await using var buffer = await SerializeToGpifBufferAsync(result, cancellationToken).ConfigureAwait(false);
         await archiveWriter.WriteArchiveAsync(buffer, destination, cancellationToken).ConfigureAwait(false);
+        return result.Diagnostics;
     }
 
-    private async ValueTask<MemoryStream> SerializeToGpifBufferAsync(Score score, CancellationToken cancellationToken)
+    private async ValueTask<MemoryStream> SerializeToGpifBufferAsync(WriteResult result, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(score);
-
-        var result = await unmapper.UnmapAsync(score, cancellationToken).ConfigureAwait(false);
         var buffer = new MemoryStream();
         await serializer.SerializeAsync(result.RawDocument, buffer, cancellationToken).ConfigureAwait(false);
         buffer.Position = 0;

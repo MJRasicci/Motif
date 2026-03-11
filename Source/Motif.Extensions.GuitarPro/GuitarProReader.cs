@@ -17,7 +17,7 @@ public sealed class GuitarProReader : IGuitarProReader
     {
     }
 
-    public GuitarProReader(IGpArchiveReader archiveReader, IGpifDeserializer deserializer, IScoreMapper mapper)
+    internal GuitarProReader(IGpArchiveReader archiveReader, IGpifDeserializer deserializer, IScoreMapper mapper)
     {
         this.archiveReader = archiveReader;
         this.deserializer = deserializer;
