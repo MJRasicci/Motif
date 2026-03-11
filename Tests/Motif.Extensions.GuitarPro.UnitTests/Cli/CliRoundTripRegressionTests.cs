@@ -12,7 +12,7 @@ public class CliRoundTripRegressionTests
     [Fact]
     public async Task No_edit_full_write_from_json_preserves_triplet_rhythm_and_section_cdata_for_schema_reference_fixture()
     {
-        var sourceGp = FixturePath("schema-reference.gp");
+        var sourceGp = GuitarProFixture.PathFor("schema-reference.gp");
         File.Exists(sourceGp).Should().BeTrue();
 
         var repoRoot = FindRepositoryRoot();
@@ -86,7 +86,7 @@ public class CliRoundTripRegressionTests
     [Fact]
     public async Task No_edit_full_write_from_json_preserves_stem_orientation_for_test_fixture()
     {
-        var sourceGp = FixturePath("test.gp");
+        var sourceGp = GuitarProFixture.PathFor("test.gp");
         File.Exists(sourceGp).Should().BeTrue();
 
         var repoRoot = FindRepositoryRoot();
@@ -135,7 +135,7 @@ public class CliRoundTripRegressionTests
     [Fact]
     public async Task Cli_can_route_by_extensions_and_explicit_format_flags_without_legacy_mode_switches()
     {
-        var sourceGp = FixturePath("schema-reference.gp");
+        var sourceGp = GuitarProFixture.PathFor("schema-reference.gp");
         File.Exists(sourceGp).Should().BeTrue();
 
         var repoRoot = FindRepositoryRoot();
@@ -177,7 +177,7 @@ public class CliRoundTripRegressionTests
     [Fact]
     public async Task Cli_can_route_between_json_gp_and_gpif_inputs_and_outputs()
     {
-        var sourceGp = FixturePath("schema-reference.gp");
+        var sourceGp = GuitarProFixture.PathFor("schema-reference.gp");
         File.Exists(sourceGp).Should().BeTrue();
 
         var repoRoot = FindRepositoryRoot();
@@ -234,7 +234,7 @@ public class CliRoundTripRegressionTests
     [Fact]
     public async Task Cli_rejects_non_v1_formats_and_unknown_output_extensions()
     {
-        var sourceGp = FixturePath("schema-reference.gp");
+        var sourceGp = GuitarProFixture.PathFor("schema-reference.gp");
         File.Exists(sourceGp).Should().BeTrue();
 
         var repoRoot = FindRepositoryRoot();
@@ -289,7 +289,7 @@ public class CliRoundTripRegressionTests
     [Fact]
     public async Task Batch_roundtrip_diagnostics_writes_summary_and_file_results_for_fixture_directory()
     {
-        var sourceGp = FixturePath("schema-reference.gp");
+        var sourceGp = GuitarProFixture.PathFor("schema-reference.gp");
         File.Exists(sourceGp).Should().BeTrue();
 
         var repoRoot = FindRepositoryRoot();
@@ -356,7 +356,7 @@ public class CliRoundTripRegressionTests
     [Fact]
     public async Task Batch_export_can_extract_gpif_when_output_format_is_gpif()
     {
-        var sourceGp = FixturePath("schema-reference.gp");
+        var sourceGp = GuitarProFixture.PathFor("schema-reference.gp");
         File.Exists(sourceGp).Should().BeTrue();
 
         var repoRoot = FindRepositoryRoot();
@@ -392,9 +392,6 @@ public class CliRoundTripRegressionTests
             }
         }
     }
-
-    private static string FixturePath(string fixtureName)
-        => Path.Combine(AppContext.BaseDirectory, "Fixtures", fixtureName);
 
     private static string FindRepositoryRoot()
     {

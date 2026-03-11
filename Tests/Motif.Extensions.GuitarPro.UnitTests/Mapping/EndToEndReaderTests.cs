@@ -7,7 +7,7 @@ public class EndToEndReaderTests
     [Fact]
     public async Task Reader_can_open_gp_file_and_map_basic_score_structure()
     {
-        var fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", "test.gp");
+        var fixturePath = GuitarProFixture.PathFor("test.gp");
         File.Exists(fixturePath).Should().BeTrue();
 
         var reader = new Motif.Extensions.GuitarPro.GuitarProReader();

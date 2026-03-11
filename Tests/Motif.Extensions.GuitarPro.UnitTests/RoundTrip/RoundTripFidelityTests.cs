@@ -11,7 +11,7 @@ public class RoundTripFidelityTests
     [InlineData("schema-reference.gp")]
     public async Task Round_trip_preserves_core_structural_invariants(string fixtureName)
     {
-        var fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", fixtureName);
+        var fixturePath = GuitarProFixture.PathFor(fixtureName);
         File.Exists(fixturePath).Should().BeTrue();
 
         var reader = new Motif.Extensions.GuitarPro.GuitarProReader();
@@ -41,7 +41,7 @@ public class RoundTripFidelityTests
     [Fact]
     public async Task Round_trip_json_pipeline_preserves_core_structural_invariants()
     {
-        var fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", "schema-reference.gp");
+        var fixturePath = GuitarProFixture.PathFor("schema-reference.gp");
         var reader = new Motif.Extensions.GuitarPro.GuitarProReader();
         var original = await reader.ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
 

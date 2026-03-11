@@ -30,7 +30,7 @@ public class MetadataMappingTests
     [Fact]
     public async Task Reader_maps_score_and_track_metadata_from_fixture()
     {
-        var fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", "schema-reference.gp");
+        var fixturePath = GuitarProFixture.PathFor("schema-reference.gp");
         var reader = new Motif.Extensions.GuitarPro.GuitarProReader();
 
         var score = await reader.ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
@@ -562,7 +562,7 @@ public class MetadataMappingTests
     [Fact]
     public async Task Reader_synthesizes_dynamic_map_from_fixture()
     {
-        var fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", "test.gp");
+        var fixturePath = GuitarProFixture.PathFor("test.gp");
         var reader = new Motif.Extensions.GuitarPro.GuitarProReader();
 
         var score = await reader.ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);

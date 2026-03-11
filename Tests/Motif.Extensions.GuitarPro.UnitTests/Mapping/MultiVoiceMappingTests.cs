@@ -9,7 +9,7 @@ public class MultiVoiceMappingTests
     [Fact]
     public async Task Reader_maps_multiple_voices_per_measure_from_fixture()
     {
-        var fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", "schema-reference.gp");
+        var fixturePath = GuitarProFixture.PathFor("schema-reference.gp");
         var reader = new Motif.Extensions.GuitarPro.GuitarProReader();
 
         var score = await reader.ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);

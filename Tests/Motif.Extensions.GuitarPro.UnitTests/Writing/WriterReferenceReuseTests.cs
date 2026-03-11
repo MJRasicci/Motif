@@ -23,7 +23,7 @@ public class WriterReferenceReuseTests
     [Fact]
     public async Task Unmapper_preserves_shared_reference_counts_for_schema_reference_fixture()
     {
-        var sourceGp = FixturePath("schema-reference.gp");
+        var sourceGp = GuitarProFixture.PathFor("schema-reference.gp");
         File.Exists(sourceGp).Should().BeTrue();
 
         var reader = new Motif.Extensions.GuitarPro.GuitarProReader();
@@ -380,7 +380,7 @@ public class WriterReferenceReuseTests
     [Fact]
     public async Task Json_round_trip_preserves_tuplet_rhythm_shapes_for_schema_reference_fixture()
     {
-        var sourceGp = FixturePath("schema-reference.gp");
+        var sourceGp = GuitarProFixture.PathFor("schema-reference.gp");
         var sourceRaw = await ReadRawAsync(sourceGp);
         var roundTrippedRaw = await ReadJsonRoundTrippedRawAsync(sourceGp);
 
@@ -402,7 +402,7 @@ public class WriterReferenceReuseTests
     [Fact]
     public async Task Json_round_trip_preserves_raw_counts_for_schema_reference_fixture()
     {
-        var sourceGp = FixturePath("schema-reference.gp");
+        var sourceGp = GuitarProFixture.PathFor("schema-reference.gp");
         var sourceRaw = await ReadRawAsync(sourceGp);
         var roundTrippedRaw = await ReadJsonRoundTrippedRawAsync(sourceGp);
 
@@ -436,9 +436,6 @@ public class WriterReferenceReuseTests
                 PalmMuted = palmMuted
             }
         };
-
-    private static string FixturePath(string fixtureName)
-        => Path.Combine(AppContext.BaseDirectory, "Fixtures", fixtureName);
 
     private static async Task<GpifDocument> ReadRawAsync(string gpPath)
     {

@@ -43,7 +43,7 @@ public class WriterDiagnosticsTests
     [Fact]
     public async Task No_op_source_fidelity_diagnostics_stop_warning_for_empty_score_nodes_once_preserved()
     {
-        var fixturePath = FixturePath("schema-reference.gp");
+        var fixturePath = GuitarProFixture.PathFor("schema-reference.gp");
         var sourceBytes = await ReadScoreGpifBytesAsync(fixturePath);
         var sourceRaw = await DeserializeRawAsync(sourceBytes);
 
@@ -71,7 +71,7 @@ public class WriterDiagnosticsTests
     [Fact]
     public async Task Unmapper_warns_when_guitar_pro_source_fidelity_was_invalidated_before_write()
     {
-        var fixturePath = FixturePath("test.gp");
+        var fixturePath = GuitarProFixture.PathFor("test.gp");
         var reader = new GuitarProReader();
         var score = await reader.ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -85,7 +85,7 @@ public class WriterDiagnosticsTests
     [Fact]
     public async Task Unmapper_warns_when_guitar_pro_reattachment_was_partial_before_write()
     {
-        var fixturePath = FixturePath("test.gp");
+        var fixturePath = GuitarProFixture.PathFor("test.gp");
         var sourceScore = await new GuitarProReader().ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
         var sourceTrack = sourceScore.Tracks[0];
         var sourceMeasure = sourceTrack.PrimaryMeasure(0);
@@ -132,7 +132,7 @@ public class WriterDiagnosticsTests
     [Fact]
     public async Task Unmapper_warns_when_guitar_pro_extension_graph_is_partial_without_explicit_state_markers()
     {
-        var fixturePath = FixturePath("test.gp");
+        var fixturePath = GuitarProFixture.PathFor("test.gp");
         var score = await new GuitarProReader().ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
 
         score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].RemoveExtension<GpNoteExtension>();
@@ -148,7 +148,7 @@ public class WriterDiagnosticsTests
     [Fact]
     public async Task Unmapper_warns_when_staff_bar_extensions_are_partial_even_with_compatibility_measures_present()
     {
-        var fixturePath = FixturePath("test.gp");
+        var fixturePath = GuitarProFixture.PathFor("test.gp");
         var score = await new GuitarProReader().ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
 
         score.Tracks[0].Staves[0].Measures[0].RemoveExtension<GpMeasureStaffExtension>();
@@ -549,9 +549,6 @@ public class WriterDiagnosticsTests
             && entry.SourceValue == "false"
             && entry.OutputValue == "true");
     }
-
-    private static string FixturePath(string fixtureName)
-        => Path.Combine(AppContext.BaseDirectory, "Fixtures", fixtureName);
 
     private static async Task<byte[]> ReadScoreGpifBytesAsync(string gpPath)
     {

@@ -12,7 +12,7 @@ public class AdvancedArticulationFixtureTests
     [Fact]
     public async Task Schema_reference_fixture_exposes_slide_bend_and_harmonic_data()
     {
-        var fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", "schema-reference.gp");
+        var fixturePath = GuitarProFixture.PathFor("schema-reference.gp");
         File.Exists(fixturePath).Should().BeTrue();
 
         var reader = new Motif.Extensions.GuitarPro.GuitarProReader();

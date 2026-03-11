@@ -12,7 +12,7 @@ public class GuitarProExtensionAttachmentTests
     [Fact]
     public async Task Reader_attaches_score_track_timeline_staff_measure_voice_beat_and_note_guitar_pro_extensions()
     {
-        var fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", "test.gp");
+        var fixturePath = GuitarProFixture.PathFor("test.gp");
 
         var score = await new GuitarProReader().ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -52,7 +52,7 @@ public class GuitarProExtensionAttachmentTests
     [Fact]
     public async Task Json_round_trip_can_reattach_score_track_staff_measure_voice_beat_and_note_guitar_pro_extensions_from_source_score()
     {
-        var fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", "test.gp");
+        var fixturePath = GuitarProFixture.PathFor("test.gp");
         var sourceScore = await new GuitarProReader().ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
         var json = sourceScore.ToJson(indented: false);
         var fromJson = JsonSerializer.Deserialize<Score>(json, new JsonSerializerOptions
@@ -122,7 +122,7 @@ public class GuitarProExtensionAttachmentTests
     [Fact]
     public async Task InvalidateGuitarProExtensions_removes_existing_extensions_from_the_full_score_tree()
     {
-        var fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", "test.gp");
+        var fixturePath = GuitarProFixture.PathFor("test.gp");
         var score = await new GuitarProReader().ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
 
         score.InvalidateGuitarProExtensions();
@@ -141,7 +141,7 @@ public class GuitarProExtensionAttachmentTests
     [Fact]
     public async Task ReattachGuitarProExtensionsFrom_matches_timeline_bars_and_staff_measures_by_index_and_clears_stale_target_extensions()
     {
-        var fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", "test.gp");
+        var fixturePath = GuitarProFixture.PathFor("test.gp");
         var sourceScore = await new GuitarProReader().ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
         var sourceTrack = sourceScore.Tracks[0];
         var sourceMeasure = sourceTrack.PrimaryMeasure(0);

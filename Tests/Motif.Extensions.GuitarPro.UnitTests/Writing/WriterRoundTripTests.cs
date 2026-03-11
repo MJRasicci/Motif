@@ -81,7 +81,7 @@ public class WriterRoundTripTests
     [Fact]
     public async Task Archive_writer_updates_existing_archive_without_losing_non_gpif_entries()
     {
-        var source = Path.Combine(AppContext.BaseDirectory, "Fixtures", "test.gp");
+        var source = GuitarProFixture.PathFor("test.gp");
         File.Exists(source).Should().BeTrue();
 
         var output = Path.Combine(Path.GetTempPath(), $"gpio-roundtrip-template-{Guid.NewGuid():N}.gp");
