@@ -25,6 +25,8 @@ public class PublicApiSurfaceTests
 
         typeof(IExtensibleModel).Should().NotBeNull();
         typeof(IModelExtension).Should().NotBeNull();
+        typeof(IScoreReader).Should().NotBeNull();
+        typeof(IScoreWriter).Should().NotBeNull();
 
         new Score().Tracks.Should().BeEmpty();
         new TrackModel().Measures.Should().BeEmpty();

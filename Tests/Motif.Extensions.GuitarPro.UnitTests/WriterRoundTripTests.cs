@@ -1,6 +1,7 @@
 namespace Motif.Extensions.GuitarPro.UnitTests;
 
 using FluentAssertions;
+using Motif;
 using Motif.Extensions.GuitarPro.Implementation;
 using Motif.Models;
 using System.IO.Compression;
@@ -11,45 +12,7 @@ public class WriterRoundTripTests
     [Fact]
     public async Task Writer_creates_gp_archive_that_reader_can_open()
     {
-        var score = new Score
-        {
-            Title = "RoundTrip",
-            Artist = "GPIO",
-            Album = "Tests",
-            Tracks =
-            [
-                new TrackModel
-                {
-                    Id = 0,
-                    Name = "Guitar",
-                    Measures =
-                    [
-                        new MeasureModel
-                        {
-                            Index = 0,
-                            TimeSignature = "4/4",
-                            Beats =
-                            [
-                                new BeatModel
-                                {
-                                    Id = 1,
-                                    Duration = 0.25m,
-                                    Notes =
-                                    [
-                                        new NoteModel
-                                        {
-                                            Id = 1,
-                                            MidiPitch = 64,
-                                            Articulation = new NoteArticulationModel { LetRing = true }
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        };
+        var score = CreateRoundTripScore();
 
         var outFile = Path.Combine(Path.GetTempPath(), $"gpio-roundtrip-{Guid.NewGuid():N}.gp");
         try
@@ -74,6 +37,30 @@ public class WriterRoundTripTests
                 File.Delete(outFile);
             }
         }
+    }
+
+    [Fact]
+    public async Task Writer_and_reader_support_stream_based_core_contracts()
+    {
+        var score = CreateRoundTripScore();
+
+        IScoreWriter writer = new Motif.Extensions.GuitarPro.GuitarProWriter();
+        await using var archiveBuffer = new MemoryStream();
+        await writer.WriteAsync(score, archiveBuffer, TestContext.Current.CancellationToken);
+
+        archiveBuffer.Length.Should().BeGreaterThan(0);
+
+        using var archive = new ZipArchive(archiveBuffer, ZipArchiveMode.Read, leaveOpen: true);
+        archive.Entries.Should().Contain(entry => entry.FullName == "Content/score.gpif");
+        archive.Entries.Should().Contain(entry => entry.FullName == "Content/Preferences.json");
+
+        IScoreReader reader = new Motif.Extensions.GuitarPro.GuitarProReader();
+        var readBack = await reader.ReadAsync(archiveBuffer, TestContext.Current.CancellationToken);
+
+        readBack.Title.Should().Be("RoundTrip");
+        readBack.Tracks.Should().HaveCount(1);
+        readBack.Tracks[0].Measures.Should().HaveCount(1);
+        readBack.Tracks[0].Measures[0].Beats.Should().HaveCount(1);
     }
 
     [Fact]
@@ -169,4 +156,45 @@ public class WriterRoundTripTests
         await stream.CopyToAsync(buffer, cancellationToken);
         return buffer.ToArray();
     }
+
+    private static Score CreateRoundTripScore()
+        => new()
+        {
+            Title = "RoundTrip",
+            Artist = "GPIO",
+            Album = "Tests",
+            Tracks =
+            [
+                new TrackModel
+                {
+                    Id = 0,
+                    Name = "Guitar",
+                    Measures =
+                    [
+                        new MeasureModel
+                        {
+                            Index = 0,
+                            TimeSignature = "4/4",
+                            Beats =
+                            [
+                                new BeatModel
+                                {
+                                    Id = 1,
+                                    Duration = 0.25m,
+                                    Notes =
+                                    [
+                                        new NoteModel
+                                        {
+                                            Id = 1,
+                                            MidiPitch = 64,
+                                            Articulation = new NoteArticulationModel { LetRing = true }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
 }

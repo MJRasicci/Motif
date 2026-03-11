@@ -9,6 +9,33 @@ public sealed class ZipGpArchiveWriter : IGpArchiveWriter
     private const string DefaultTemplateResourceName = "Motif.Extensions.GuitarPro.Resources.DefaultTemplate.gp";
     private static readonly byte[]? DefaultTemplateArchiveBytes = LoadDefaultTemplateArchiveBytes();
 
+    public async ValueTask WriteArchiveAsync(Stream gpifContent, Stream destination, CancellationToken cancellationToken = default)
+    {
+        ValidateStreams(gpifContent, destination);
+
+        if (destination.CanSeek)
+        {
+            destination.Position = 0;
+            destination.SetLength(0);
+        }
+
+        if (DefaultTemplateArchiveBytes is { Length: > 0 })
+        {
+            await using var templateArchive = new MemoryStream(DefaultTemplateArchiveBytes, writable: false);
+            await RewriteArchiveFromTemplateAsync(templateArchive, destination, gpifContent, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            using var archive = new ZipArchive(destination, ZipArchiveMode.Create, leaveOpen: true);
+            await CreateScoreEntryAsync(archive, gpifContent, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (destination.CanSeek)
+        {
+            destination.Position = 0;
+        }
+    }
+
     public async ValueTask WriteArchiveAsync(Stream gpifContent, string filePath, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(gpifContent);
@@ -74,6 +101,38 @@ public sealed class ZipGpArchiveWriter : IGpArchiveWriter
         await RewriteArchiveFromTemplateAsync(templateArchive, targetArchivePath, gpifContent, cancellationToken).ConfigureAwait(false);
     }
 
+    private static async ValueTask RewriteArchiveFromTemplateAsync(Stream templateArchive, Stream targetArchive, Stream gpifContent, CancellationToken cancellationToken)
+    {
+        using var source = new ZipArchive(templateArchive, ZipArchiveMode.Read, leaveOpen: false);
+        using var target = new ZipArchive(targetArchive, ZipArchiveMode.Create, leaveOpen: true);
+
+        var wroteScoreEntry = false;
+        foreach (var sourceEntry in source.Entries)
+        {
+            var targetEntry = target.CreateEntry(sourceEntry.FullName, CompressionLevel.Optimal);
+            await using var outStream = await targetEntry.OpenAsync(cancellationToken).ConfigureAwait(false);
+            if (string.Equals(sourceEntry.FullName, ScoreEntryPath, StringComparison.OrdinalIgnoreCase))
+            {
+                if (gpifContent.CanSeek)
+                {
+                    gpifContent.Position = 0;
+                }
+
+                await gpifContent.CopyToAsync(outStream, cancellationToken).ConfigureAwait(false);
+                wroteScoreEntry = true;
+                continue;
+            }
+
+            await using var inStream = await sourceEntry.OpenAsync(cancellationToken).ConfigureAwait(false);
+            await inStream.CopyToAsync(outStream, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (!wroteScoreEntry)
+        {
+            await CreateScoreEntryAsync(target, gpifContent, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
     private static async ValueTask RewriteArchiveFromTemplateAsync(Stream templateArchive, string targetArchivePath, Stream gpifContent, CancellationToken cancellationToken)
     {
         using var source = new ZipArchive(templateArchive, ZipArchiveMode.Read, leaveOpen: false);
@@ -103,6 +162,22 @@ public sealed class ZipGpArchiveWriter : IGpArchiveWriter
         if (!wroteScoreEntry)
         {
             await CreateScoreEntryAsync(target, gpifContent, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private static void ValidateStreams(Stream gpifContent, Stream destination)
+    {
+        ArgumentNullException.ThrowIfNull(gpifContent);
+        ArgumentNullException.ThrowIfNull(destination);
+
+        if (!gpifContent.CanRead)
+        {
+            throw new ArgumentException("GPIF content stream must be readable.", nameof(gpifContent));
+        }
+
+        if (!destination.CanWrite)
+        {
+            throw new ArgumentException("Destination stream must be writable.", nameof(destination));
         }
     }
 

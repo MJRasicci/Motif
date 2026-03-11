@@ -5,6 +5,7 @@ Motif v1 is now primarily an architecture-completion pass, not a proof-of-concep
 ## Current Verified State
 
 - Guitar Pro read/write pipeline lives in `Motif.Extensions.GuitarPro`
+- Core exposes stream-based `IScoreReader` / `IScoreWriter` contracts implemented by the GP package
 - Typed extension contracts live in `Motif.Core`
 - Core domain model is mutable and JSON-serializable
 - Most Guitar Pro fidelity/cache state has moved behind GP extensions
@@ -163,14 +164,14 @@ Mostly done.
 
 ## Status
 
-Not started.
+Done.
 
-## Remaining
+## Landed
 
-- Add stream-based `IScoreReader` / `IScoreWriter` contracts to `Motif.Core`
-- Implement them in `Motif.Extensions.GuitarPro`
-- Keep GP-specific path conveniences and GP-specific options in the GP package
-- Avoid inventing fake universal options too early
+- `IScoreReader` / `IScoreWriter` live in `Motif.Core` as stream-based format-agnostic contracts
+- `GuitarProReader` / `GuitarProWriter` implement the Core contracts for `.gp` archive I/O
+- GP-specific path conveniences and `GpReadOptions` remain in the GP package
+- No fake cross-format options were introduced in Core
 
 # Step 6 - Navigation in Core
 

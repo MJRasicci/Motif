@@ -5,16 +5,22 @@ using System.IO.Compression;
 
 public sealed class ZipGpArchiveReader : IGpArchiveReader
 {
-    public async ValueTask<Stream> OpenScoreStreamAsync(string filePath, CancellationToken cancellationToken = default)
+    public async ValueTask<Stream> OpenScoreStreamAsync(Stream archiveStream, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(archiveStream);
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (!File.Exists(filePath))
+        if (!archiveStream.CanRead)
         {
-            throw new FileNotFoundException($"Guitar Pro file not found: {filePath}", filePath);
+            throw new ArgumentException("Archive stream must be readable.", nameof(archiveStream));
         }
 
-        await using var archive = await ZipFile.OpenReadAsync(filePath, cancellationToken).ConfigureAwait(false);
+        if (archiveStream.CanSeek)
+        {
+            archiveStream.Position = 0;
+        }
+
+        using var archive = new ZipArchive(archiveStream, ZipArchiveMode.Read, leaveOpen: true);
         var entry = archive.GetEntry("Content/score.gpif")
             ?? throw new InvalidDataException("Archive does not contain Content/score.gpif");
 
@@ -24,5 +30,19 @@ public sealed class ZipGpArchiveReader : IGpArchiveReader
         buffer.Position = 0;
 
         return buffer;
+    }
+
+    public async ValueTask<Stream> OpenScoreStreamAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"Guitar Pro file not found: {filePath}", filePath);
+        }
+
+        await using var archiveStream = File.OpenRead(filePath);
+        return await OpenScoreStreamAsync(archiveStream, cancellationToken).ConfigureAwait(false);
     }
 }

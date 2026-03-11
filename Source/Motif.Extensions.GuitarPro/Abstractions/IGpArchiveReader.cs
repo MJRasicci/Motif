@@ -5,5 +5,7 @@ namespace Motif.Extensions.GuitarPro.Abstractions;
 /// </summary>
 public interface IGpArchiveReader
 {
+    ValueTask<Stream> OpenScoreStreamAsync(Stream archiveStream, CancellationToken cancellationToken = default);
+
     ValueTask<Stream> OpenScoreStreamAsync(string filePath, CancellationToken cancellationToken = default);
 }
