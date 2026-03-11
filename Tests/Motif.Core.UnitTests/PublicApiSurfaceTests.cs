@@ -15,7 +15,7 @@ public class PublicApiSurfaceTests
             Title = "Example",
             Tracks =
             [
-                new TrackModel
+                new Track
                 {
                     Id = 1,
                     Name = "Lead"
@@ -28,14 +28,14 @@ public class PublicApiSurfaceTests
         typeof(IScoreReader).Should().NotBeNull();
         typeof(IScoreWriter).Should().NotBeNull();
         typeof(ScoreNavigation).Should().NotBeNull();
-        typeof(TimelineBarModel).Should().NotBeNull();
-        typeof(StaffModel).Should().NotBeNull();
-        typeof(StaffMeasureModel).Should().NotBeNull();
+        typeof(TimelineBar).Should().NotBeNull();
+        typeof(Staff).Should().NotBeNull();
+        typeof(StaffMeasure).Should().NotBeNull();
 
         new Score().Tracks.Should().BeEmpty();
         new Score().TimelineBars.Should().BeEmpty();
-        new TrackModel().Staves.Should().BeEmpty();
-        new StaffModel().Measures.Should().BeEmpty();
+        new Track().Staves.Should().BeEmpty();
+        new Staff().Measures.Should().BeEmpty();
 
         var json = score.ToJson();
         using var document = JsonDocument.Parse(json);

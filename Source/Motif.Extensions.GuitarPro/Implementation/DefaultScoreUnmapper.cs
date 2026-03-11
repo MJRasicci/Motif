@@ -2,11 +2,13 @@ namespace Motif.Extensions.GuitarPro.Implementation;
 
 using Motif.Extensions.GuitarPro.Abstractions;
 using Motif.Extensions.GuitarPro.Models;
-using Motif.Models;
 using Motif.Extensions.GuitarPro.Models.Raw;
 using Motif.Extensions.GuitarPro.Models.Write;
 using Motif.Extensions.GuitarPro.Utilities;
+using Motif.Models;
 using System.Xml.Linq;
+using CoreTupletRatio = Motif.Models.TupletRatio;
+using RawTupletRatio = Motif.Extensions.GuitarPro.Models.Raw.TupletRatio;
 
 internal sealed class DefaultScoreUnmapper : IScoreUnmapper
 {
@@ -708,7 +710,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         });
     }
 
-    private static GpifMasterBar CreateMasterBar(TimelineBarModel timelineBar)
+    private static GpifMasterBar CreateMasterBar(TimelineBar timelineBar)
     {
         var timelineMetadata = GetTimelineBarMetadata(timelineBar);
         var jump = ResolveDirectionValue(timelineBar.Jump, timelineBar.DirectionProperties, "Jump");
@@ -750,7 +752,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         };
     }
 
-    private static TimelineBarModel CreateDefaultTimelineBar(int index)
+    private static TimelineBar CreateDefaultTimelineBar(int index)
         => new()
         {
             Index = index,
@@ -838,8 +840,8 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
     }
 
     private static void AppendMeasureContentCoverage(
-        IReadOnlyList<MeasureVoiceModel> voices,
-        IReadOnlyList<BeatModel> beats,
+        IReadOnlyList<Voice> voices,
+        IReadOnlyList<Beat> beats,
         ExtensionCoverage coverage)
     {
         if (voices.Count > 0)
@@ -851,7 +853,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         AppendBeatCoverage(beats, coverage);
     }
 
-    private static void AppendVoiceCoverage(IReadOnlyList<MeasureVoiceModel> voices, ExtensionCoverage coverage)
+    private static void AppendVoiceCoverage(IReadOnlyList<Voice> voices, ExtensionCoverage coverage)
     {
         foreach (var voice in voices)
         {
@@ -865,7 +867,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         }
     }
 
-    private static void AppendBeatCoverage(IReadOnlyList<BeatModel> beats, ExtensionCoverage coverage)
+    private static void AppendBeatCoverage(IReadOnlyList<Beat> beats, ExtensionCoverage coverage)
     {
         foreach (var beat in beats)
         {
@@ -1029,29 +1031,29 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             : string.Join(", ", samples);
     }
 
-    private static string FormatTrackPath(TrackModel track)
+    private static string FormatTrackPath(Track track)
         => $"/Score/Tracks[@id='{track.Id}']";
 
     private static string FormatVoicePath(
-        TrackModel track,
+        Track track,
         int measureIndex,
-        StaffMeasureModel staffBar,
-        MeasureVoiceModel measureVoice)
+        StaffMeasure staffBar,
+        Voice measureVoice)
         => $"{FormatTrackPath(track)}/Staves[@index='{staffBar.StaffIndex}']/Measures[@index='{measureIndex}']/Voices[@index='{measureVoice.VoiceIndex}']";
 
     private static string FormatBeatPath(
-        TrackModel track,
+        Track track,
         int measureIndex,
-        StaffMeasureModel staffBar,
-        MeasureVoiceModel measureVoice,
+        StaffMeasure staffBar,
+        Voice measureVoice,
         int beatIndex)
         => $"{FormatVoicePath(track, measureIndex, staffBar, measureVoice)}/Beats[{beatIndex}]";
 
     private static string FormatNotePath(
-        TrackModel track,
+        Track track,
         int measureIndex,
-        StaffMeasureModel staffBar,
-        MeasureVoiceModel measureVoice,
+        StaffMeasure staffBar,
+        Voice measureVoice,
         int beatIndex,
         int noteIndex)
         => $"{FormatBeatPath(track, measureIndex, staffBar, measureVoice, beatIndex)}/Notes[{noteIndex}]";
@@ -1091,8 +1093,8 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
     }
 
     private static (int? StringNumber, int? Fret) ResolveStringAndFret(
-        NoteModel note,
-        TrackModel track,
+        Note note,
+        Track track,
         int staffIndex,
         bool preserveSourceStringAndFret)
     {
@@ -1148,7 +1150,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return (bestString ?? note.StringNumber, bestFret);
     }
 
-    private static bool ResolveNotePalmMuted(NoteModel note, BeatModel beat)
+    private static bool ResolveNotePalmMuted(Note note, Beat beat)
     {
         if (note.Articulation.PalmMuted)
         {
@@ -1160,12 +1162,12 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             return false;
         }
 
-        // BeatModel.PalmMuted is a derived aggregate on read, so only fan it back out when the caller
+        // Beat.PalmMuted is a derived aggregate on read, so only fan it back out when the caller
         // set the beat-level flag without any explicit note-level palm-muted articulations.
         return beat.Notes.Count > 0 && !beat.Notes.Any(candidate => candidate.Articulation.PalmMuted);
     }
 
-    private static bool BrushDurationXPropertiesMatch(BeatModel beat, IReadOnlyDictionary<string, int> beatXProperties)
+    private static bool BrushDurationXPropertiesMatch(Beat beat, IReadOnlyDictionary<string, int> beatXProperties)
     {
         if (!beat.BrushDurationTicks.HasValue)
         {
@@ -1185,25 +1187,25 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             && kv.Value == beat.BrushDurationTicks.Value);
     }
 
-    private static TrackMetadata GetTrackMetadata(TrackModel track)
+    private static TrackMetadata GetTrackMetadata(Track track)
         => track.GetGuitarPro()?.Metadata ?? new TrackMetadata();
 
-    private static GpTimelineBarMetadata GetTimelineBarMetadata(TimelineBarModel timelineBar)
+    private static GpTimelineBarMetadata GetTimelineBarMetadata(TimelineBar timelineBar)
         => timelineBar.GetGuitarPro()?.Metadata ?? new GpTimelineBarMetadata();
 
-    private static GpMeasureStaffMetadata GetMeasureStaffMetadata(StaffMeasureModel staffMeasure)
+    private static GpMeasureStaffMetadata GetMeasureStaffMetadata(StaffMeasure staffMeasure)
         => staffMeasure.GetGuitarPro()?.Metadata ?? new GpMeasureStaffMetadata();
 
-    private static GpVoiceMetadata GetVoiceMetadata(MeasureVoiceModel voice)
+    private static GpVoiceMetadata GetVoiceMetadata(Voice voice)
         => voice.GetGuitarPro()?.Metadata ?? new GpVoiceMetadata();
 
-    private static GpBeatMetadata GetBeatMetadata(BeatModel beat)
+    private static GpBeatMetadata GetBeatMetadata(Beat beat)
         => beat.GetGuitarPro()?.Metadata ?? new GpBeatMetadata();
 
-    private static GpNoteMetadata GetNoteMetadata(NoteModel note)
+    private static GpNoteMetadata GetNoteMetadata(Note note)
         => note.GetGuitarPro()?.Metadata ?? new GpNoteMetadata();
 
-    private static IReadOnlyList<StaffMetadata> ResolveTrackStaffMetadata(TrackModel track)
+    private static IReadOnlyList<StaffMetadata> ResolveTrackStaffMetadata(Track track)
     {
         var trackMetadata = GetTrackMetadata(track);
         if (track.Staves.Count == 0)
@@ -1245,7 +1247,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             Xml = source.Xml
         };
 
-    private static int[] ResolveTuningPitches(TrackModel track, int staffIndex)
+    private static int[] ResolveTuningPitches(Track track, int staffIndex)
     {
         var metadata = GetTrackMetadata(track);
         var currentStaffMetadata = ResolveTrackStaffMetadata(track);
@@ -1262,7 +1264,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return metadata.TuningPitches;
     }
 
-    private static bool ShouldPreserveSourceStringAndFret(NoteModel note, TrackModel track, int staffIndex)
+    private static bool ShouldPreserveSourceStringAndFret(Note note, Track track, int staffIndex)
     {
         var noteMetadata = GetNoteMetadata(note);
         if (!HasSourceStringAndFret(noteMetadata))
@@ -1283,7 +1285,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
     private static bool HasSourceStringAndFret(GpNoteMetadata noteMetadata)
         => noteMetadata.SourceFret.HasValue || noteMetadata.SourceStringNumber.HasValue;
 
-    private static bool SourceStringContextMatches(TrackModel track, int staffIndex)
+    private static bool SourceStringContextMatches(Track track, int staffIndex)
     {
         var source = ResolveSourceStringContext(track, staffIndex);
         if (source is null)
@@ -1295,7 +1297,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                && ResolveCapoFret(track, staffIndex) == source.CapoFret;
     }
 
-    private static SourceStringContext? ResolveSourceStringContext(TrackModel track, int staffIndex)
+    private static SourceStringContext? ResolveSourceStringContext(Track track, int staffIndex)
     {
         var metadata = GetTrackMetadata(track);
         var currentStaffMetadata = ResolveTrackStaffMetadata(track);
@@ -1330,7 +1332,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             ? TryParseNullableInt(capoRaw)
             : null;
 
-    private static int? ResolveCapoFret(TrackModel track, int staffIndex)
+    private static int? ResolveCapoFret(Track track, int staffIndex)
     {
         var metadata = GetTrackMetadata(track);
         var currentStaffMetadata = ResolveTrackStaffMetadata(track);
@@ -1404,7 +1406,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         }
     }
 
-    private static int? ResolveTransposedMidiPitch(NoteModel note, TrackModel track)
+    private static int? ResolveTransposedMidiPitch(Note note, Track track)
     {
         if (!note.MidiPitch.HasValue)
         {
@@ -1417,7 +1419,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return note.MidiPitch.Value - (octave * 12) + chromatic;
     }
 
-    private static int? ResolveTrillSpeedXPropertyValue(NoteModel note)
+    private static int? ResolveTrillSpeedXPropertyValue(Note note)
     {
         var encodedTrillSpeed = ArticulationDecoders.EncodeTrillSpeed(note.Articulation.TrillSpeed);
         if (!encodedTrillSpeed.HasValue)
@@ -1438,7 +1440,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return encodedTrillSpeed.Value;
     }
 
-    private static int? ResolveSlideFlags(NoteModel note)
+    private static int? ResolveSlideFlags(Note note)
     {
         var encodedSlideFlags = ArticulationDecoders.EncodeSlides(note.Articulation.Slides);
         if (!encodedSlideFlags.HasValue)
@@ -1457,21 +1459,21 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return encodedSlideFlags.Value;
     }
 
-    private static bool ShouldPreserveSourceConcertPitch(NoteModel note)
+    private static bool ShouldPreserveSourceConcertPitch(Note note)
     {
         var noteMetadata = GetNoteMetadata(note);
         return note.ConcertPitch is not null
                && note.MidiPitch == noteMetadata.SourceMidiPitch;
     }
 
-    private static bool ShouldPreserveSourceTransposedPitch(NoteModel note, int? transposedMidiPitch)
+    private static bool ShouldPreserveSourceTransposedPitch(Note note, int? transposedMidiPitch)
     {
         var noteMetadata = GetNoteMetadata(note);
         return note.TransposedPitch is not null
                && transposedMidiPitch == noteMetadata.SourceTransposedMidiPitch;
     }
 
-    private static GpifPitchValue? ToRawPitchValue(PitchValueModel? pitch)
+    private static GpifPitchValue? ToRawPitchValue(PitchValue? pitch)
         => pitch is null
             ? null
             : new GpifPitchValue
@@ -1583,13 +1585,13 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             : string.Empty;
     }
 
-    private static int GetTrackMeasureCount(TrackModel track)
+    private static int GetTrackMeasureCount(Track track)
         => track.Staves
             .Select(staff => staff.Measures.Count)
             .DefaultIfEmpty(0)
             .Max();
 
-    private static int? GetScoreBarIndexAtPosition(IReadOnlyList<TrackModel> tracks, int measurePosition)
+    private static int? GetScoreBarIndexAtPosition(IReadOnlyList<Track> tracks, int measurePosition)
     {
         foreach (var track in tracks)
         {
@@ -1603,7 +1605,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return null;
     }
 
-    private static int? GetTrackBarIndexAtPosition(TrackModel track, int measurePosition)
+    private static int? GetTrackBarIndexAtPosition(Track track, int measurePosition)
     {
         foreach (var staff in track.Staves.OrderBy(staff => staff.StaffIndex))
         {
@@ -1616,8 +1618,8 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return null;
     }
 
-    private static IReadOnlyList<StaffMeasureModel> ResolveTrackStaffMeasures(
-        TrackModel track,
+    private static IReadOnlyList<StaffMeasure> ResolveTrackStaffMeasures(
+        Track track,
         int timelineIndex,
         int measurePosition)
     {
@@ -1628,7 +1630,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         }
 
         var trackStaffsByIndex = track.Staves.ToDictionary(staff => staff.StaffIndex);
-        var resolved = new List<StaffMeasureModel>(totalStaffCount);
+        var resolved = new List<StaffMeasure>(totalStaffCount);
         for (var staffIndex = 0; staffIndex < totalStaffCount; staffIndex++)
         {
             if (trackStaffsByIndex.TryGetValue(staffIndex, out var staff)
@@ -1644,7 +1646,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return resolved;
     }
 
-    private static int GetTrackStaffCount(TrackModel track)
+    private static int GetTrackStaffCount(Track track)
     {
         var currentStaffMetadata = ResolveTrackStaffMetadata(track);
         var highestStaffIndex = track.Staves
@@ -1656,10 +1658,10 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
     }
 
     private static bool TryResolveStaffMeasure(
-        StaffModel staff,
+        Staff staff,
         int timelineIndex,
         int measurePosition,
-        out StaffMeasureModel staffMeasure)
+        out StaffMeasure staffMeasure)
     {
         staffMeasure = staff.Measures.FirstOrDefault(measure => measure.Index == timelineIndex)
             ?? (measurePosition >= 0 && measurePosition < staff.Measures.Count ? staff.Measures[measurePosition] : null!);
@@ -1667,9 +1669,9 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return staffMeasure is not null;
     }
 
-    private static IReadOnlyList<StaffMeasureModel> CreateEmptyStaffMeasures(int count, int timelineIndex)
+    private static IReadOnlyList<StaffMeasure> CreateEmptyStaffMeasures(int count, int timelineIndex)
     {
-        var staffBars = new List<StaffMeasureModel>(Math.Max(1, count));
+        var staffBars = new List<StaffMeasure>(Math.Max(1, count));
         for (var staffIndex = 0; staffIndex < Math.Max(1, count); staffIndex++)
         {
             staffBars.Add(CreateEmptyStaffMeasure(timelineIndex, staffIndex));
@@ -1678,9 +1680,9 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return staffBars;
     }
 
-    private static StaffMeasureModel CreateEmptyStaffMeasure(int timelineIndex, int staffIndex)
+    private static StaffMeasure CreateEmptyStaffMeasure(int timelineIndex, int staffIndex)
     {
-        var staffBar = new StaffMeasureModel
+        var staffBar = new StaffMeasure
         {
             Index = timelineIndex,
             StaffIndex = staffIndex
@@ -1696,7 +1698,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return staffBar;
     }
 
-    private static IEnumerable<StaffMeasureModel> EnumeratePreferredStaffMeasures(TrackModel track)
+    private static IEnumerable<StaffMeasure> EnumeratePreferredStaffMeasures(Track track)
     {
         for (var measurePosition = 0; measurePosition < GetTrackMeasureCount(track); measurePosition++)
         {
@@ -1708,16 +1710,16 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         }
     }
 
-    private static IEnumerable<MeasureVoiceModel> EnumeratePreferredVoices(TrackModel track)
+    private static IEnumerable<Voice> EnumeratePreferredVoices(Track track)
         => EnumeratePreferredStaffMeasures(track)
             .SelectMany(staffBar => ResolveMeasureVoices(staffBar.Voices, staffBar.Beats));
 
-    private static IEnumerable<BeatModel> EnumeratePreferredBeats(TrackModel track)
+    private static IEnumerable<Beat> EnumeratePreferredBeats(Track track)
         => EnumeratePreferredStaffMeasures(track)
             .SelectMany(staffBar => ResolveMeasureVoices(staffBar.Voices, staffBar.Beats))
             .SelectMany(voice => voice.Beats);
 
-    private static IReadOnlyList<MeasureVoiceModel> ResolveMeasureVoices(IReadOnlyList<MeasureVoiceModel> measureVoices, IReadOnlyList<BeatModel> measureBeats)
+    private static IReadOnlyList<Voice> ResolveMeasureVoices(IReadOnlyList<Voice> measureVoices, IReadOnlyList<Beat> measureBeats)
     {
         if (measureVoices.Count > 0)
         {
@@ -1728,10 +1730,10 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
 
         if (measureBeats.Count == 0)
         {
-            return Array.Empty<MeasureVoiceModel>();
+            return Array.Empty<Voice>();
         }
 
-        var voice = new MeasureVoiceModel
+        var voice = new Voice
         {
             VoiceIndex = 0,
             Beats = measureBeats
@@ -1748,7 +1750,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return [voice];
     }
 
-    private static List<int> CreateVoiceSlots(IReadOnlyList<MeasureVoiceModel> measureVoices)
+    private static List<int> CreateVoiceSlots(IReadOnlyList<Voice> measureVoices)
     {
         var highestSlotIndex = measureVoices.Count == 0
             ? -1
@@ -2115,7 +2117,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
            && string.Equals(a.HarmonicTypeText, b.HarmonicTypeText, StringComparison.Ordinal)
            && a.HarmonicFret == b.HarmonicFret;
 
-    private static bool TupletsEqual(TupletRatio? a, TupletRatio? b)
+    private static bool TupletsEqual(RawTupletRatio? a, RawTupletRatio? b)
         => a?.Numerator == b?.Numerator
            && a?.Denominator == b?.Denominator;
 
@@ -2138,7 +2140,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return true;
     }
 
-    private static GpifRhythm? TryPreserveSourceRhythmShape(BeatModel beat)
+    private static GpifRhythm? TryPreserveSourceRhythmShape(Beat beat)
     {
         var beatMetadata = GetBeatMetadata(beat);
         if (beatMetadata.SourceRhythm is null)
@@ -2163,10 +2165,10 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             : null;
     }
 
-    private static TupletRatio? ToRawTuplet(TupletRatioModel? tuplet)
+    private static RawTupletRatio? ToRawTuplet(CoreTupletRatio? tuplet)
         => tuplet is null
             ? null
-            : new TupletRatio
+            : new RawTupletRatio
             {
                 Numerator = tuplet.Numerator,
                 Denominator = tuplet.Denominator
@@ -2216,7 +2218,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return duration;
     }
 
-    private static decimal TupletFactor(TupletRatio? tuplet)
+    private static decimal TupletFactor(RawTupletRatio? tuplet)
     {
         if (tuplet is null || tuplet.Numerator <= 0 || tuplet.Denominator <= 0)
         {
@@ -2278,7 +2280,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                             Id = id,
                             NoteValue = c.Name,
                             AugmentationDots = dots,
-                            PrimaryTuplet = new TupletRatio { Numerator = tr.Item1, Denominator = tr.Item2 }
+                            PrimaryTuplet = new RawTupletRatio { Numerator = tr.Item1, Denominator = tr.Item2 }
                         };
                     }
                 }

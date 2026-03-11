@@ -151,11 +151,11 @@ public class GuitarProExtensionAttachmentTests
         {
             TimelineBars =
             [
-                new TimelineBarModel
+                new TimelineBar
                 {
                     Index = 999
                 },
-                new TimelineBarModel
+                new TimelineBar
                 {
                     Index = sourceTimelineBar.Index
                 }
@@ -165,18 +165,18 @@ public class GuitarProExtensionAttachmentTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     sourceTrack.Id,
                     sourceTrack.Name,
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 999,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = -1,
                                 Notes =
                                 [
-                                    new NoteModel
+                                    new Note
                                     {
                                         Id = -2
                                     }
@@ -184,7 +184,7 @@ public class GuitarProExtensionAttachmentTests
                             }
                         ]
                     },
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = sourceMeasure.Index,
                         StaffIndex = 0,
@@ -220,11 +220,11 @@ public class GuitarProExtensionAttachmentTests
         target.Tracks[0].PrimaryMeasure(0).GetGuitarPro().Should().BeNull();
     }
 
-    private static BeatModel CloneBeat(BeatModel beat)
+    private static Beat CloneBeat(Beat beat)
         => new()
         {
             Id = beat.Id,
-            Notes = beat.Notes.Select(note => new NoteModel
+            Notes = beat.Notes.Select(note => new Note
             {
                 Id = note.Id
             }).ToArray()

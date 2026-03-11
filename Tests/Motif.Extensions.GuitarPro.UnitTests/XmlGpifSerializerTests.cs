@@ -17,7 +17,7 @@ public class XmlGpifSerializerTests
         {
             TimelineBars =
             [
-                new TimelineBarModel
+                new TimelineBar
                 {
                     Index = 0,
                     TimeSignature = "4/4",
@@ -29,7 +29,7 @@ public class XmlGpifSerializerTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0
@@ -122,7 +122,7 @@ public class XmlGpifSerializerTests
             Title = "Formatting Test",
             TimelineBars =
             [
-                new TimelineBarModel
+                new TimelineBar
                 {
                     Index = 0,
                     TimeSignature = "4/4"
@@ -133,18 +133,18 @@ public class XmlGpifSerializerTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Voices =
                         [
-                            new MeasureVoiceModel
+                            new Voice
                             {
                                 VoiceIndex = 0,
                                 Beats =
                                 [
-                                    new BeatModel
+                                    new Beat
                                     {
                                         Id = 1,
                                         Duration = 0.25m

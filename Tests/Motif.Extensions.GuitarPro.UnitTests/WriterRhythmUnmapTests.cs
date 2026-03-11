@@ -19,14 +19,14 @@ public class WriterRhythmUnmapTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel { Id = 1, Duration = 0.375m },
-                            new BeatModel { Id = 2, Duration = 1m / 12m }
+                            new Beat { Id = 1, Duration = 0.375m },
+                            new Beat { Id = 2, Duration = 1m / 12m }
                         ]
                     })
             ]
@@ -58,14 +58,14 @@ public class WriterRhythmUnmapTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel { Id = 1, Duration = 0.25m },
-                            new BeatModel { Id = 2, Duration = 0.25m }
+                            new Beat { Id = 1, Duration = 0.25m },
+                            new Beat { Id = 2, Duration = 0.25m }
                         ]
                     })
             ]
@@ -92,13 +92,13 @@ public class WriterRhythmUnmapTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = 1,
                                 Duration = 1m / 48m
@@ -111,7 +111,7 @@ public class WriterRhythmUnmapTests
         score.Tracks[0].PrimaryMeasure(0).Beats[0].GetRequiredGuitarPro().Metadata.SourceRhythm = new GpRhythmShapeMetadata
         {
             NoteValue = "32nd",
-            PrimaryTuplet = new TupletRatioModel
+            PrimaryTuplet = new TupletRatio
             {
                 Numerator = 3,
                 Denominator = 2
@@ -139,13 +139,13 @@ public class WriterRhythmUnmapTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = 1,
                                 Duration = 0.375m
@@ -188,13 +188,13 @@ public class WriterRhythmUnmapTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = 1,
                                 Duration = 0.4375m

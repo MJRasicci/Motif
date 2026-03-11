@@ -10,10 +10,10 @@ using System.Xml.Linq;
 
 public class WriterNotationFidelityTests
 {
-    private static GpBeatMetadata BeatMetadataOf(BeatModel beat)
+    private static GpBeatMetadata BeatMetadataOf(Beat beat)
         => beat.GetRequiredGuitarPro().Metadata;
 
-    private static GpNoteMetadata NoteMetadataOf(NoteModel note)
+    private static GpNoteMetadata NoteMetadataOf(Note note)
         => note.GetRequiredGuitarPro().Metadata;
 
     private static string BuildGpif()
@@ -217,13 +217,13 @@ public class WriterNotationFidelityTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Lead",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = beat.Id,
                                 Duration = 0.25m,
@@ -231,12 +231,12 @@ public class WriterNotationFidelityTests
                                 XProperties = beat.XProperties,
                                 Notes =
                                 [
-                                    new NoteModel
+                                    new Note
                                     {
                                         Id = note.Id,
                                         MidiPitch = 69,
                                         XProperties = note.XProperties,
-                                        Articulation = new NoteArticulationModel
+                                        Articulation = new NoteArticulation
                                         {
                                             TrillSpeed = TrillSpeedKind.ThirtySecond
                                         }
@@ -275,19 +275,19 @@ public class WriterNotationFidelityTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Lead",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = beat.Id,
                                 Duration = beat.Duration,
                                 Notes =
                                 [
-                                    new NoteModel
+                                    new Note
                                     {
                                         Id = note.Id,
                                         MidiPitch = 71,

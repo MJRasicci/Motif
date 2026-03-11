@@ -10,7 +10,7 @@ using System.Xml.Linq;
 
 public class BeatEffectMappingTests
 {
-    private static GpBeatMetadata BeatMetadataOf(BeatModel beat)
+    private static GpBeatMetadata BeatMetadataOf(Beat beat)
         => beat.GetRequiredGuitarPro().Metadata;
 
     private static string BuildGpif(string beatBody, string noteBody = "", string noteXProperties = "")
@@ -206,17 +206,17 @@ public class BeatEffectMappingTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = 1,
                                 Duration = 0.25m,
-                                WhammyBar = new WhammyBarModel
+                                WhammyBar = new WhammyBar
                                 {
                                     Enabled = true,
                                     Extended = true,
@@ -228,7 +228,7 @@ public class BeatEffectMappingTests
                                     MiddleOffset2 = 0.5m,
                                     DestinationOffset = 1m
                                 },
-                                Notes = [new NoteModel { Id = 1, MidiPitch = 60 }]
+                                Notes = [new Note { Id = 1, MidiPitch = 60 }]
                             }
                         ]
                     })
@@ -473,23 +473,23 @@ public class BeatEffectMappingTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = 1,
                                 Duration = 0.25m,
                                 Notes =
                                 [
-                                    new NoteModel
+                                    new Note
                                     {
                                         Id = 1,
                                         MidiPitch = 64,
-                                        Articulation = new NoteArticulationModel
+                                        Articulation = new NoteArticulation
                                         {
                                             Trill = 7,
                                             TrillSpeed = kind
@@ -598,20 +598,20 @@ public class BeatEffectMappingTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = 1,
                                 Duration = 0.25m,
                                 Dynamic = "PP",
                                 Notes =
                                 [
-                                    new NoteModel { Id = 1, MidiPitch = 60 }
+                                    new Note { Id = 1, MidiPitch = 60 }
                                 ]
                             }
                         ]
@@ -645,13 +645,13 @@ public class BeatEffectMappingTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = 1,
                                 Arpeggio = true,
@@ -663,7 +663,7 @@ public class BeatEffectMappingTests
                                 Tremolo = true,
                                 TremoloValue = "1/8",
                                 FreeText = "muted",
-                                WhammyBar = new WhammyBarModel
+                                WhammyBar = new WhammyBar
                                 {
                                     Enabled = true,
                                     Extended = true,
@@ -678,11 +678,11 @@ public class BeatEffectMappingTests
                                 Duration = 0.25m,
                                 Notes =
                                 [
-                                    new NoteModel
+                                    new Note
                                     {
                                         Id = 1,
                                         MidiPitch = 64,
-                                        Articulation = new NoteArticulationModel
+                                        Articulation = new NoteArticulation
                                         {
                                             Trill = 7,
                                             TrillSpeed = TrillSpeedKind.ThirtySecond
@@ -749,17 +749,17 @@ public class BeatEffectMappingTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = 1,
                                 Duration = 0.25m,
-                                WhammyBar = new WhammyBarModel
+                                WhammyBar = new WhammyBar
                                 {
                                     Enabled = true,
                                     OriginValue = 0m,
@@ -767,7 +767,7 @@ public class BeatEffectMappingTests
                                 },
                                 Notes =
                                 [
-                                    new NoteModel { Id = 1, MidiPitch = 60 }
+                                    new Note { Id = 1, MidiPitch = 60 }
                                 ]
                             }
                         ]

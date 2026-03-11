@@ -58,7 +58,7 @@ internal static class ArticulationDecoders
         return flags == 0 ? null : flags;
     }
 
-    public static BendModel? DecodeBend(GpifNoteArticulation a, bool tieDestination)
+    public static Bend? DecodeBend(GpifNoteArticulation a, bool tieDestination)
     {
         var hasCurveData = a.BendOriginValue.HasValue
             || a.BendMiddleValue.HasValue
@@ -78,7 +78,7 @@ internal static class ArticulationDecoders
         var destinationValue = NormalizeBendValue(a.BendDestinationValue);
         var inferredType = InferBendType(originValue, middleValue, destinationValue, tieDestination, a.BendEnabled);
 
-        return new BendModel
+        return new Bend
         {
             Enabled = a.BendEnabled || hasCurveData,
             Type = inferredType,
@@ -92,7 +92,7 @@ internal static class ArticulationDecoders
         };
     }
 
-    public static EncodedBend EncodeBend(BendModel? bend)
+    public static EncodedBend EncodeBend(Bend? bend)
     {
         if (bend is null)
         {
@@ -110,7 +110,7 @@ internal static class ArticulationDecoders
             DestinationValue: DenormalizeBendValue(bend.DestinationValue));
     }
 
-    public static HarmonicModel? DecodeHarmonic(GpifNoteArticulation a)
+    public static Harmonic? DecodeHarmonic(GpifNoteArticulation a)
     {
         if (!a.HarmonicEnabled
             && a.HarmonicType is null
@@ -126,7 +126,7 @@ internal static class ArticulationDecoders
             ? a.HarmonicTypeText
             : MapHarmonicTypeName(kind);
 
-        return new HarmonicModel
+        return new Harmonic
         {
             Enabled = a.HarmonicEnabled || a.HarmonicFret.HasValue || kind != HarmonicTypeKind.NoHarmonic,
             Type = typeNumber,
@@ -136,7 +136,7 @@ internal static class ArticulationDecoders
         };
     }
 
-    public static EncodedHarmonic EncodeHarmonic(HarmonicModel? harmonic)
+    public static EncodedHarmonic EncodeHarmonic(Harmonic? harmonic)
     {
         if (harmonic is null)
         {
@@ -274,7 +274,7 @@ internal static class ArticulationDecoders
     private static bool Close(decimal left, decimal right)
         => Math.Abs(left - right) <= Epsilon;
 
-    public static WhammyBarModel? DecodeWhammyBar(GpifBeat beat)
+    public static WhammyBar? DecodeWhammyBar(GpifBeat beat)
     {
         var hasCurveData = beat.WhammyBarOriginValue.HasValue
             || beat.WhammyBarMiddleValue.HasValue
@@ -289,7 +289,7 @@ internal static class ArticulationDecoders
             return null;
         }
 
-        return new WhammyBarModel
+        return new WhammyBar
         {
             Enabled = beat.WhammyBar || beat.WhammyBarExtended || hasCurveData,
             Extended = beat.WhammyBarExtended,
@@ -303,7 +303,7 @@ internal static class ArticulationDecoders
         };
     }
 
-    public static EncodedWhammyBar EncodeWhammyBar(WhammyBarModel? whammy)
+    public static EncodedWhammyBar EncodeWhammyBar(WhammyBar? whammy)
     {
         if (whammy is null)
         {

@@ -9,7 +9,7 @@ using System.Text;
 
 public class PropertyArticulationMappingTests
 {
-    private static GpNoteMetadata NoteMetadataOf(NoteModel note)
+    private static GpNoteMetadata NoteMetadataOf(Note note)
         => note.GetRequiredGuitarPro().Metadata;
 
     [Fact]

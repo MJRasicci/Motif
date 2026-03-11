@@ -6,8 +6,8 @@ using System.Text.Json.Serialization;
 
 [JsonSourceGenerationOptions(WriteIndented = true, PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(Score))]
-[JsonSerializable(typeof(PitchValueModel))]
-[JsonSerializable(typeof(TupletRatioModel))]
+[JsonSerializable(typeof(PitchValue))]
+[JsonSerializable(typeof(TupletRatio))]
 [JsonSerializable(typeof(WriteDiagnosticEntry[]))]
 [JsonSerializable(typeof(BatchFailure))]
 [JsonSerializable(typeof(BatchFailure[]))]

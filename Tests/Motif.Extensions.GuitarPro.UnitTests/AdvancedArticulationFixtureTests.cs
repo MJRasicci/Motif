@@ -6,7 +6,7 @@ using Motif.Models;
 
 public class AdvancedArticulationFixtureTests
 {
-    private static int? SourceSlideFlagsOf(NoteModel note)
+    private static int? SourceSlideFlagsOf(Note note)
         => note.GetRequiredGuitarPro().Metadata.SourceSlideFlags;
 
     [Fact]

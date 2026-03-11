@@ -30,8 +30,8 @@ public class ModelExtensionTests
     [Fact]
     public void Extensions_are_isolated_per_model_instance()
     {
-        var lead = new TrackModel { Name = "Lead" };
-        var rhythm = new TrackModel { Name = "Rhythm" };
+        var lead = new Track { Name = "Lead" };
+        var rhythm = new Track { Name = "Rhythm" };
 
         lead.SetExtension(new TestTrackExtension(1));
 
@@ -42,7 +42,7 @@ public class ModelExtensionTests
     [Fact]
     public void Setting_same_extension_type_replaces_existing_instance()
     {
-        var beat = new BeatModel();
+        var beat = new Beat();
 
         beat.SetExtension(new TestBeatExtension("first"));
         beat.SetExtension(new TestBeatExtension("second"));
@@ -54,7 +54,7 @@ public class ModelExtensionTests
     [Fact]
     public void Missing_required_extension_throws_clear_error()
     {
-        var note = new NoteModel();
+        var note = new Note();
 
         var act = () => note.GetRequiredExtension<TestBeatExtension>();
 

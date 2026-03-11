@@ -15,10 +15,10 @@ public class MetadataMappingTests
     private static MasterTrackMetadata MasterTrackMetadataOf(Score score)
         => score.GetRequiredGuitarPro().MasterTrack;
 
-    private static TrackMetadata TrackMetadataOf(TrackModel track)
+    private static TrackMetadata TrackMetadataOf(Track track)
         => track.GetRequiredGuitarPro().Metadata;
 
-    private static GpVoiceMetadata VoiceMetadataOf(MeasureVoiceModel voice)
+    private static GpVoiceMetadata VoiceMetadataOf(Voice voice)
         => voice.GetRequiredGuitarPro().Metadata;
 
     [Fact]
@@ -63,12 +63,12 @@ public class MetadataMappingTests
     [Fact]
     public async Task Writer_round_trip_preserves_custom_score_and_track_metadata()
     {
-        var beat = new BeatModel
+        var beat = new Beat
         {
             Id = 1,
             Duration = 0.25m
         };
-        var voice = new MeasureVoiceModel
+        var voice = new Voice
         {
             VoiceIndex = 0,
             Beats = [beat]
@@ -81,7 +81,7 @@ public class MetadataMappingTests
             Album = "B",
             TimelineBars =
             [
-                new TimelineBarModel
+                new TimelineBar
                 {
                     Index = 0,
                     TimeSignature = "4/4",
@@ -98,7 +98,7 @@ public class MetadataMappingTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
@@ -403,11 +403,11 @@ public class MetadataMappingTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Track",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
-                        Beats = [ new BeatModel { Id = 1, Duration = 0.25m } ]
+                        Beats = [ new Beat { Id = 1, Duration = 0.25m } ]
                     })
             ]
         };

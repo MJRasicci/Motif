@@ -15,13 +15,13 @@ public class WriterArticulationParityTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = 1,
                                 GraceType = "BeforeBeat",
@@ -35,11 +35,11 @@ public class WriterArticulationParityTests
                                 Duration = 0.25m,
                                 Notes =
                                 [
-                                    new NoteModel
+                                    new Note
                                     {
                                         Id = 1,
                                         MidiPitch = 64,
-                                        Articulation = new NoteArticulationModel
+                                        Articulation = new NoteArticulation
                                         {
                                             LeftFingering = "I",
                                             RightFingering = "M",
@@ -49,14 +49,14 @@ public class WriterArticulationParityTests
                                             PalmMuted = true,
                                             HopoOrigin = true,
                                             Slides = [SlideType.Shift, SlideType.OutUp],
-                                            Harmonic = new HarmonicModel
+                                            Harmonic = new Harmonic
                                             {
                                                 Enabled = true,
                                                 Type = 2,
                                                 Kind = HarmonicTypeKind.Artificial,
                                                 Fret = 12m
                                             },
-                                            Bend = new BendModel
+                                            Bend = new Bend
                                             {
                                                 Enabled = true,
                                                 Type = BendTypeKind.Bend,

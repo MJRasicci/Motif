@@ -11,13 +11,13 @@ using System.Text.Json;
 
 public class WriterReferenceReuseTests
 {
-    private static GpMeasureStaffMetadata MeasureMetadataOf(StaffMeasureModel measure)
+    private static GpMeasureStaffMetadata MeasureMetadataOf(StaffMeasure measure)
         => measure.GetRequiredGuitarPro().Metadata;
 
-    private static GpMeasureStaffMetadata StaffMetadataOf(StaffMeasureModel staff)
+    private static GpMeasureStaffMetadata StaffMetadataOf(StaffMeasure staff)
         => staff.GetRequiredGuitarPro().Metadata;
 
-    private static GpVoiceMetadata VoiceMetadataOf(MeasureVoiceModel voice)
+    private static GpVoiceMetadata VoiceMetadataOf(Voice voice)
         => voice.GetRequiredGuitarPro().Metadata;
 
     [Fact]
@@ -51,13 +51,13 @@ public class WriterReferenceReuseTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Voices =
                         [
-                            new MeasureVoiceModel
+                            new Voice
                             {
                                 VoiceIndex = 0,
                                 Beats =
@@ -99,13 +99,13 @@ public class WriterReferenceReuseTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Voices =
                         [
-                            new MeasureVoiceModel
+                            new Voice
                             {
                                 VoiceIndex = 0,
                                 Beats =
@@ -143,13 +143,13 @@ public class WriterReferenceReuseTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Voices =
                         [
-                            new MeasureVoiceModel
+                            new Voice
                             {
                                 VoiceIndex = 0,
                                 Beats =
@@ -186,7 +186,7 @@ public class WriterReferenceReuseTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
@@ -215,7 +215,7 @@ public class WriterReferenceReuseTests
         {
             TimelineBars =
             [
-                new TimelineBarModel
+                new TimelineBar
                 {
                     Index = 0,
                     TimeSignature = "7/8",
@@ -229,7 +229,7 @@ public class WriterReferenceReuseTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
@@ -257,7 +257,7 @@ public class WriterReferenceReuseTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0
@@ -266,7 +266,7 @@ public class WriterReferenceReuseTests
         };
         score.TimelineBars =
         [
-            new TimelineBarModel
+            new TimelineBar
             {
                 Index = 0,
                 TimeSignature = "4/4",
@@ -409,7 +409,7 @@ public class WriterReferenceReuseTests
         AssertStructuralCountsEqual(sourceRaw, roundTrippedRaw);
     }
 
-    private static BeatModel CreateBeat(int id, params NoteModel[] notes)
+    private static Beat CreateBeat(int id, params Note[] notes)
         => new()
         {
             Id = id,
@@ -417,7 +417,7 @@ public class WriterReferenceReuseTests
             Notes = notes
         };
 
-    private static BeatModel CreateBeatWithPalmMute(int id, bool palmMuted, params NoteModel[] notes)
+    private static Beat CreateBeatWithPalmMute(int id, bool palmMuted, params Note[] notes)
         => new()
         {
             Id = id,
@@ -426,12 +426,12 @@ public class WriterReferenceReuseTests
             Notes = notes
         };
 
-    private static NoteModel CreateNote(int id, int midiPitch, bool palmMuted = false)
+    private static Note CreateNote(int id, int midiPitch, bool palmMuted = false)
         => new()
         {
             Id = id,
             MidiPitch = midiPitch,
-            Articulation = new NoteArticulationModel
+            Articulation = new NoteArticulation
             {
                 PalmMuted = palmMuted
             }
@@ -501,7 +501,7 @@ public class WriterReferenceReuseTests
             Secondary = CreateTupletSignature(rhythm.SecondaryTuplet)
         };
 
-    private static string? CreateTupletSignature(TupletRatio? tuplet)
+    private static string? CreateTupletSignature(Motif.Extensions.GuitarPro.Models.Raw.TupletRatio? tuplet)
         => tuplet is null
             ? null
             : $"{tuplet.Numerator}/{tuplet.Denominator}";
@@ -643,7 +643,7 @@ public class WriterReferenceReuseTests
         {
             TimelineBars =
             [
-                new TimelineBarModel
+                new TimelineBar
                 {
                     Index = 0,
                     TimeSignature = "4/4",
@@ -656,19 +656,19 @@ public class WriterReferenceReuseTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Lead Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = 1,
                                 Duration = 1m / 48m,
                                 Notes =
                                 [
-                                    new NoteModel
+                                    new Note
                                     {
                                         Id = 1,
                                         MidiPitch = 64

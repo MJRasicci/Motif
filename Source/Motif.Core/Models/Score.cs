@@ -8,12 +8,12 @@ public sealed class Score : ExtensibleModel
 
     public string Album { get; set; } = string.Empty;
 
-    public IReadOnlyList<TrackModel> Tracks { get; set; } = Array.Empty<TrackModel>();
+    public IReadOnlyList<Track> Tracks { get; set; } = Array.Empty<Track>();
 
     /// <summary>
     /// Score-owned master-bar timeline used for playback/navigation and other timeline-global state.
     /// </summary>
-    public IReadOnlyList<TimelineBarModel> TimelineBars { get; set; } = Array.Empty<TimelineBarModel>();
+    public IReadOnlyList<TimelineBar> TimelineBars { get; set; } = Array.Empty<TimelineBar>();
 
     /// <summary>
     /// True when playback should treat the score as beginning with a pickup bar.
@@ -29,7 +29,7 @@ public sealed class Score : ExtensibleModel
     public IReadOnlyList<int> PlaybackMasterBarSequence { get; set; } = Array.Empty<int>();
 }
 
-public sealed class TimelineBarModel : ExtensibleModel
+public sealed class TimelineBar : ExtensibleModel
 {
     public int Index { get; set; }
 
@@ -78,23 +78,23 @@ public sealed class TimelineBarModel : ExtensibleModel
     public IReadOnlyDictionary<string, int> XProperties { get; set; } = new Dictionary<string, int>();
 }
 
-public sealed class TrackModel : ExtensibleModel
+public sealed class Track : ExtensibleModel
 {
     public int Id { get; set; }
 
     public string Name { get; set; } = string.Empty;
 
-    public IReadOnlyList<StaffModel> Staves { get; set; } = Array.Empty<StaffModel>();
+    public IReadOnlyList<Staff> Staves { get; set; } = Array.Empty<Staff>();
 }
 
-public sealed class StaffModel : ExtensibleModel
+public sealed class Staff : ExtensibleModel
 {
     public int StaffIndex { get; set; }
 
-    public IReadOnlyList<StaffMeasureModel> Measures { get; set; } = Array.Empty<StaffMeasureModel>();
+    public IReadOnlyList<StaffMeasure> Measures { get; set; } = Array.Empty<StaffMeasure>();
 }
 
-public sealed class StaffMeasureModel : ExtensibleModel
+public sealed class StaffMeasure : ExtensibleModel
 {
     public int Index { get; set; }
 
@@ -108,19 +108,19 @@ public sealed class StaffMeasureModel : ExtensibleModel
 
     public IReadOnlyDictionary<string, int> BarXProperties { get; set; } = new Dictionary<string, int>();
 
-    public IReadOnlyList<MeasureVoiceModel> Voices { get; set; } = Array.Empty<MeasureVoiceModel>();
+    public IReadOnlyList<Voice> Voices { get; set; } = Array.Empty<Voice>();
 
-    public IReadOnlyList<BeatModel> Beats { get; set; } = Array.Empty<BeatModel>();
+    public IReadOnlyList<Beat> Beats { get; set; } = Array.Empty<Beat>();
 }
 
-public sealed class MeasureVoiceModel : ExtensibleModel
+public sealed class Voice : ExtensibleModel
 {
     public int VoiceIndex { get; set; }
 
-    public IReadOnlyList<BeatModel> Beats { get; set; } = Array.Empty<BeatModel>();
+    public IReadOnlyList<Beat> Beats { get; set; } = Array.Empty<Beat>();
 }
 
-public sealed class TupletRatioModel
+public sealed class TupletRatio
 {
     public int Numerator { get; set; }
 
@@ -136,7 +136,7 @@ public sealed class FermataMetadata
     public decimal? Length { get; set; }
 }
 
-public sealed class BeatModel : ExtensibleModel
+public sealed class Beat : ExtensibleModel
 {
     public int Id { get; set; }
 
@@ -188,7 +188,7 @@ public sealed class BeatModel : ExtensibleModel
 
     public string FreeText { get; set; } = string.Empty;
 
-    public WhammyBarModel? WhammyBar { get; set; }
+    public WhammyBar? WhammyBar { get; set; }
 
     public IReadOnlyDictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
 
@@ -198,12 +198,12 @@ public sealed class BeatModel : ExtensibleModel
 
     public decimal Duration { get; set; }
 
-    public IReadOnlyList<NoteModel> Notes { get; set; } = Array.Empty<NoteModel>();
+    public IReadOnlyList<Note> Notes { get; set; } = Array.Empty<Note>();
 
     public IReadOnlyList<int> MidiPitches { get; set; } = Array.Empty<int>();
 }
 
-public sealed class NoteModel : ExtensibleModel
+public sealed class Note : ExtensibleModel
 {
     public int Id { get; set; }
 
@@ -211,9 +211,9 @@ public sealed class NoteModel : ExtensibleModel
 
     public int? MidiPitch { get; set; }
 
-    public PitchValueModel? ConcertPitch { get; set; }
+    public PitchValue? ConcertPitch { get; set; }
 
-    public PitchValueModel? TransposedPitch { get; set; }
+    public PitchValue? TransposedPitch { get; set; }
 
     public bool ShowStringNumber { get; set; }
 
@@ -225,10 +225,10 @@ public sealed class NoteModel : ExtensibleModel
 
     public bool TieExtendedFromPrevious { get; set; }
 
-    public NoteArticulationModel Articulation { get; set; } = new();
+    public NoteArticulation Articulation { get; set; } = new();
 }
 
-public sealed class PitchValueModel
+public sealed class PitchValue
 {
     public string Step { get; set; } = string.Empty;
 
@@ -237,7 +237,7 @@ public sealed class PitchValueModel
     public int? Octave { get; set; }
 }
 
-public sealed class NoteArticulationModel
+public sealed class NoteArticulation
 {
     public string LeftFingering { get; set; } = string.Empty;
 
@@ -283,9 +283,9 @@ public sealed class NoteArticulationModel
 
     public IReadOnlyList<SlideType> Slides { get; set; } = Array.Empty<SlideType>();
 
-    public HarmonicModel? Harmonic { get; set; }
+    public Harmonic? Harmonic { get; set; }
 
-    public BendModel? Bend { get; set; }
+    public Bend? Bend { get; set; }
 }
 
 [Flags]
@@ -335,7 +335,7 @@ public enum HopoTypeKind
     Legato = 3
 }
 
-public sealed class HarmonicModel
+public sealed class Harmonic
 {
     public int? Type { get; set; }
 
@@ -348,7 +348,7 @@ public sealed class HarmonicModel
     public bool Enabled { get; set; }
 }
 
-public sealed class BendModel
+public sealed class Bend
 {
     public bool Enabled { get; set; }
 
@@ -369,7 +369,7 @@ public sealed class BendModel
     public decimal? DestinationValue { get; set; }
 }
 
-public sealed class WhammyBarModel
+public sealed class WhammyBar
 {
     public bool Enabled { get; set; }
 

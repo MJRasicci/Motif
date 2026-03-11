@@ -8,7 +8,7 @@ using System.Text;
 
 public class RhythmAndTieMappingTests
 {
-    private static GpRhythmShapeMetadata SourceRhythmOf(BeatModel beat)
+    private static GpRhythmShapeMetadata SourceRhythmOf(Beat beat)
         => beat.GetRequiredGuitarPro().Metadata.SourceRhythm!;
 
     [Fact]

@@ -143,7 +143,7 @@ public class WriterTrackMetadataFidelityTests
         {
             Tracks =
             [
-                new TrackModel
+                new Track
                 {
                     Id = 0,
                     Name = "Guitar"

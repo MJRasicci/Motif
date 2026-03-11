@@ -30,7 +30,7 @@ public static class ScoreNavigation
         SetPlaybackSequenceState(score, isCurrent: false);
     }
 
-    public static IReadOnlyList<int> BuildPlaybackSequence(IReadOnlyList<TimelineBarModel> timelineBars, bool anacrusis = false)
+    public static IReadOnlyList<int> BuildPlaybackSequence(IReadOnlyList<TimelineBar> timelineBars, bool anacrusis = false)
     {
         ArgumentNullException.ThrowIfNull(timelineBars);
 
@@ -52,11 +52,11 @@ public static class ScoreNavigation
     /// <summary>
     /// Returns the current score-owned timeline without promoting legacy measure state implicitly.
     /// </summary>
-    public static IReadOnlyList<TimelineBarModel> EnsureTimelineBars(Score score)
+    public static IReadOnlyList<TimelineBar> EnsureTimelineBars(Score score)
     {
         ArgumentNullException.ThrowIfNull(score);
 
-        score.TimelineBars ??= Array.Empty<TimelineBarModel>();
+        score.TimelineBars ??= Array.Empty<TimelineBar>();
         return score.TimelineBars;
     }
 
@@ -846,7 +846,7 @@ public static class ScoreNavigation
     {
         public bool HasAlternateEndings => AlternateEndingMask != 0;
 
-        public static MeasureState From(TimelineBarModel source)
+        public static MeasureState From(TimelineBar source)
             => new(
                 MeasureIndex: source.Index,
                 RepeatStart: source.RepeatStart,

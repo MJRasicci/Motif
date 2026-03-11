@@ -5,9 +5,9 @@ using System.Text.Json.Serialization;
 
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(Score))]
-[JsonSerializable(typeof(TimelineBarModel))]
-[JsonSerializable(typeof(PitchValueModel))]
-[JsonSerializable(typeof(TupletRatioModel))]
+[JsonSerializable(typeof(TimelineBar))]
+[JsonSerializable(typeof(PitchValue))]
+[JsonSerializable(typeof(TupletRatio))]
 internal partial class MotifJsonContext : JsonSerializerContext
 {
 }

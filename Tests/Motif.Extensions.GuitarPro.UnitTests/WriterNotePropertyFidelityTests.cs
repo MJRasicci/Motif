@@ -10,7 +10,7 @@ using System.Xml.Linq;
 
 public class WriterNotePropertyFidelityTests
 {
-    private static GpNoteMetadata NoteMetadataOf(NoteModel note)
+    private static GpNoteMetadata NoteMetadataOf(Note note)
         => note.GetRequiredGuitarPro().Metadata;
 
     private static string BuildGpif(string noteBody)
@@ -74,42 +74,42 @@ public class WriterNotePropertyFidelityTests
         {
             Tracks =
             [
-                new TrackModel
+                new Track
                 {
                     Id = 0,
                     Name = "Piano",
                     Staves =
                     [
-                        new StaffModel
+                        new Staff
                         {
                             StaffIndex = 0,
                             Measures =
                             [
-                                new StaffMeasureModel
+                                new StaffMeasure
                                 {
                                     Index = 0,
                                     StaffIndex = 0
                                 }
                             ]
                         },
-                        new StaffModel
+                        new Staff
                         {
                             StaffIndex = 1,
                             Measures =
                             [
-                                new StaffMeasureModel
+                                new StaffMeasure
                                 {
                                     Index = 0,
                                     StaffIndex = 1,
                                     Beats =
                                     [
-                                        new BeatModel
+                                        new Beat
                                         {
                                             Id = 1,
                                             Duration = 0.5m,
                                             Notes =
                                             [
-                                                new NoteModel
+                                                new Note
                                                 {
                                                     Id = 22,
                                                     MidiPitch = 40,
@@ -206,29 +206,29 @@ public class WriterNotePropertyFidelityTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Drums",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = 1,
                                 Duration = 0.25m,
                                 Notes =
                                 [
-                                    new NoteModel
+                                    new Note
                                     {
                                         Id = 200,
                                         MidiPitch = 38,
-                                        ConcertPitch = new PitchValueModel
+                                        ConcertPitch = new PitchValue
                                         {
                                             Step = "C",
                                             Accidental = string.Empty,
                                             Octave = -1
                                         },
-                                        TransposedPitch = new PitchValueModel
+                                        TransposedPitch = new PitchValue
                                         {
                                             Step = "C",
                                             Accidental = string.Empty,

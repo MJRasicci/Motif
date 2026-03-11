@@ -38,21 +38,21 @@ public static class GuitarProModelExtensions
         return extension;
     }
 
-    public static GpTrackExtension? GetGuitarPro(this TrackModel track)
+    public static GpTrackExtension? GetGuitarPro(this Track track)
     {
         ArgumentNullException.ThrowIfNull(track);
 
         return track.GetExtension<GpTrackExtension>();
     }
 
-    public static GpTrackExtension GetRequiredGuitarPro(this TrackModel track)
+    public static GpTrackExtension GetRequiredGuitarPro(this Track track)
     {
         ArgumentNullException.ThrowIfNull(track);
 
         return track.GetRequiredExtension<GpTrackExtension>();
     }
 
-    public static GpTrackExtension GetOrCreateGuitarPro(this TrackModel track)
+    public static GpTrackExtension GetOrCreateGuitarPro(this Track track)
     {
         ArgumentNullException.ThrowIfNull(track);
 
@@ -70,21 +70,21 @@ public static class GuitarProModelExtensions
         return extension;
     }
 
-    public static GpTimelineBarExtension? GetGuitarPro(this TimelineBarModel timelineBar)
+    public static GpTimelineBarExtension? GetGuitarPro(this TimelineBar timelineBar)
     {
         ArgumentNullException.ThrowIfNull(timelineBar);
 
         return timelineBar.GetExtension<GpTimelineBarExtension>();
     }
 
-    public static GpTimelineBarExtension GetRequiredGuitarPro(this TimelineBarModel timelineBar)
+    public static GpTimelineBarExtension GetRequiredGuitarPro(this TimelineBar timelineBar)
     {
         ArgumentNullException.ThrowIfNull(timelineBar);
 
         return timelineBar.GetRequiredExtension<GpTimelineBarExtension>();
     }
 
-    public static GpTimelineBarExtension GetOrCreateGuitarPro(this TimelineBarModel timelineBar)
+    public static GpTimelineBarExtension GetOrCreateGuitarPro(this TimelineBar timelineBar)
     {
         ArgumentNullException.ThrowIfNull(timelineBar);
 
@@ -102,21 +102,21 @@ public static class GuitarProModelExtensions
         return extension;
     }
 
-    public static GpStaffExtension? GetGuitarPro(this StaffModel staff)
+    public static GpStaffExtension? GetGuitarPro(this Staff staff)
     {
         ArgumentNullException.ThrowIfNull(staff);
 
         return staff.GetExtension<GpStaffExtension>();
     }
 
-    public static GpStaffExtension GetRequiredGuitarPro(this StaffModel staff)
+    public static GpStaffExtension GetRequiredGuitarPro(this Staff staff)
     {
         ArgumentNullException.ThrowIfNull(staff);
 
         return staff.GetRequiredExtension<GpStaffExtension>();
     }
 
-    public static GpStaffExtension GetOrCreateGuitarPro(this StaffModel staff)
+    public static GpStaffExtension GetOrCreateGuitarPro(this Staff staff)
     {
         ArgumentNullException.ThrowIfNull(staff);
 
@@ -134,21 +134,21 @@ public static class GuitarProModelExtensions
         return extension;
     }
 
-    public static GpMeasureStaffExtension? GetGuitarPro(this StaffMeasureModel staffMeasure)
+    public static GpMeasureStaffExtension? GetGuitarPro(this StaffMeasure staffMeasure)
     {
         ArgumentNullException.ThrowIfNull(staffMeasure);
 
         return staffMeasure.GetExtension<GpMeasureStaffExtension>();
     }
 
-    public static GpMeasureStaffExtension GetRequiredGuitarPro(this StaffMeasureModel staffMeasure)
+    public static GpMeasureStaffExtension GetRequiredGuitarPro(this StaffMeasure staffMeasure)
     {
         ArgumentNullException.ThrowIfNull(staffMeasure);
 
         return staffMeasure.GetRequiredExtension<GpMeasureStaffExtension>();
     }
 
-    public static GpMeasureStaffExtension GetOrCreateGuitarPro(this StaffMeasureModel staffMeasure)
+    public static GpMeasureStaffExtension GetOrCreateGuitarPro(this StaffMeasure staffMeasure)
     {
         ArgumentNullException.ThrowIfNull(staffMeasure);
 
@@ -166,21 +166,21 @@ public static class GuitarProModelExtensions
         return extension;
     }
 
-    public static GpVoiceExtension? GetGuitarPro(this MeasureVoiceModel voice)
+    public static GpVoiceExtension? GetGuitarPro(this Voice voice)
     {
         ArgumentNullException.ThrowIfNull(voice);
 
         return voice.GetExtension<GpVoiceExtension>();
     }
 
-    public static GpVoiceExtension GetRequiredGuitarPro(this MeasureVoiceModel voice)
+    public static GpVoiceExtension GetRequiredGuitarPro(this Voice voice)
     {
         ArgumentNullException.ThrowIfNull(voice);
 
         return voice.GetRequiredExtension<GpVoiceExtension>();
     }
 
-    public static GpVoiceExtension GetOrCreateGuitarPro(this MeasureVoiceModel voice)
+    public static GpVoiceExtension GetOrCreateGuitarPro(this Voice voice)
     {
         ArgumentNullException.ThrowIfNull(voice);
 
@@ -198,21 +198,21 @@ public static class GuitarProModelExtensions
         return extension;
     }
 
-    public static GpBeatExtension? GetGuitarPro(this BeatModel beat)
+    public static GpBeatExtension? GetGuitarPro(this Beat beat)
     {
         ArgumentNullException.ThrowIfNull(beat);
 
         return beat.GetExtension<GpBeatExtension>();
     }
 
-    public static GpBeatExtension GetRequiredGuitarPro(this BeatModel beat)
+    public static GpBeatExtension GetRequiredGuitarPro(this Beat beat)
     {
         ArgumentNullException.ThrowIfNull(beat);
 
         return beat.GetRequiredExtension<GpBeatExtension>();
     }
 
-    public static GpBeatExtension GetOrCreateGuitarPro(this BeatModel beat)
+    public static GpBeatExtension GetOrCreateGuitarPro(this Beat beat)
     {
         ArgumentNullException.ThrowIfNull(beat);
 
@@ -230,21 +230,21 @@ public static class GuitarProModelExtensions
         return extension;
     }
 
-    public static GpNoteExtension? GetGuitarPro(this NoteModel note)
+    public static GpNoteExtension? GetGuitarPro(this Note note)
     {
         ArgumentNullException.ThrowIfNull(note);
 
         return note.GetExtension<GpNoteExtension>();
     }
 
-    public static GpNoteExtension GetRequiredGuitarPro(this NoteModel note)
+    public static GpNoteExtension GetRequiredGuitarPro(this Note note)
     {
         ArgumentNullException.ThrowIfNull(note);
 
         return note.GetRequiredExtension<GpNoteExtension>();
     }
 
-    public static GpNoteExtension GetOrCreateGuitarPro(this NoteModel note)
+    public static GpNoteExtension GetOrCreateGuitarPro(this Note note)
     {
         ArgumentNullException.ThrowIfNull(note);
 
@@ -315,7 +315,7 @@ public static class GuitarProModelExtensions
 
         ReattachTimelineBarExtensions(target, source, result);
 
-        var sourceTracksById = new Dictionary<int, TrackModel>();
+        var sourceTracksById = new Dictionary<int, Track>();
         foreach (var sourceTrack in source.Tracks)
         {
             sourceTracksById[sourceTrack.Id] = sourceTrack;
@@ -407,8 +407,8 @@ public static class GuitarProModelExtensions
     }
 
     private static void ReattachBeatExtensions(
-        IReadOnlyList<BeatModel> targetBeats,
-        IReadOnlyList<BeatModel> sourceBeats,
+        IReadOnlyList<Beat> targetBeats,
+        IReadOnlyList<Beat> sourceBeats,
         GpExtensionReattachmentResult result)
     {
         var sourceBeatsById = BuildItemsByIdQueue(sourceBeats, static beat => beat.Id);
@@ -473,7 +473,7 @@ public static class GuitarProModelExtensions
         return removedAny;
     }
 
-    private static bool InvalidateTrackStaffExtensions(TrackModel track)
+    private static bool InvalidateTrackStaffExtensions(Track track)
     {
         var removedAny = false;
 
@@ -498,7 +498,7 @@ public static class GuitarProModelExtensions
         return removedAny;
     }
 
-    private static bool InvalidateBeatExtensions(IReadOnlyList<BeatModel> beats)
+    private static bool InvalidateBeatExtensions(IReadOnlyList<Beat> beats)
     {
         var removedAny = false;
 
@@ -515,7 +515,7 @@ public static class GuitarProModelExtensions
         return removedAny;
     }
 
-    private static void CountUnmatchedTrackSubtree(TrackModel track, GpExtensionReattachmentResult result)
+    private static void CountUnmatchedTrackSubtree(Track track, GpExtensionReattachmentResult result)
     {
         foreach (var staff in track.Staves)
         {
@@ -526,7 +526,7 @@ public static class GuitarProModelExtensions
         }
     }
 
-    private static void CountUnmatchedStaffMeasureSubtree(StaffMeasureModel staffMeasure, GpExtensionReattachmentResult result)
+    private static void CountUnmatchedStaffMeasureSubtree(StaffMeasure staffMeasure, GpExtensionReattachmentResult result)
     {
         result.StaffsUnmatched++;
 
@@ -538,19 +538,19 @@ public static class GuitarProModelExtensions
         CountUnmatchedBeatList(staffMeasure.Beats, result);
     }
 
-    private static void CountUnmatchedVoiceSubtree(MeasureVoiceModel voice, GpExtensionReattachmentResult result)
+    private static void CountUnmatchedVoiceSubtree(Voice voice, GpExtensionReattachmentResult result)
     {
         result.VoicesUnmatched++;
         CountUnmatchedBeatList(voice.Beats, result);
     }
 
-    private static void CountUnmatchedBeatSubtree(BeatModel beat, GpExtensionReattachmentResult result)
+    private static void CountUnmatchedBeatSubtree(Beat beat, GpExtensionReattachmentResult result)
     {
         result.BeatsUnmatched++;
         result.NotesUnmatched += beat.Notes.Count;
     }
 
-    private static void CountUnmatchedBeatList(IReadOnlyList<BeatModel> beats, GpExtensionReattachmentResult result)
+    private static void CountUnmatchedBeatList(IReadOnlyList<Beat> beats, GpExtensionReattachmentResult result)
     {
         foreach (var beat in beats)
         {
@@ -593,7 +593,7 @@ public static class GuitarProModelExtensions
         return false;
     }
 
-    private static void ReattachTrackStaffHierarchyExtensions(TrackModel targetTrack, TrackModel sourceTrack, GpExtensionReattachmentResult result)
+    private static void ReattachTrackStaffHierarchyExtensions(Track targetTrack, Track sourceTrack, GpExtensionReattachmentResult result)
     {
         if (targetTrack.Staves.Count == 0)
         {

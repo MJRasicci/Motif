@@ -160,9 +160,9 @@ public sealed class GpRhythmShapeMetadata
 
     public int[] AugmentationDotCounts { get; set; } = Array.Empty<int>();
 
-    public TupletRatioModel? PrimaryTuplet { get; set; }
+    public TupletRatio? PrimaryTuplet { get; set; }
 
-    public TupletRatioModel? SecondaryTuplet { get; set; }
+    public TupletRatio? SecondaryTuplet { get; set; }
 }
 
 public sealed class GpNoteMetadata

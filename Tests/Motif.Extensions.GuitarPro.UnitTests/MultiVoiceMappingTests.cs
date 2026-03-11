@@ -29,13 +29,13 @@ public class MultiVoiceMappingTests
     [Fact]
     public async Task Writer_round_trip_preserves_multiple_voices_per_measure()
     {
-        var voice0Beat = new BeatModel
+        var voice0Beat = new Beat
         {
             Id = 1,
             Duration = 0.25m,
             Notes =
             [
-                new NoteModel
+                new Note
                 {
                     Id = 1,
                     MidiPitch = 60
@@ -43,13 +43,13 @@ public class MultiVoiceMappingTests
             ]
         };
 
-        var voice1Beat = new BeatModel
+        var voice1Beat = new Beat
         {
             Id = 2,
             Duration = 0.5m,
             Notes =
             [
-                new NoteModel
+                new Note
                 {
                     Id = 2,
                     MidiPitch = 67
@@ -65,18 +65,18 @@ public class MultiVoiceMappingTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Voices =
                         [
-                            new MeasureVoiceModel
+                            new Voice
                             {
                                 VoiceIndex = 0,
                                 Beats = [voice0Beat]
                             },
-                            new MeasureVoiceModel
+                            new Voice
                             {
                                 VoiceIndex = 1,
                                 Beats = [voice1Beat]

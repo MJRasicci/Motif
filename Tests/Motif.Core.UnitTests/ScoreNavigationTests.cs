@@ -235,10 +235,10 @@ public class ScoreNavigationTests
             Tracks =
             [
                 HierarchyTestHelpers.SingleStaffTrack(
-                    new StaffMeasureModel { Index = 0, StaffIndex = 0 },
-                    new StaffMeasureModel { Index = 1, StaffIndex = 0 },
-                    new StaffMeasureModel { Index = 2, StaffIndex = 0 },
-                    new StaffMeasureModel { Index = 3, StaffIndex = 0 })
+                    new StaffMeasure { Index = 0, StaffIndex = 0 },
+                    new StaffMeasure { Index = 1, StaffIndex = 0 },
+                    new StaffMeasure { Index = 2, StaffIndex = 0 },
+                    new StaffMeasure { Index = 3, StaffIndex = 0 })
             ]
         };
 
@@ -263,9 +263,9 @@ public class ScoreNavigationTests
             Tracks =
             [
                 HierarchyTestHelpers.SingleStaffTrack(
-                    new StaffMeasureModel { Index = 0, StaffIndex = 0 },
-                    new StaffMeasureModel { Index = 1, StaffIndex = 0 },
-                    new StaffMeasureModel { Index = 2, StaffIndex = 0 })
+                    new StaffMeasure { Index = 0, StaffIndex = 0 },
+                    new StaffMeasure { Index = 1, StaffIndex = 0 },
+                    new StaffMeasure { Index = 2, StaffIndex = 0 })
             ]
         };
 
@@ -283,7 +283,7 @@ public class ScoreNavigationTests
             TimelineBars = [TimelineBar(0)],
             Tracks =
             [
-                HierarchyTestHelpers.SingleStaffTrack(new StaffMeasureModel { Index = 0, StaffIndex = 0 })
+                HierarchyTestHelpers.SingleStaffTrack(new StaffMeasure { Index = 0, StaffIndex = 0 })
             ]
         };
 
@@ -309,9 +309,9 @@ public class ScoreNavigationTests
             Tracks =
             [
                 HierarchyTestHelpers.SingleStaffTrack(
-                    new StaffMeasureModel { Index = 0, StaffIndex = 0 },
-                    new StaffMeasureModel { Index = 1, StaffIndex = 0 },
-                    new StaffMeasureModel { Index = 2, StaffIndex = 0 })
+                    new StaffMeasure { Index = 0, StaffIndex = 0 },
+                    new StaffMeasure { Index = 1, StaffIndex = 0 },
+                    new StaffMeasure { Index = 2, StaffIndex = 0 })
             ]
         };
 
@@ -324,7 +324,7 @@ public class ScoreNavigationTests
 
         score.Tracks[0].PrimaryMeasure(1).Beats =
         [
-            new BeatModel
+            new Beat
             {
                 Id = 10
             }
@@ -346,7 +346,7 @@ public class ScoreNavigationTests
         ScoreNavigation.HasCurrentPlaybackSequence(score).Should().BeTrue();
     }
 
-    private static TimelineBarModel TimelineBar(
+    private static TimelineBar TimelineBar(
         int index,
         bool repeatStart = false,
         bool repeatEnd = false,

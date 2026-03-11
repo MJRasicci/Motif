@@ -23,11 +23,11 @@ public class WriterDiagnosticsTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
-                        Beats = [ new BeatModel { Id = 1, Duration = 0.17m } ]
+                        Beats = [ new Beat { Id = 1, Duration = 0.17m } ]
                     })
             ]
         };
@@ -97,20 +97,20 @@ public class WriterDiagnosticsTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     sourceTrack.Id,
                     sourceTrack.Name,
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 999,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = -1,
-                                Notes = [new NoteModel { Id = -2 }]
+                                Notes = [new Note { Id = -2 }]
                             }
                         ]
                     },
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = sourceMeasure.Index,
                         StaffIndex = 0,
@@ -620,11 +620,11 @@ public class WriterDiagnosticsTests
         return await new DefaultScoreMapper().MapAsync(raw, TestContext.Current.CancellationToken);
     }
 
-    private static BeatModel CloneBeat(BeatModel beat)
+    private static Beat CloneBeat(Beat beat)
         => new()
         {
             Id = beat.Id,
-            Notes = beat.Notes.Select(note => new NoteModel
+            Notes = beat.Notes.Select(note => new Note
             {
                 Id = note.Id
             }).ToArray()

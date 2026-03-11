@@ -10,14 +10,14 @@ public class MutableDomainModelTests
     public void Domain_model_supports_post_construction_mutation()
     {
         var score = new Score();
-        var track = new TrackModel();
-        var primaryStaff = new StaffModel();
-        var secondaryStaff = new StaffModel();
-        var primaryStaffMeasure = new StaffMeasureModel();
-        var secondaryStaffMeasure = new StaffMeasureModel();
-        var timelineBar = new TimelineBarModel();
-        var beat = new BeatModel();
-        var note = new NoteModel();
+        var track = new Track();
+        var primaryStaff = new Staff();
+        var secondaryStaff = new Staff();
+        var primaryStaffMeasure = new StaffMeasure();
+        var secondaryStaffMeasure = new StaffMeasure();
+        var timelineBar = new TimelineBar();
+        var beat = new Beat();
+        var note = new Note();
 
         score.Title = "Motif";
         score.Artist = "Artist";
@@ -48,7 +48,7 @@ public class MutableDomainModelTests
 
         primaryStaffMeasure.Voices =
         [
-            new MeasureVoiceModel
+            new Voice
             {
                 VoiceIndex = 0
             }
@@ -61,7 +61,7 @@ public class MutableDomainModelTests
         note.Id = 20;
         note.MidiPitch = 64;
         note.Duration = 1m;
-        note.Articulation = new NoteArticulationModel
+        note.Articulation = new NoteArticulation
         {
             LetRing = true
         };
@@ -84,12 +84,12 @@ public class MutableDomainModelTests
         beat.FreeText = "eighth pulse";
 
         note.MidiPitch = 67;
-        note.ConcertPitch = new PitchValueModel
+        note.ConcertPitch = new PitchValue
         {
             Step = "G",
             Octave = 4
         };
-        note.Articulation.Bend = new BendModel
+        note.Articulation.Bend = new Bend
         {
             Enabled = true,
             DestinationValue = 1.5m

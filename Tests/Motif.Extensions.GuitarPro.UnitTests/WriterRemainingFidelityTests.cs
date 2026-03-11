@@ -16,19 +16,19 @@ public class WriterRemainingFidelityTests
     private static MasterTrackMetadata MasterTrackMetadataOf(Score score)
         => score.GetRequiredGuitarPro().MasterTrack;
 
-    private static GpTimelineBarMetadata TimelineMetadataOf(TimelineBarModel timelineBar)
+    private static GpTimelineBarMetadata TimelineMetadataOf(TimelineBar timelineBar)
         => timelineBar.GetRequiredGuitarPro().Metadata;
 
-    private static TrackMetadata TrackMetadataOf(TrackModel track)
+    private static TrackMetadata TrackMetadataOf(Track track)
         => track.GetRequiredGuitarPro().Metadata;
 
-    private static GpMeasureStaffMetadata MeasureMetadataOf(StaffMeasureModel measure)
+    private static GpMeasureStaffMetadata MeasureMetadataOf(StaffMeasure measure)
         => measure.GetRequiredGuitarPro().Metadata;
 
-    private static GpVoiceMetadata VoiceMetadataOf(MeasureVoiceModel voice)
+    private static GpVoiceMetadata VoiceMetadataOf(Voice voice)
         => voice.GetRequiredGuitarPro().Metadata;
 
-    private static GpBeatMetadata BeatMetadataOf(BeatModel beat)
+    private static GpBeatMetadata BeatMetadataOf(Beat beat)
         => beat.GetRequiredGuitarPro().Metadata;
 
     private static async Task<Score> DeserializeAndMap(string gpif)
@@ -509,30 +509,30 @@ public class WriterRemainingFidelityTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Voices =
                         [
-                            new MeasureVoiceModel
+                            new Voice
                             {
                                 VoiceIndex = 1,
                                 Beats =
                                 [
-                                    new BeatModel
+                                    new Beat
                                     {
                                         Id = 100,
                                         Duration = 0.25m
                                     }
                                 ]
                             },
-                            new MeasureVoiceModel
+                            new Voice
                             {
                                 VoiceIndex = 3,
                                 Beats =
                                 [
-                                    new BeatModel
+                                    new Beat
                                     {
                                         Id = 101,
                                         Duration = 0.25m

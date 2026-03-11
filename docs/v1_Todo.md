@@ -46,7 +46,7 @@
   Landed: `IModelExtension` / `IExtensibleModel`, typed helpers, GP extension attachments, Core-only JSON.
 
 - `[~]` Step 2 - Split Core domain vs Guitar Pro fidelity
-  Landed: score-owned timeline ownership via `Score.TimelineBars`; navigation and GP master-bar export now consume that score-level timeline instead of implicitly depending on the first populated track; GP master-bar fidelity metadata now attaches to `TimelineBarModel`; the compatibility `Track.Measures` + `Measure.AdditionalStaffBars` shape is gone; mapper, unmapper, GP fidelity diagnostics, reattachment, and hierarchy tests now operate on `Track.Staves` / `StaffMeasure` only.
+  Landed: score-owned timeline ownership via `Score.TimelineBars`; navigation and GP master-bar export now consume that score-level timeline instead of implicitly depending on the first populated track; GP master-bar fidelity metadata now attaches to `TimelineBar`; the compatibility `Track.Measures` + `Measure.AdditionalStaffBars` shape is gone; mapper, unmapper, GP fidelity diagnostics, reattachment, and hierarchy tests now operate on `Track.Staves` / `StaffMeasure` only.
   Remaining: move surviving Core property/XProperty bags behind GP extensions or normalize them as typed semantics, remove the `*Model` suffix from Core types, keep genuinely cross-format semantics such as golpe in Core.
 
 - `[x]` Step 3 - Raw cache invariants
@@ -79,7 +79,7 @@
 1. Run the public API cleanup pass.
    - Rename Core `*Model` types
    - Move measure/bar/beat/note property/XProperty bags out of Core unless they become typed cross-format semantics
-   - Audit remaining GP-shaped Core properties such as `BeatModel.Wah`, `BeatModel.VibratoWithTremBarStrength`, and `NoteArticulationModel.AntiAccentValue`
+   - Audit remaining GP-shaped Core properties such as `Beat.Wah`, `Beat.VibratoWithTremBarStrength`, and `NoteArticulation.AntiAccentValue`
    - Keep cross-format semantics such as golpe in Core while remapping GP-specific representations behind the GP package
 
 2. Finish packaging and release docs.

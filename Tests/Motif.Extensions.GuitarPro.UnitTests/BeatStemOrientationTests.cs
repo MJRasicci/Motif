@@ -10,7 +10,7 @@ using System.Text.Json;
 
 public class BeatStemOrientationTests
 {
-    private static GpBeatMetadata BeatMetadataOf(BeatModel beat)
+    private static GpBeatMetadata BeatMetadataOf(Beat beat)
         => beat.GetRequiredGuitarPro().Metadata;
 
     [Fact]

@@ -180,7 +180,7 @@ public class WriterRoundTripTests
             Album = "Tests",
             TimelineBars =
             [
-                new TimelineBarModel
+                new TimelineBar
                 {
                     Index = 0,
                     TimeSignature = "4/4"
@@ -191,23 +191,23 @@ public class WriterRoundTripTests
                 HierarchyTestHelpers.SingleStaffTrack(
                     0,
                     "Guitar",
-                    new StaffMeasureModel
+                    new StaffMeasure
                     {
                         Index = 0,
                         StaffIndex = 0,
                         Beats =
                         [
-                            new BeatModel
+                            new Beat
                             {
                                 Id = 1,
                                 Duration = 0.25m,
                                 Notes =
                                 [
-                                    new NoteModel
+                                    new Note
                                     {
                                         Id = 1,
                                         MidiPitch = 64,
-                                        Articulation = new NoteArticulationModel { LetRing = true }
+                                        Articulation = new NoteArticulation { LetRing = true }
                                     }
                                 ]
                             }

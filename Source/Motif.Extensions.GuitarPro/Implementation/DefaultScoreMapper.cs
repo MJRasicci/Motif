@@ -3,9 +3,11 @@ namespace Motif.Extensions.GuitarPro.Implementation;
 using Motif;
 using Motif.Extensions.GuitarPro.Abstractions;
 using Motif.Extensions.GuitarPro.Models;
-using Motif.Models;
 using Motif.Extensions.GuitarPro.Models.Raw;
 using Motif.Extensions.GuitarPro.Utilities;
+using Motif.Models;
+using CoreTupletRatio = Motif.Models.TupletRatio;
+using RawTupletRatio = Motif.Extensions.GuitarPro.Models.Raw.TupletRatio;
 
 internal sealed class DefaultScoreMapper : IScoreMapper
 {
@@ -176,7 +178,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                     }).ToArray()
                 };
 
-                var mappedTrack = new TrackModel
+                var mappedTrack = new Track
                 {
                     Id = track.Id,
                     Name = track.Name,
@@ -282,7 +284,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return ValueTask.FromResult(score);
     }
 
-    private static IReadOnlyList<StaffModel> AttachTrackStaffExtensions(TrackMetadata trackMetadata, IReadOnlyList<StaffModel> staves)
+    private static IReadOnlyList<Staff> AttachTrackStaffExtensions(TrackMetadata trackMetadata, IReadOnlyList<Staff> staves)
     {
         for (var staffIndex = 0; staffIndex < staves.Count; staffIndex++)
         {
@@ -300,9 +302,9 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return staves;
     }
 
-    private static StaffMeasureModel CreateEmptyStaffMeasure(int index, int staffIndex)
+    private static StaffMeasure CreateEmptyStaffMeasure(int index, int staffIndex)
     {
-        var staffMeasure = new StaffMeasureModel
+        var staffMeasure = new StaffMeasure
         {
             Index = index,
             StaffIndex = staffIndex
@@ -346,7 +348,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
     private static int GetTrackStaffCount(GpifTrack track)
         => Math.Max(1, track.Staffs.Count);
 
-    private static IReadOnlyList<StaffModel> MapTrackStaves(
+    private static IReadOnlyList<Staff> MapTrackStaves(
         GpifDocument source,
         GpifTrack track,
         int trackBarSlotStart,
@@ -354,10 +356,10 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         bool isStringedTrack)
     {
         var staffMeasures = Enumerable.Range(0, Math.Max(1, staffCount))
-            .Select(staffIndex => new StaffModel
+            .Select(staffIndex => new Staff
             {
                 StaffIndex = staffIndex,
-                Measures = new List<StaffMeasureModel>(source.MasterBars.Count)
+                Measures = new List<StaffMeasure>(source.MasterBars.Count)
             })
             .ToArray();
 
@@ -370,7 +372,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 var staffMeasure = barSlot < barRefs.Count
                     ? MapStaffBar(source, track, barRefs[barSlot], masterBar.Index, staffIndex, isStringedTrack)
                     : null;
-                ((List<StaffMeasureModel>)staffMeasures[staffIndex].Measures).Add(
+                ((List<StaffMeasure>)staffMeasures[staffIndex].Measures).Add(
                     staffMeasure ?? CreateEmptyStaffMeasure(masterBar.Index, staffIndex));
             }
         }
@@ -383,9 +385,9 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return staffMeasures;
     }
 
-    private static TimelineBarModel MapTimelineBar(GpifMasterBar masterBar)
+    private static TimelineBar MapTimelineBar(GpifMasterBar masterBar)
     {
-        var timelineBar = new TimelineBarModel
+        var timelineBar = new TimelineBar
         {
             Index = masterBar.Index,
             TimeSignature = masterBar.Time,
@@ -428,7 +430,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return timelineBar;
     }
 
-    private static StaffMeasureModel? MapStaffBar(
+    private static StaffMeasure? MapStaffBar(
         GpifDocument source,
         GpifTrack track,
         int barId,
@@ -441,7 +443,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             return null;
         }
 
-        var voices = new List<MeasureVoiceModel>();
+        var voices = new List<Voice>();
         var voiceRefs = ReferenceListParser.SplitRefsPreservePlaceholders(bar.VoicesReferenceList);
 
         for (var voiceIndex = 0; voiceIndex < voiceRefs.Count; voiceIndex++)
@@ -452,7 +454,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             }
 
             var mappedBeats = MapVoiceBeats(source, track, voice, isStringedTrack);
-            var mappedVoice = new MeasureVoiceModel
+            var mappedVoice = new Voice
             {
                 VoiceIndex = voiceIndex,
                 Beats = mappedBeats
@@ -472,9 +474,9 @@ internal sealed class DefaultScoreMapper : IScoreMapper
 
         var beats = voices.FirstOrDefault(v => v.VoiceIndex == 0)?.Beats
             ?? voices.FirstOrDefault()?.Beats
-            ?? Array.Empty<BeatModel>();
+            ?? Array.Empty<Beat>();
 
-        var staffMeasure = new StaffMeasureModel
+        var staffMeasure = new StaffMeasure
         {
             Index = measureIndex,
             StaffIndex = staffIndex,
@@ -497,10 +499,10 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return staffMeasure;
     }
 
-    private static IReadOnlyList<BeatModel> MapVoiceBeats(GpifDocument source, GpifTrack track, GpifVoice voice, bool isStringedTrack)
+    private static IReadOnlyList<Beat> MapVoiceBeats(GpifDocument source, GpifTrack track, GpifVoice voice, bool isStringedTrack)
     {
         var beatRefs = ReferenceListParser.SplitRefs(voice.BeatsReferenceList);
-        var beats = new List<BeatModel>(beatRefs.Count);
+        var beats = new List<Beat>(beatRefs.Count);
 
         decimal offset = 0;
         for (var beatIndex = 0; beatIndex < beatRefs.Count; beatIndex++)
@@ -532,7 +534,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                         ? ResolveHopoCounterpartNoteId(source, nextBeat, stringNumber, isStringedTrack, expectOrigin: false)
                         : null;
 
-                    var note = new NoteModel
+                    var note = new Note
                     {
                         Id = n.Id,
                         Velocity = n.Velocity,
@@ -543,7 +545,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                         StringNumber = stringNumber,
                         XProperties = n.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
                         Duration = duration,
-                        Articulation = new NoteArticulationModel
+                        Articulation = new NoteArticulation
                         {
                             LeftFingering = n.Articulation.LeftFingering,
                             RightFingering = n.Articulation.RightFingering,
@@ -596,7 +598,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 .Select(n => n.MidiPitch!.Value)
                 .ToArray();
 
-            var mappedBeat = new BeatModel
+            var mappedBeat = new Beat
             {
                 Id = beat.Id,
                 GraceType = beat.GraceType,
@@ -680,10 +682,10 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         };
     }
 
-    private static TupletRatioModel? ToTupletModel(TupletRatio? tuplet)
+    private static CoreTupletRatio? ToTupletModel(RawTupletRatio? tuplet)
         => tuplet is null
             ? null
-            : new TupletRatioModel
+            : new CoreTupletRatio
             {
                 Numerator = tuplet.Numerator,
                 Denominator = tuplet.Denominator
@@ -827,7 +829,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return duration;
     }
 
-    private static decimal TupletFactor(TupletRatio? tuplet)
+    private static decimal TupletFactor(RawTupletRatio? tuplet)
     {
         if (tuplet is null || tuplet.Numerator <= 0 || tuplet.Denominator <= 0)
         {
@@ -877,7 +879,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             .ToArray();
     }
 
-    private static IReadOnlyList<DynamicEventMetadata> BuildDynamicMap(IReadOnlyList<TrackModel> tracks)
+    private static IReadOnlyList<DynamicEventMetadata> BuildDynamicMap(IReadOnlyList<Track> tracks)
     {
         var map = new List<DynamicEventMetadata>();
         var lastDynamicByTrackVoice = new Dictionary<(int TrackId, int VoiceIndex), string>();
@@ -921,7 +923,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             .ToArray();
     }
 
-    private static IReadOnlyList<StaffMeasureModel> EnumeratePrimaryStaffMeasures(TrackModel track)
+    private static IReadOnlyList<StaffMeasure> EnumeratePrimaryStaffMeasures(Track track)
     {
         var primaryStaff = track.Staves
             .OrderBy(staff => staff.StaffIndex)
@@ -931,7 +933,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return primaryStaff?.Measures
             .OrderBy(measure => measure.Index)
             .ToArray()
-            ?? Array.Empty<StaffMeasureModel>();
+            ?? Array.Empty<StaffMeasure>();
     }
 
     private static void AppendDynamicEvents(
@@ -940,7 +942,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         int trackId,
         int measureIndex,
         int voiceIndex,
-        IReadOnlyList<BeatModel> beats)
+        IReadOnlyList<Beat> beats)
     {
         var key = (trackId, voiceIndex);
 
@@ -1024,10 +1026,10 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return (numericValue, referenceHint);
     }
 
-    private static PitchValueModel? MapPitchValue(GpifPitchValue? pitch)
+    private static PitchValue? MapPitchValue(GpifPitchValue? pitch)
         => pitch is null
             ? null
-            : new PitchValueModel
+            : new PitchValue
             {
                 Step = pitch.Step,
                 Accidental = pitch.Accidental,
@@ -1046,9 +1048,9 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return midiPitch.Value - (octave * 12) + chromatic;
     }
 
-    private static void ApplyTieDurationStitching(IReadOnlyList<StaffMeasureModel> measures)
+    private static void ApplyTieDurationStitching(IReadOnlyList<StaffMeasure> measures)
     {
-        var carryByPitch = new Dictionary<int, NoteModel>();
+        var carryByPitch = new Dictionary<int, Note>();
 
         foreach (var note in measures
                      .SelectMany(m => m.Voices.Count > 0
