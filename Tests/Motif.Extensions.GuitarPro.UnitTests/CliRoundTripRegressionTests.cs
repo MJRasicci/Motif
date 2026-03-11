@@ -175,6 +175,116 @@ public class CliRoundTripRegressionTests
     }
 
     [Fact]
+    public async Task Cli_can_route_between_json_gp_and_gpif_inputs_and_outputs()
+    {
+        var sourceGp = FixturePath("schema-reference.gp");
+        File.Exists(sourceGp).Should().BeTrue();
+
+        var repoRoot = FindRepositoryRoot();
+        var toolProject = Path.Combine(repoRoot, "Source", "Motif.CLI", "Motif.CLI.csproj");
+        Directory.Exists(Path.GetDirectoryName(toolProject)!).Should().BeTrue();
+
+        var tempDir = Path.Combine(Path.GetTempPath(), $"motif-cli-gp-gpif-routing-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+
+        var jsonPath = Path.Combine(tempDir, "schema-reference.json");
+        var gpifPath = Path.Combine(tempDir, "schema-reference.score.gpif");
+        var jsonFromGpifPath = Path.Combine(tempDir, "schema-reference.from-gpif.json");
+        var gpFromGpifPath = Path.Combine(tempDir, "schema-reference.from-gpif.gp");
+
+        try
+        {
+            await RunDotNetAsync(
+                $"run --project \"{toolProject}\" -- \"{sourceGp}\" \"{jsonPath}\"",
+                repoRoot);
+
+            await RunDotNetAsync(
+                $"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{gpifPath}\"",
+                repoRoot);
+
+            File.Exists(gpifPath).Should().BeTrue();
+            var gpif = await File.ReadAllTextAsync(gpifPath, TestContext.Current.CancellationToken);
+            gpif.Should().Contain("<GPIF");
+
+            await RunDotNetAsync(
+                $"run --project \"{toolProject}\" -- \"{gpifPath}\" \"{jsonFromGpifPath}\"",
+                repoRoot);
+
+            File.Exists(jsonFromGpifPath).Should().BeTrue();
+            var jsonFromGpif = await File.ReadAllTextAsync(jsonFromGpifPath, TestContext.Current.CancellationToken);
+            jsonFromGpif.Should().Contain("\"Tracks\"");
+            jsonFromGpif.Should().Contain("\"TimelineBars\"");
+
+            await RunDotNetAsync(
+                $"run --project \"{toolProject}\" -- \"{gpifPath}\" \"{gpFromGpifPath}\"",
+                repoRoot);
+
+            using var archive = ZipFile.OpenRead(gpFromGpifPath);
+            archive.GetEntry("Content/score.gpif").Should().NotBeNull();
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Cli_reports_not_implemented_for_recognized_mxl_musicxml_and_midi_routes()
+    {
+        var sourceGp = FixturePath("schema-reference.gp");
+        File.Exists(sourceGp).Should().BeTrue();
+
+        var repoRoot = FindRepositoryRoot();
+        var toolProject = Path.Combine(repoRoot, "Source", "Motif.CLI", "Motif.CLI.csproj");
+        Directory.Exists(Path.GetDirectoryName(toolProject)!).Should().BeTrue();
+
+        var tempDir = Path.Combine(Path.GetTempPath(), $"motif-cli-unimplemented-routing-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+
+        var jsonPath = Path.Combine(tempDir, "schema-reference.json");
+        var musicXmlInputPath = Path.Combine(tempDir, "score.musicxml");
+        var mxlInputPath = Path.Combine(tempDir, "score.mxl");
+        var midiInputPath = Path.Combine(tempDir, "score.mid");
+
+        try
+        {
+            await RunDotNetAsync(
+                $"run --project \"{toolProject}\" -- \"{sourceGp}\" \"{jsonPath}\"",
+                repoRoot);
+
+            await File.WriteAllTextAsync(musicXmlInputPath, "<score-partwise version=\"4.0\" />", TestContext.Current.CancellationToken);
+            await File.WriteAllTextAsync(mxlInputPath, "not-a-real-archive", TestContext.Current.CancellationToken);
+            await File.WriteAllTextAsync(midiInputPath, "not-a-real-midi", TestContext.Current.CancellationToken);
+
+            var failureCases = new (string Arguments, string ExpectedMessage)[]
+            {
+                ($"run --project \"{toolProject}\" -- \"{musicXmlInputPath}\" \"{Path.Combine(tempDir, "musicxml.json")}\"", "MusicXML input is recognized but not implemented yet."),
+                ($"run --project \"{toolProject}\" -- \"{mxlInputPath}\" \"{Path.Combine(tempDir, "mxl.json")}\"", "MXL input is recognized but not implemented yet."),
+                ($"run --project \"{toolProject}\" -- \"{midiInputPath}\" \"{Path.Combine(tempDir, "midi.json")}\"", "MIDI input is recognized but not implemented yet."),
+                ($"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{Path.Combine(tempDir, "score.musicxml")}\"", "MusicXML output is recognized but not implemented yet."),
+                ($"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{Path.Combine(tempDir, "score.mxl")}\"", "MXL output is recognized but not implemented yet."),
+                ($"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{Path.Combine(tempDir, "score.mid")}\"", "MIDI output is recognized but not implemented yet.")
+            };
+
+            foreach (var failureCase in failureCases)
+            {
+                var stderr = await RunDotNetExpectFailureAsync(failureCase.Arguments, repoRoot);
+                stderr.Should().Contain(failureCase.ExpectedMessage);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task Batch_roundtrip_diagnostics_writes_summary_and_file_results_for_fixture_directory()
     {
         var sourceGp = FixturePath("schema-reference.gp");
@@ -302,6 +412,30 @@ public class CliRoundTripRegressionTests
 
     private static async Task RunDotNetAsync(string arguments, string workingDirectory)
     {
+        var result = await RunDotNetForResultAsync(arguments, workingDirectory);
+
+        if (result.ExitCode != 0)
+        {
+            throw new Xunit.Sdk.XunitException(
+                $"dotnet {arguments} failed with exit code {result.ExitCode}{Environment.NewLine}stdout:{Environment.NewLine}{result.Stdout}{Environment.NewLine}stderr:{Environment.NewLine}{result.Stderr}");
+        }
+    }
+
+    private static async Task<string> RunDotNetExpectFailureAsync(string arguments, string workingDirectory)
+    {
+        var result = await RunDotNetForResultAsync(arguments, workingDirectory);
+
+        if (result.ExitCode == 0)
+        {
+            throw new Xunit.Sdk.XunitException(
+                $"dotnet {arguments} unexpectedly succeeded.{Environment.NewLine}stdout:{Environment.NewLine}{result.Stdout}{Environment.NewLine}stderr:{Environment.NewLine}{result.Stderr}");
+        }
+
+        return result.Stderr;
+    }
+
+    private static async Task<(int ExitCode, string Stdout, string Stderr)> RunDotNetForResultAsync(string arguments, string workingDirectory)
+    {
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
@@ -319,11 +453,7 @@ public class CliRoundTripRegressionTests
         var stderr = await process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
         await process.WaitForExitAsync(TestContext.Current.CancellationToken);
 
-        if (process.ExitCode != 0)
-        {
-            throw new Xunit.Sdk.XunitException(
-                $"dotnet {arguments} failed with exit code {process.ExitCode}{Environment.NewLine}stdout:{Environment.NewLine}{stdout}{Environment.NewLine}stderr:{Environment.NewLine}{stderr}");
-        }
+        return (process.ExitCode, stdout, stderr);
     }
 
     private static async Task<byte[]> ReadScoreGpifBytesAsync(string gpPath, CancellationToken cancellationToken)

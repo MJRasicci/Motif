@@ -1,6 +1,7 @@
 using Motif;
 using Motif.Extensions.GuitarPro;
 using Motif.Extensions.GuitarPro.Implementation;
+using Motif.Extensions.GuitarPro.Models.Write;
 using Motif.Models;
 using Motif.CLI;
 using System.IO.Compression;
@@ -49,8 +50,8 @@ try
                 {
                     case CliFormat.Json:
                     {
-                        var score = await reader!.ReadAsync(file).ConfigureAwait(false);
-                        var mappedJson = score.ToJson(
+                        var mappedScore = await reader!.ReadAsync(file).ConfigureAwait(false);
+                        var mappedJson = mappedScore.ToJson(
                             indented: options.JsonIndented,
                             ignoreNullValues: options.JsonIgnoreNull,
                             ignoreDefaultValues: options.JsonIgnoreDefaults);
@@ -62,11 +63,21 @@ try
                         await ExtractGpifAsync(file, outPath).ConfigureAwait(false);
                         break;
 
+                    case CliFormat.GuitarPro:
+                        if (!AreSamePath(file, outPath))
+                        {
+                            File.Copy(file, outPath, overwrite: true);
+                        }
+                        break;
+
+                    case CliFormat.Mxl:
+                        throw new NotImplementedException("MXL output is recognized but not implemented yet.");
+
                     case CliFormat.MusicXml:
-                        throw new NotImplementedException("MusicXML output is planned but not implemented yet.");
+                        throw new NotImplementedException("MusicXML output is recognized but not implemented yet.");
 
                     case CliFormat.Midi:
-                        throw new NotImplementedException("MIDI output is planned but not implemented yet.");
+                        throw new NotImplementedException("MIDI output is recognized but not implemented yet.");
 
                     default:
                         throw new InvalidOperationException($"Unsupported batch conversion gp -> {FormatToken(options.OutputFormat)}.");
@@ -112,48 +123,53 @@ try
     var outputPath = options.OutputPath ?? BuildDefaultOutputPath(options.InputPath, options.OutputFormat);
 
     if (!string.IsNullOrWhiteSpace(options.SourceGpPath)
-        && (options.InputFormat != CliFormat.Json || options.OutputFormat != CliFormat.GuitarPro))
+        && options.OutputFormat != CliFormat.GuitarPro)
     {
-        throw new InvalidOperationException("--source-gp is only supported for JSON -> .gp writes.");
+        throw new InvalidOperationException("--source-gp is only supported for -> .gp writes.");
     }
 
     switch ((options.InputFormat, options.OutputFormat))
     {
-        case (CliFormat.Json, CliFormat.GuitarPro):
-        {
-            await WriteGuitarProArchiveAsync(options, outputPath).ConfigureAwait(false);
-            return 0;
-        }
-
-        case (CliFormat.GuitarPro, CliFormat.Json):
-        {
-            var reader = new GuitarProReader();
-            var score = await reader.ReadAsync(options.InputPath).ConfigureAwait(false);
-            var mappedJson = score.ToJson(
-                indented: options.JsonIndented,
-                ignoreNullValues: options.JsonIgnoreNull,
-                ignoreDefaultValues: options.JsonIgnoreDefaults);
-
-            EnsureOutputDirectory(outputPath);
-            await File.WriteAllTextAsync(outputPath, mappedJson).ConfigureAwait(false);
-
-            Console.WriteLine($"Mapped JSON written: {outputPath}");
-            Console.WriteLine($"Title: {score.Title}");
-            Console.WriteLine($"Tracks: {score.Tracks.Count}");
-            Console.WriteLine($"Playback bars: {score.PlaybackMasterBarSequence.Count}");
-            return 0;
-        }
-
         case (CliFormat.GuitarPro, CliFormat.Gpif):
+        {
             await ExtractGpifAsync(options.InputPath, outputPath).ConfigureAwait(false);
             Console.WriteLine($"Extracted GPIF written: {outputPath}");
             return 0;
+        }
+    }
 
-        case (_, CliFormat.MusicXml):
-            throw new NotImplementedException("MusicXML output is planned but not implemented yet.");
+    var score = await ReadScoreAsync(options.InputPath, options.InputFormat).ConfigureAwait(false);
+    switch (options.OutputFormat)
+    {
+        case CliFormat.Json:
+            await WriteMappedJsonAsync(score, options, outputPath).ConfigureAwait(false);
+            return 0;
 
-        case (_, CliFormat.Midi):
-            throw new NotImplementedException("MIDI output is planned but not implemented yet.");
+        case CliFormat.GuitarPro:
+        {
+            var sourceScore = options.InputFormat == CliFormat.GuitarPro ? score : null;
+            var archiveTemplatePath = !string.IsNullOrWhiteSpace(options.SourceGpPath)
+                ? options.SourceGpPath
+                : options.InputFormat == CliFormat.GuitarPro
+                    ? options.InputPath
+                    : null;
+
+            await WriteGuitarProArchiveAsync(options, outputPath, score, sourceScore, archiveTemplatePath).ConfigureAwait(false);
+            return 0;
+        }
+
+        case CliFormat.Gpif:
+            await WriteGpifAsync(score, options, outputPath).ConfigureAwait(false);
+            return 0;
+
+        case CliFormat.Mxl:
+            throw new NotImplementedException("MXL output is recognized but not implemented yet.");
+
+        case CliFormat.MusicXml:
+            throw new NotImplementedException("MusicXML output is recognized but not implemented yet.");
+
+        case CliFormat.Midi:
+            throw new NotImplementedException("MIDI output is recognized but not implemented yet.");
 
         default:
             throw new InvalidOperationException(
@@ -171,32 +187,100 @@ catch (Exception ex)
     return 1;
 }
 
-static async Task WriteGuitarProArchiveAsync(CliOptions options, string outputPath)
+static async Task<Score> ReadScoreAsync(string inputPath, CliFormat inputFormat)
 {
-    if (!string.IsNullOrWhiteSpace(options.SourceGpPath) && !File.Exists(options.SourceGpPath))
+    switch (inputFormat)
+    {
+        case CliFormat.Json:
+        {
+            var json = await File.ReadAllTextAsync(inputPath).ConfigureAwait(false);
+            return JsonSerializer.Deserialize(json, CliJsonContext.Default.Score)
+                   ?? throw new InvalidDataException("Unable to deserialize mapped score JSON.");
+        }
+
+        case CliFormat.GuitarPro:
+        {
+            var reader = new GuitarProReader();
+            return await reader.ReadAsync(inputPath).ConfigureAwait(false);
+        }
+
+        case CliFormat.Gpif:
+        {
+            await using var stream = File.OpenRead(inputPath);
+            var deserializer = new XmlGpifDeserializer();
+            var raw = await deserializer.DeserializeAsync(stream).ConfigureAwait(false);
+            var mapper = new DefaultScoreMapper();
+            return await mapper.MapAsync(raw).ConfigureAwait(false);
+        }
+
+        case CliFormat.Mxl:
+            throw new NotImplementedException("MXL input is recognized but not implemented yet.");
+
+        case CliFormat.MusicXml:
+            throw new NotImplementedException("MusicXML input is recognized but not implemented yet.");
+
+        case CliFormat.Midi:
+            throw new NotImplementedException("MIDI input is recognized but not implemented yet.");
+
+        default:
+            throw new InvalidOperationException($"Unsupported input format {FormatToken(inputFormat)}.");
+    }
+}
+
+static async Task WriteMappedJsonAsync(Score score, CliOptions options, string outputPath)
+{
+    var mappedJson = score.ToJson(
+        indented: options.JsonIndented,
+        ignoreNullValues: options.JsonIgnoreNull,
+        ignoreDefaultValues: options.JsonIgnoreDefaults);
+
+    EnsureOutputDirectory(outputPath);
+    await File.WriteAllTextAsync(outputPath, mappedJson).ConfigureAwait(false);
+
+    Console.WriteLine($"Mapped JSON written: {outputPath}");
+    Console.WriteLine($"Title: {score.Title}");
+    Console.WriteLine($"Tracks: {score.Tracks.Count}");
+    Console.WriteLine($"Playback bars: {score.PlaybackMasterBarSequence.Count}");
+}
+
+static async Task WriteGpifAsync(Score score, CliOptions options, string outputPath)
+{
+    var unmapResult = await BuildWriteResultAsync(score).ConfigureAwait(false);
+    EnsureOutputDirectory(outputPath);
+
+    await using var output = File.Create(outputPath);
+    var serializer = new XmlGpifSerializer();
+    await serializer.SerializeAsync(unmapResult.RawDocument, output).ConfigureAwait(false);
+
+    Console.WriteLine($"GPIF written: {outputPath}");
+    await ReportWriteDiagnosticsAsync(options, unmapResult.Diagnostics).ConfigureAwait(false);
+}
+
+static async Task WriteGuitarProArchiveAsync(
+    CliOptions options,
+    string outputPath,
+    Score editedScore,
+    Score? sourceScore,
+    string? archiveTemplatePath)
+{
+    if (!string.IsNullOrWhiteSpace(archiveTemplatePath) && !File.Exists(archiveTemplatePath))
     {
         throw new InvalidOperationException("--source-gp requires <path-to-existing.gp>.");
     }
 
-    var json = await File.ReadAllTextAsync(options.InputPath).ConfigureAwait(false);
-    var editedScore = JsonSerializer.Deserialize(json, CliJsonContext.Default.Score)
-                      ?? throw new InvalidDataException("Unable to deserialize mapped score JSON.");
-
-    var sourceScore = default(Score);
-    if (!string.IsNullOrWhiteSpace(options.SourceGpPath))
+    if (sourceScore is null && !string.IsNullOrWhiteSpace(options.SourceGpPath))
     {
         var reader = new GuitarProReader();
         sourceScore = await reader.ReadAsync(options.SourceGpPath).ConfigureAwait(false);
     }
 
     var isNoOpWrite = sourceScore is not null && IsNoOpWrite(sourceScore, editedScore);
-    if (isNoOpWrite)
+    if (isNoOpWrite && !ReferenceEquals(sourceScore, editedScore))
     {
         editedScore.ReattachGuitarProExtensionsFrom(sourceScore!);
     }
 
-    var unmapper = new DefaultScoreUnmapper();
-    var unmapResult = await unmapper.UnmapAsync(editedScore).ConfigureAwait(false);
+    var unmapResult = await BuildWriteResultAsync(editedScore).ConfigureAwait(false);
 
     using var gpifBuffer = new MemoryStream();
     var serializer = new XmlGpifSerializer();
@@ -204,7 +288,7 @@ static async Task WriteGuitarProArchiveAsync(CliOptions options, string outputPa
 
     if (isNoOpWrite)
     {
-        var sourceGpifBytes = await ReadScoreGpifBytesAsync(options.SourceGpPath!).ConfigureAwait(false);
+        var sourceGpifBytes = await ReadScoreGpifBytesAsync(archiveTemplatePath!).ConfigureAwait(false);
         var sourceRaw = await DeserializeRawGpifAsync(sourceGpifBytes).ConfigureAwait(false);
         GpifWriteFidelityDiagnostics.AppendNoOpSourceFidelityWarnings(
             sourceRaw,
@@ -216,26 +300,38 @@ static async Task WriteGuitarProArchiveAsync(CliOptions options, string outputPa
 
     gpifBuffer.Position = 0;
 
-    if (!string.IsNullOrWhiteSpace(options.SourceGpPath) && !AreSamePath(options.SourceGpPath, outputPath))
+    if (!string.IsNullOrWhiteSpace(archiveTemplatePath) && !AreSamePath(archiveTemplatePath, outputPath))
     {
         EnsureOutputDirectory(outputPath);
-        File.Copy(options.SourceGpPath, outputPath, overwrite: true);
+        File.Copy(archiveTemplatePath, outputPath, overwrite: true);
     }
 
+    EnsureOutputDirectory(outputPath);
     var archiveWriter = new ZipGpArchiveWriter();
     await archiveWriter.WriteArchiveAsync(gpifBuffer, outputPath).ConfigureAwait(false);
 
     Console.WriteLine($"GP archive written: {outputPath}");
-    if (!string.IsNullOrWhiteSpace(options.SourceGpPath))
+    if (!string.IsNullOrWhiteSpace(archiveTemplatePath))
     {
-        Console.WriteLine($"Archive template preserved from: {options.SourceGpPath}");
+        Console.WriteLine($"Archive template preserved from: {archiveTemplatePath}");
     }
 
-    Console.WriteLine($"Warnings: {unmapResult.Diagnostics.Warnings.Count}");
+    await ReportWriteDiagnosticsAsync(options, unmapResult.Diagnostics).ConfigureAwait(false);
+}
 
-    if (unmapResult.Diagnostics.Warnings.Count > 0)
+static async Task<WriteResult> BuildWriteResultAsync(Score score)
+{
+    var unmapper = new DefaultScoreUnmapper();
+    return await unmapper.UnmapAsync(score).ConfigureAwait(false);
+}
+
+static async Task ReportWriteDiagnosticsAsync(CliOptions options, WriteDiagnostics diagnostics)
+{
+    Console.WriteLine($"Warnings: {diagnostics.Warnings.Count}");
+
+    if (diagnostics.Warnings.Count > 0)
     {
-        foreach (var warning in unmapResult.Diagnostics.Warnings)
+        foreach (var warning in diagnostics.Warnings)
         {
             Console.WriteLine($" - [{warning.Code}] {warning.Category}: {warning.Message}");
         }
@@ -245,12 +341,12 @@ static async Task WriteGuitarProArchiveAsync(CliOptions options, string outputPa
             EnsureOutputDirectory(options.DiagnosticsOutPath);
             if (options.DiagnosticsAsJson)
             {
-                var jsonDiagnostics = JsonSerializer.Serialize(unmapResult.Diagnostics.Entries.ToArray(), CliJsonContext.Default.WriteDiagnosticEntryArray);
+                var jsonDiagnostics = JsonSerializer.Serialize(diagnostics.Entries.ToArray(), CliJsonContext.Default.WriteDiagnosticEntryArray);
                 await File.WriteAllTextAsync(options.DiagnosticsOutPath, jsonDiagnostics).ConfigureAwait(false);
             }
             else
             {
-                var lines = unmapResult.Diagnostics.Entries.Select(d => $"[{d.Severity}] [{d.Code}] {d.Category}: {d.Message}").ToArray();
+                var lines = diagnostics.Entries.Select(d => $"[{d.Severity}] [{d.Code}] {d.Category}: {d.Message}").ToArray();
                 await File.WriteAllLinesAsync(options.DiagnosticsOutPath, lines).ConfigureAwait(false);
             }
 
@@ -278,7 +374,8 @@ static string BuildDefaultOutputPath(string inputPath, CliFormat outputFormat)
         CliFormat.Json => ".mapped.json",
         CliFormat.GuitarPro => ".gp",
         CliFormat.Gpif => ".score.gpif",
-        CliFormat.MusicXml => ".mxl",
+        CliFormat.Mxl => ".mxl",
+        CliFormat.MusicXml => ".musicxml",
         CliFormat.Midi => ".mid",
         _ => ".out"
     };
@@ -292,8 +389,10 @@ static string BuildBatchOutputRelativePath(string relativeInputPath, CliFormat o
     => outputFormat switch
     {
         CliFormat.Json => Path.ChangeExtension(relativeInputPath, ".json"),
+        CliFormat.GuitarPro => Path.ChangeExtension(relativeInputPath, ".gp"),
         CliFormat.Gpif => Path.ChangeExtension(relativeInputPath, ".score.gpif"),
-        CliFormat.MusicXml => Path.ChangeExtension(relativeInputPath, ".mxl"),
+        CliFormat.Mxl => Path.ChangeExtension(relativeInputPath, ".mxl"),
+        CliFormat.MusicXml => Path.ChangeExtension(relativeInputPath, ".musicxml"),
         CliFormat.Midi => Path.ChangeExtension(relativeInputPath, ".mid"),
         _ => throw new InvalidOperationException($"Unsupported batch output format {FormatToken(outputFormat)}.")
     };
@@ -349,6 +448,7 @@ static string FormatToken(CliFormat format)
         CliFormat.Json => "json",
         CliFormat.GuitarPro => "gp",
         CliFormat.Gpif => "gpif",
+        CliFormat.Mxl => "mxl",
         CliFormat.MusicXml => "musicxml",
         CliFormat.Midi => "midi",
         _ => throw new ArgumentOutOfRangeException(nameof(format))
@@ -378,6 +478,10 @@ SINGLE FILE
   motif-cli song.gp song.score.gpif
   motif-cli song.gp --output-format gpif
     Extract the raw GPIF XML embedded in the .gp archive.
+
+  motif-cli song.gpif song.json
+  motif-cli song.json song.score.gpif
+    Route through the mapped score model without going through a .gp archive.
 
   motif-cli song.json output.gp
     Read mapped score JSON and write a .gp archive.
@@ -419,11 +523,11 @@ BATCH EXPORT
     (default: <batch-output-dir>/batch-failures.jsonl).
 
 OPTIONS
-  --input-format <json|gp|gpif|musicxml|midi>
+  --input-format <json|gp|gpif|mxl|musicxml|midi>
                                 Explicit input format
-  --output-format <json|gp|gpif|musicxml|midi>
+  --output-format <json|gp|gpif|mxl|musicxml|midi>
                                 Explicit output format
-  --format <json|gp|gpif|musicxml|midi>
+  --format <json|gp|gpif|mxl|musicxml|midi>
                                 Alias for --output-format
   --out <path>                  Explicit output file path
   --from-json                   Compatibility alias for --input-format json

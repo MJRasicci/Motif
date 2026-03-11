@@ -61,8 +61,8 @@
   Landed: `ScoreNavigation`, `Score.Anacrusis`, explicit `HasCurrentPlaybackSequence` / `InvalidatePlaybackSequence` / `EnsurePlaybackSequence` workflow, `Score.TimelineBars` as the only canonical timeline source, and Core navigation tests for staff-first timeline playback and invalidation.
 
 - `[~]` Step 7 - CLI
-  Landed: package-split CLI, source-extension reattachment for no-op JSON writes, writer-diagnostic surfacing for partial reattachment, format-pair routing, legacy flag compatibility, GPIF batch export.
-  Remaining: revisit routing once non-Guitar-Pro inputs/outputs exist.
+  Landed: package-split CLI, source-extension reattachment for no-op JSON writes, writer-diagnostic surfacing for partial reattachment, format-pair routing, legacy flag compatibility, GPIF batch export, and explicit route recognition for `json`, `gp`, `gpif`, `mxl`, `musicxml`, and `midi` with not-implemented failures for formats whose backends do not exist yet.
+  Remaining: add real readers/writers for `mxl`, `musicxml`, and `midi`, then revisit routing defaults once those backends exist.
 
 - `[x]` Step 8 - Tests
   Landed: Core/GP test split, API surface tests, Core navigation coverage, explicit navigation invalidation tests, GP extension invalidation/reattachment tests, writer coverage for specific regeneration diagnostics plus score timeline master-bar export, and hierarchy coverage for staff-first mapping/unmap, staff-level fidelity reattachment, JSON round-trips, and empty-slot synthesis for sparse staff trees.

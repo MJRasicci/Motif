@@ -43,3 +43,5 @@ dotnet run --project Source/Motif.CLI -- input.gp score.gpif
 - Use `--input-format` / `--output-format` when extensions are missing or ambiguous.
 - `--format` remains an alias for `--output-format`.
 - `--from-json` remains supported as a compatibility alias for `--input-format json`.
+- The CLI now recognizes `json`, `gp`, `gpif`, `mxl`, `musicxml`, and `midi` routes.
+- Current end-to-end implementations are `json`, `gp`, and `gpif`. `mxl`, `musicxml`, and `midi` currently fail with explicit not-implemented messages.
