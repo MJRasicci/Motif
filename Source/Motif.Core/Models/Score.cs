@@ -84,7 +84,16 @@ public sealed class TrackModel : ExtensibleModel
 
     public string Name { get; set; } = string.Empty;
 
+    public IReadOnlyList<StaffModel> Staves { get; set; } = Array.Empty<StaffModel>();
+
     public IReadOnlyList<MeasureModel> Measures { get; set; } = Array.Empty<MeasureModel>();
+}
+
+public sealed class StaffModel : ExtensibleModel
+{
+    public int StaffIndex { get; set; }
+
+    public IReadOnlyList<StaffMeasureModel> Measures { get; set; } = Array.Empty<StaffMeasureModel>();
 }
 
 public sealed class MeasureModel : ExtensibleModel
@@ -144,6 +153,25 @@ public sealed class MeasureModel : ExtensibleModel
     public IReadOnlyDictionary<string, int> BarXProperties { get; set; } = new Dictionary<string, int>();
 
     public IReadOnlyList<MeasureStaffModel> AdditionalStaffBars { get; set; } = Array.Empty<MeasureStaffModel>();
+
+    public IReadOnlyList<MeasureVoiceModel> Voices { get; set; } = Array.Empty<MeasureVoiceModel>();
+
+    public IReadOnlyList<BeatModel> Beats { get; set; } = Array.Empty<BeatModel>();
+}
+
+public sealed class StaffMeasureModel : ExtensibleModel
+{
+    public int Index { get; set; }
+
+    public int StaffIndex { get; set; }
+
+    public string Clef { get; set; } = string.Empty;
+
+    public string SimileMark { get; set; } = string.Empty;
+
+    public IReadOnlyDictionary<string, string> BarProperties { get; set; } = new Dictionary<string, string>();
+
+    public IReadOnlyDictionary<string, int> BarXProperties { get; set; } = new Dictionary<string, int>();
 
     public IReadOnlyList<MeasureVoiceModel> Voices { get; set; } = Array.Empty<MeasureVoiceModel>();
 

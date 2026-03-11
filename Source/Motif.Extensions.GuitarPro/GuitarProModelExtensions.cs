@@ -70,6 +70,38 @@ public static class GuitarProModelExtensions
         return extension;
     }
 
+    public static GpStaffExtension? GetGuitarPro(this StaffModel staff)
+    {
+        ArgumentNullException.ThrowIfNull(staff);
+
+        return staff.GetExtension<GpStaffExtension>();
+    }
+
+    public static GpStaffExtension GetRequiredGuitarPro(this StaffModel staff)
+    {
+        ArgumentNullException.ThrowIfNull(staff);
+
+        return staff.GetRequiredExtension<GpStaffExtension>();
+    }
+
+    public static GpStaffExtension GetOrCreateGuitarPro(this StaffModel staff)
+    {
+        ArgumentNullException.ThrowIfNull(staff);
+
+        var extension = staff.GetGuitarPro();
+        if (extension is not null)
+        {
+            return extension;
+        }
+
+        extension = new GpStaffExtension
+        {
+            Metadata = new StaffMetadata()
+        };
+        staff.SetExtension(extension);
+        return extension;
+    }
+
     public static GpMeasureExtension? GetGuitarPro(this MeasureModel measure)
     {
         ArgumentNullException.ThrowIfNull(measure);
@@ -131,6 +163,38 @@ public static class GuitarProModelExtensions
             Metadata = new GpMeasureStaffMetadata()
         };
         staff.SetExtension(extension);
+        return extension;
+    }
+
+    public static GpMeasureStaffExtension? GetGuitarPro(this StaffMeasureModel staffMeasure)
+    {
+        ArgumentNullException.ThrowIfNull(staffMeasure);
+
+        return staffMeasure.GetExtension<GpMeasureStaffExtension>();
+    }
+
+    public static GpMeasureStaffExtension GetRequiredGuitarPro(this StaffMeasureModel staffMeasure)
+    {
+        ArgumentNullException.ThrowIfNull(staffMeasure);
+
+        return staffMeasure.GetRequiredExtension<GpMeasureStaffExtension>();
+    }
+
+    public static GpMeasureStaffExtension GetOrCreateGuitarPro(this StaffMeasureModel staffMeasure)
+    {
+        ArgumentNullException.ThrowIfNull(staffMeasure);
+
+        var extension = staffMeasure.GetGuitarPro();
+        if (extension is not null)
+        {
+            return extension;
+        }
+
+        extension = new GpMeasureStaffExtension
+        {
+            Metadata = new GpMeasureStaffMetadata()
+        };
+        staffMeasure.SetExtension(extension);
         return extension;
     }
 
@@ -239,6 +303,7 @@ public static class GuitarProModelExtensions
         foreach (var track in score.Tracks)
         {
             removedAny |= track.RemoveExtension<GpTrackExtension>();
+            removedAny |= InvalidateTrackStaffExtensions(track);
             removedAny |= InvalidateMeasureHierarchyExtensions(track);
         }
 
@@ -311,6 +376,7 @@ public static class GuitarProModelExtensions
             }
 
             ReattachMeasureHierarchyExtensions(targetTrack, sourceTrack, result);
+            ReattachTrackStaffHierarchyExtensions(targetTrack, sourceTrack, result);
         }
 
         var fidelityState = target.GetExtension<GpFidelityStateExtension>() ?? new GpFidelityStateExtension();
@@ -545,6 +611,36 @@ public static class GuitarProModelExtensions
         return removedAny;
     }
 
+    private static bool InvalidateTrackStaffExtensions(TrackModel track)
+    {
+        var removedAny = false;
+
+        foreach (var staff in track.Staves)
+        {
+            removedAny |= staff.RemoveExtension<GpStaffExtension>();
+
+            foreach (var staffMeasure in staff.Measures)
+            {
+                removedAny |= staffMeasure.RemoveExtension<GpMeasureStaffExtension>();
+
+                if (track.Measures.Count > 0)
+                {
+                    continue;
+                }
+
+                foreach (var voice in staffMeasure.Voices)
+                {
+                    removedAny |= voice.RemoveExtension<GpVoiceExtension>();
+                    removedAny |= InvalidateBeatExtensions(voice.Beats);
+                }
+
+                removedAny |= InvalidateBeatExtensions(staffMeasure.Beats);
+            }
+        }
+
+        return removedAny;
+    }
+
     private static bool InvalidateBeatExtensions(IReadOnlyList<BeatModel> beats)
     {
         var removedAny = false;
@@ -564,9 +660,22 @@ public static class GuitarProModelExtensions
 
     private static void CountUnmatchedTrackSubtree(TrackModel track, GpExtensionReattachmentResult result)
     {
-        foreach (var measure in track.Measures)
+        if (track.Measures.Count > 0)
         {
-            CountUnmatchedMeasureSubtree(measure, result);
+            foreach (var measure in track.Measures)
+            {
+                CountUnmatchedMeasureSubtree(measure, result);
+            }
+
+            return;
+        }
+
+        foreach (var staff in track.Staves)
+        {
+            foreach (var staffMeasure in staff.Measures)
+            {
+                CountUnmatchedStaffMeasureSubtree(staffMeasure, result);
+            }
         }
     }
 
@@ -597,6 +706,18 @@ public static class GuitarProModelExtensions
         }
 
         CountUnmatchedBeatList(staff.Beats, result);
+    }
+
+    private static void CountUnmatchedStaffMeasureSubtree(StaffMeasureModel staffMeasure, GpExtensionReattachmentResult result)
+    {
+        result.StaffsUnmatched++;
+
+        foreach (var targetVoice in staffMeasure.Voices)
+        {
+            CountUnmatchedVoiceSubtree(targetVoice, result);
+        }
+
+        CountUnmatchedBeatList(staffMeasure.Beats, result);
     }
 
     private static void CountUnmatchedVoiceSubtree(MeasureVoiceModel voice, GpExtensionReattachmentResult result)
@@ -652,5 +773,108 @@ public static class GuitarProModelExtensions
 
         item = default!;
         return false;
+    }
+
+    private static void ReattachTrackStaffHierarchyExtensions(TrackModel targetTrack, TrackModel sourceTrack, GpExtensionReattachmentResult result)
+    {
+        if (targetTrack.Staves.Count == 0)
+        {
+            return;
+        }
+
+        var sourceStaffsByIndex = sourceTrack.Staves
+            .ToDictionary(staff => staff.StaffIndex);
+
+        foreach (var targetStaff in targetTrack.Staves)
+        {
+            if (!sourceStaffsByIndex.TryGetValue(targetStaff.StaffIndex, out var sourceStaff))
+            {
+                if (targetTrack.Measures.Count == 0)
+                {
+                    foreach (var targetStaffMeasure in targetStaff.Measures)
+                    {
+                        CountUnmatchedStaffMeasureSubtree(targetStaffMeasure, result);
+                    }
+                }
+
+                continue;
+            }
+
+            var staffExtension = sourceStaff.GetGuitarPro();
+            if (staffExtension is not null)
+            {
+                targetStaff.SetExtension(new GpStaffExtension
+                {
+                    Metadata = staffExtension.Metadata
+                });
+            }
+
+            var sourceMeasuresByIndex = sourceStaff.Measures
+                .GroupBy(measure => measure.Index)
+                .ToDictionary(group => group.Key, group => group.First());
+
+            foreach (var targetStaffMeasure in targetStaff.Measures)
+            {
+                if (!sourceMeasuresByIndex.TryGetValue(targetStaffMeasure.Index, out var sourceStaffMeasure))
+                {
+                    if (targetTrack.Measures.Count == 0)
+                    {
+                        CountUnmatchedStaffMeasureSubtree(targetStaffMeasure, result);
+                    }
+
+                    continue;
+                }
+
+                var staffMeasureExtension = sourceStaffMeasure.GetGuitarPro();
+                if (staffMeasureExtension is not null)
+                {
+                    targetStaffMeasure.SetExtension(new GpMeasureStaffExtension
+                    {
+                        Metadata = staffMeasureExtension.Metadata
+                    });
+
+                    result.StaffsAttached++;
+                }
+                else if (targetTrack.Measures.Count == 0)
+                {
+                    result.StaffsUnmatched++;
+                }
+
+                if (targetTrack.Measures.Count > 0)
+                {
+                    continue;
+                }
+
+                ReattachBeatExtensions(targetStaffMeasure.Beats, sourceStaffMeasure.Beats, result);
+
+                var sourceVoicesByIndex = sourceStaffMeasure.Voices
+                    .ToDictionary(voice => voice.VoiceIndex);
+                foreach (var targetVoice in targetStaffMeasure.Voices)
+                {
+                    if (!sourceVoicesByIndex.TryGetValue(targetVoice.VoiceIndex, out var sourceVoice))
+                    {
+                        CountUnmatchedVoiceSubtree(targetVoice, result);
+                        continue;
+                    }
+
+                    var voiceExtension = sourceVoice.GetGuitarPro();
+                    if (voiceExtension is null)
+                    {
+                        result.VoicesUnmatched++;
+                    }
+                    else
+                    {
+                        targetVoice.SetExtension(new GpVoiceExtension
+                        {
+                            Metadata = voiceExtension.Metadata
+                        });
+
+                        result.VoicesAttached++;
+                    }
+
+                    ReattachBeatExtensions(targetVoice.Beats, sourceVoice.Beats, result);
+                }
+            }
+        }
     }
 }

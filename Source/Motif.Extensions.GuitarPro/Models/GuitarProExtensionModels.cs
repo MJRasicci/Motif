@@ -14,6 +14,11 @@ public sealed class GpTrackExtension : IModelExtension
     public required TrackMetadata Metadata { get; set; }
 }
 
+public sealed class GpStaffExtension : IModelExtension
+{
+    public required StaffMetadata Metadata { get; set; }
+}
+
 public sealed class GpMeasureExtension : IModelExtension
 {
     public required GpMeasureMetadata Metadata { get; set; }

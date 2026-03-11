@@ -29,10 +29,14 @@ public class PublicApiSurfaceTests
         typeof(IScoreWriter).Should().NotBeNull();
         typeof(ScoreNavigation).Should().NotBeNull();
         typeof(TimelineBarModel).Should().NotBeNull();
+        typeof(StaffModel).Should().NotBeNull();
+        typeof(StaffMeasureModel).Should().NotBeNull();
 
         new Score().Tracks.Should().BeEmpty();
         new Score().TimelineBars.Should().BeEmpty();
+        new TrackModel().Staves.Should().BeEmpty();
         new TrackModel().Measures.Should().BeEmpty();
+        new StaffModel().Measures.Should().BeEmpty();
 
         var json = score.ToJson();
         using var document = JsonDocument.Parse(json);

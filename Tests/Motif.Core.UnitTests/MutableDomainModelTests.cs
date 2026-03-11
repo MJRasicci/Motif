@@ -11,6 +11,8 @@ public class MutableDomainModelTests
     {
         var score = new Score();
         var track = new TrackModel();
+        var staff = new StaffModel();
+        var staffMeasure = new StaffMeasureModel();
         var timelineBar = new TimelineBarModel();
         var measure = new MeasureModel();
         var beat = new BeatModel();
@@ -24,6 +26,14 @@ public class MutableDomainModelTests
 
         track.Id = 1;
         track.Name = "Lead";
+        track.Staves = [staff];
+
+        staff.StaffIndex = 0;
+        staff.Measures = [staffMeasure];
+
+        staffMeasure.Index = 0;
+        staffMeasure.StaffIndex = 0;
+        staffMeasure.Clef = "Treble";
 
         timelineBar.Index = 0;
         timelineBar.TimeSignature = "4/4";
@@ -62,6 +72,7 @@ public class MutableDomainModelTests
         timelineBar.SectionLetter = "A";
 
         track.Name = "Rhythm";
+        staffMeasure.Clef = "Bass";
 
         measure.TimeSignature = "7/8";
         measure.AdditionalStaffBars =
@@ -97,8 +108,13 @@ public class MutableDomainModelTests
         score.Tracks.Should().ContainSingle().Which.Should().BeSameAs(track);
 
         track.Name.Should().Be("Rhythm");
+        track.Staves.Should().ContainSingle().Which.Should().BeSameAs(staff);
         track.Measures.Should().ContainSingle().Which.Should().BeSameAs(measure);
 
+        staff.StaffIndex.Should().Be(0);
+        staff.Measures.Should().ContainSingle().Which.Should().BeSameAs(staffMeasure);
+
+        staffMeasure.Clef.Should().Be("Bass");
         measure.TimeSignature.Should().Be("7/8");
         measure.AdditionalStaffBars.Should().ContainSingle();
         measure.Beats.Should().ContainSingle().Which.Should().BeSameAs(beat);

@@ -38,7 +38,8 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             .Select(t =>
             {
                 var metadata = GetTrackMetadata(t);
-                var stavesXml = ResolveStavesXml(metadata);
+                var currentStaffMetadata = ResolveTrackStaffMetadata(t);
+                var stavesXml = ResolveStavesXml(metadata, currentStaffMetadata);
                 if (regenerationDiagnostics is not null
                     && HasSourceStavesXml(metadata)
                     && string.IsNullOrEmpty(stavesXml))
@@ -180,7 +181,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                         Chromatic = metadata.Transpose.Chromatic,
                         Octave = metadata.Transpose.Octave
                     },
-                    Staffs = metadata.Staffs.Select(s => new GpifStaff
+                    Staffs = currentStaffMetadata.Select(s => new GpifStaff
                     {
                         Id = s.Id,
                         Cref = s.Cref,
@@ -194,14 +195,13 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             .ToArray();
 
         var barId = NextIdAfter(orderedTracks
-            .SelectMany(track => track.Measures.SelectMany(measure => ResolveMeasureStaffBars(track, measure)))
+            .SelectMany(EnumeratePreferredStaffBars)
             .Select(staff => GetMeasureStaffMetadata(staff).SourceBarId));
         var voiceId = NextIdAfter(orderedTracks
-            .SelectMany(t => t.Measures)
-            .SelectMany(m => m.Voices)
+            .SelectMany(EnumeratePreferredVoices)
             .Select(v => GetVoiceMetadata(v).SourceVoiceId));
-        var beatId = NextIdAfter(orderedTracks.SelectMany(t => t.Measures).SelectMany(m => m.Voices.Count > 0 ? m.Voices.SelectMany(v => v.Beats) : m.Beats).Select(b => b.Id));
-        var noteId = NextIdAfter(orderedTracks.SelectMany(t => t.Measures).SelectMany(m => m.Voices.Count > 0 ? m.Voices.SelectMany(v => v.Beats) : m.Beats).SelectMany(b => b.Notes).Select(n => n.Id));
+        var beatId = NextIdAfter(orderedTracks.SelectMany(EnumeratePreferredBeats).Select(b => b.Id));
+        var noteId = NextIdAfter(orderedTracks.SelectMany(EnumeratePreferredBeats).SelectMany(b => b.Notes).Select(n => n.Id));
         var rhythmId = 0;
 
         var bars = new Dictionary<int, GpifBar>();
@@ -218,19 +218,20 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         var masterBars = new List<GpifMasterBar>();
 
         var maxMeasures = Math.Max(
-            orderedTracks.Select(t => t.Measures.Count).DefaultIfEmpty(0).Max(),
+            orderedTracks.Select(GetTrackMeasureCount).DefaultIfEmpty(0).Max(),
             orderedTimelineBars.Length);
 
         for (var m = 0; m < maxMeasures; m++)
         {
             var measureBarIds = new List<int>();
-            var primaryTimelineTrack = orderedTracks.FirstOrDefault(track => m < track.Measures.Count);
+            var primaryTimelineTrack = orderedTracks.FirstOrDefault(track => m < GetTrackMeasureCount(track));
             var fallbackMeasure = primaryTimelineTrack is null
                 ? null
-                : primaryTimelineTrack.Measures[m];
+                : GetTrackFallbackMeasureAtPosition(primaryTimelineTrack, m);
             var timelineBar = m < orderedTimelineBars.Length
                 ? orderedTimelineBars[m]
                 : null;
+            var timelineIndex = timelineBar?.Index ?? fallbackMeasure?.Index ?? m;
             var masterBar = CreateMasterBar(timelineBar, fallbackMeasure);
             if (masterBar is not null)
             {
@@ -239,13 +240,13 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
 
             foreach (var track in orderedTracks)
             {
-                if (m >= track.Measures.Count)
+                if (m >= GetTrackMeasureCount(track))
                 {
                     continue;
                 }
 
-                var measure = track.Measures[m];
-                var staffBars = ResolveMeasureStaffBars(track, measure);
+                var measure = GetTrackFallbackMeasureAtPosition(track, m);
+                var staffBars = ResolveTrackStaffBars(track, measure, timelineIndex, m);
 
                 foreach (var staffBar in staffBars)
                 {
@@ -302,7 +303,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                         && !preserveSourceStringAndFret)
                                     {
                                         regenerationDiagnostics.RecordNoteStringFret(
-                                            FormatNotePath(track, measure, staffBar, measureVoice, beatIndex, noteIndex));
+                                            FormatNotePath(track, timelineIndex, staffBar, measureVoice, beatIndex, noteIndex));
                                     }
 
                                     var (resolvedStringNumber, resolvedFret) = ResolveStringAndFret(note, track, staffBar.StaffIndex, preserveSourceStringAndFret);
@@ -313,7 +314,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                         && !preserveSourceConcertPitch)
                                     {
                                         regenerationDiagnostics.RecordNoteConcertPitch(
-                                            FormatNotePath(track, measure, staffBar, measureVoice, beatIndex, noteIndex));
+                                            FormatNotePath(track, timelineIndex, staffBar, measureVoice, beatIndex, noteIndex));
                                     }
 
                                     var preserveSourceTransposedPitch = ShouldPreserveSourceTransposedPitch(note, transposedMidiPitch);
@@ -322,7 +323,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                         && !preserveSourceTransposedPitch)
                                     {
                                         regenerationDiagnostics.RecordNoteTransposedPitch(
-                                            FormatNotePath(track, measure, staffBar, measureVoice, beatIndex, noteIndex));
+                                            FormatNotePath(track, timelineIndex, staffBar, measureVoice, beatIndex, noteIndex));
                                     }
 
                                     var noteXProperties = note.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value);
@@ -414,7 +415,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                 && preservedSourceRhythm is null)
                             {
                                 regenerationDiagnostics.RecordRhythmSourceShape(
-                                    FormatBeatPath(track, measure, staffBar, measureVoice, beatIndex));
+                                    FormatBeatPath(track, timelineIndex, staffBar, measureVoice, beatIndex));
                             }
 
                             var rhythmCandidate = preservedSourceRhythm
@@ -866,6 +867,25 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                 coverage.TracksAttached++;
             }
 
+            if (track.Measures.Count == 0 && track.Staves.Count > 0)
+            {
+                foreach (var staff in track.Staves)
+                {
+                    foreach (var staffMeasure in staff.Measures)
+                    {
+                        coverage.StaffsTotal++;
+                        if (staffMeasure.GetGuitarPro() is not null)
+                        {
+                            coverage.StaffsAttached++;
+                        }
+
+                        AppendMeasureContentCoverage(staffMeasure.Voices, staffMeasure.Beats, coverage);
+                    }
+                }
+
+                continue;
+            }
+
             foreach (var measure in track.Measures)
             {
                 coverage.MeasuresTotal++;
@@ -1089,27 +1109,27 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
 
     private static string FormatVoicePath(
         TrackModel track,
-        MeasureModel measure,
+        int measureIndex,
         MeasureStaffModel staffBar,
         MeasureVoiceModel measureVoice)
-        => $"{FormatTrackPath(track)}/Measures[@index='{measure.Index}']/StaffBars[@index='{staffBar.StaffIndex}']/Voices[@index='{measureVoice.VoiceIndex}']";
+        => $"{FormatTrackPath(track)}/Measures[@index='{measureIndex}']/StaffBars[@index='{staffBar.StaffIndex}']/Voices[@index='{measureVoice.VoiceIndex}']";
 
     private static string FormatBeatPath(
         TrackModel track,
-        MeasureModel measure,
+        int measureIndex,
         MeasureStaffModel staffBar,
         MeasureVoiceModel measureVoice,
         int beatIndex)
-        => $"{FormatVoicePath(track, measure, staffBar, measureVoice)}/Beats[{beatIndex}]";
+        => $"{FormatVoicePath(track, measureIndex, staffBar, measureVoice)}/Beats[{beatIndex}]";
 
     private static string FormatNotePath(
         TrackModel track,
-        MeasureModel measure,
+        int measureIndex,
         MeasureStaffModel staffBar,
         MeasureVoiceModel measureVoice,
         int beatIndex,
         int noteIndex)
-        => $"{FormatBeatPath(track, measure, staffBar, measureVoice, beatIndex)}/Notes[{noteIndex}]";
+        => $"{FormatBeatPath(track, measureIndex, staffBar, measureVoice, beatIndex)}/Notes[{noteIndex}]";
 
     private static IReadOnlyList<GpifNoteProperty> BuildCoreNoteProperties(int? midiPitch, int? stringNumber, int? fret)
     {
@@ -1249,6 +1269,9 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
     private static GpMeasureStaffMetadata GetMeasureStaffMetadata(MeasureStaffModel staff)
         => staff.GetGuitarPro()?.Metadata ?? new GpMeasureStaffMetadata();
 
+    private static GpMeasureStaffMetadata GetMeasureStaffMetadata(StaffMeasureModel staffMeasure)
+        => staffMeasure.GetGuitarPro()?.Metadata ?? new GpMeasureStaffMetadata();
+
     private static GpVoiceMetadata GetVoiceMetadata(MeasureVoiceModel voice)
         => voice.GetGuitarPro()?.Metadata ?? new GpVoiceMetadata();
 
@@ -1258,13 +1281,56 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
     private static GpNoteMetadata GetNoteMetadata(NoteModel note)
         => note.GetGuitarPro()?.Metadata ?? new GpNoteMetadata();
 
+    private static IReadOnlyList<StaffMetadata> ResolveTrackStaffMetadata(TrackModel track)
+    {
+        var trackMetadata = GetTrackMetadata(track);
+        if (track.Staves.Count == 0 || track.Measures.Count > 0)
+        {
+            return trackMetadata.Staffs;
+        }
+
+        var current = new List<StaffMetadata>(track.Staves.Count);
+        foreach (var staff in track.Staves.OrderBy(s => s.StaffIndex))
+        {
+            var staffExtension = staff.GetGuitarPro();
+            if (staffExtension is not null)
+            {
+                current.Add(CloneStaffMetadata(staffExtension.Metadata));
+                continue;
+            }
+
+            if (staff.StaffIndex >= 0 && staff.StaffIndex < trackMetadata.Staffs.Count)
+            {
+                current.Add(CloneStaffMetadata(trackMetadata.Staffs[staff.StaffIndex]));
+            }
+            else
+            {
+                current.Add(new StaffMetadata());
+            }
+        }
+
+        return current;
+    }
+
+    private static StaffMetadata CloneStaffMetadata(StaffMetadata source)
+        => new()
+        {
+            Id = source.Id,
+            Cref = source.Cref,
+            TuningPitches = source.TuningPitches.ToArray(),
+            CapoFret = source.CapoFret,
+            Properties = source.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
+            Xml = source.Xml
+        };
+
     private static int[] ResolveTuningPitches(TrackModel track, int staffIndex)
     {
         var metadata = GetTrackMetadata(track);
+        var currentStaffMetadata = ResolveTrackStaffMetadata(track);
 
-        if (staffIndex >= 0 && staffIndex < metadata.Staffs.Count)
+        if (staffIndex >= 0 && staffIndex < currentStaffMetadata.Count)
         {
-            var staffTuning = metadata.Staffs[staffIndex].TuningPitches;
+            var staffTuning = currentStaffMetadata[staffIndex].TuningPitches;
             if (staffTuning.Length > 0)
             {
                 return staffTuning;
@@ -1297,7 +1363,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
 
     private static bool SourceStringContextMatches(TrackModel track, int staffIndex)
     {
-        var source = ResolveSourceStringContext(GetTrackMetadata(track), staffIndex);
+        var source = ResolveSourceStringContext(track, staffIndex);
         if (source is null)
         {
             return true;
@@ -1307,11 +1373,13 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                && ResolveCapoFret(track, staffIndex) == source.CapoFret;
     }
 
-    private static SourceStringContext? ResolveSourceStringContext(TrackMetadata metadata, int staffIndex)
+    private static SourceStringContext? ResolveSourceStringContext(TrackModel track, int staffIndex)
     {
-        if (staffIndex >= 0 && staffIndex < metadata.Staffs.Count)
+        var metadata = GetTrackMetadata(track);
+        var currentStaffMetadata = ResolveTrackStaffMetadata(track);
+        if (staffIndex >= 0 && staffIndex < currentStaffMetadata.Count)
         {
-            var staff = metadata.Staffs[staffIndex];
+            var staff = currentStaffMetadata[staffIndex];
             var staffTuning = ParseTuningPitches(staff.Properties);
             var staffCapo = ParseCapoFret(staff.Properties);
             if (staffTuning.Length > 0 || staffCapo.HasValue)
@@ -1343,10 +1411,11 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
     private static int? ResolveCapoFret(TrackModel track, int staffIndex)
     {
         var metadata = GetTrackMetadata(track);
+        var currentStaffMetadata = ResolveTrackStaffMetadata(track);
 
-        if (staffIndex >= 0 && staffIndex < metadata.Staffs.Count)
+        if (staffIndex >= 0 && staffIndex < currentStaffMetadata.Count)
         {
-            var staffCapo = metadata.Staffs[staffIndex].CapoFret;
+            var staffCapo = currentStaffMetadata[staffIndex].CapoFret;
             if (staffCapo.HasValue)
             {
                 return staffCapo;
@@ -1356,15 +1425,19 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return ParseCapoFret(metadata.Properties);
     }
 
-    private static string ResolveStavesXml(TrackMetadata metadata)
-        => ShouldPreserveSourceStavesXml(metadata)
+    private static string ResolveStavesXml(
+        TrackMetadata metadata,
+        IReadOnlyList<StaffMetadata> currentStaffMetadata)
+        => ShouldPreserveSourceStavesXml(metadata, currentStaffMetadata)
             ? metadata.StavesXml
             : string.Empty;
 
     private static bool HasSourceStavesXml(TrackMetadata metadata)
         => !string.IsNullOrWhiteSpace(metadata.StavesXml);
 
-    private static bool ShouldPreserveSourceStavesXml(TrackMetadata metadata)
+    private static bool ShouldPreserveSourceStavesXml(
+        TrackMetadata metadata,
+        IReadOnlyList<StaffMetadata> currentStaffMetadata)
     {
         if (string.IsNullOrWhiteSpace(metadata.StavesXml))
         {
@@ -1378,12 +1451,12 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                 .Select(ParseSourceStaff)
                 .ToArray();
 
-            if (sourceStaffs.Length != metadata.Staffs.Count)
+            if (sourceStaffs.Length != currentStaffMetadata.Count)
             {
                 return false;
             }
 
-            return sourceStaffs.Zip(metadata.Staffs)
+            return sourceStaffs.Zip(currentStaffMetadata)
                 .All(pair => StaffMatchesSource(pair.Second, pair.First));
         }
         catch
@@ -1563,9 +1636,74 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             : string.Empty;
     }
 
+    private static int GetTrackMeasureCount(TrackModel track)
+    {
+        var staffMeasureCount = track.Staves
+            .Select(staff => staff.Measures.Count)
+            .DefaultIfEmpty(0)
+            .Max();
+        return Math.Max(track.Measures.Count, staffMeasureCount);
+    }
+
+    private static MeasureModel? GetTrackFallbackMeasureAtPosition(TrackModel track, int measurePosition)
+        => measurePosition >= 0 && measurePosition < track.Measures.Count
+            ? track.Measures[measurePosition]
+            : null;
+
+    private static IReadOnlyList<MeasureStaffModel> ResolveTrackStaffBars(
+        TrackModel track,
+        MeasureModel? fallbackMeasure,
+        int timelineIndex,
+        int measurePosition)
+    {
+        if (track.Staves.Count == 0 || track.Measures.Count > 0)
+        {
+            return fallbackMeasure is null
+                ? CreateEmptyStaffBars(Math.Max(1, ResolveTrackStaffMetadata(track).Count))
+                : ResolveMeasureStaffBars(track, fallbackMeasure);
+        }
+
+        var currentStaffMetadata = ResolveTrackStaffMetadata(track);
+        var highestStaffIndex = track.Staves
+            .Select(staff => staff.StaffIndex)
+            .DefaultIfEmpty(-1)
+            .Max();
+        var compatibilityHighestStaffIndex = fallbackMeasure is null || fallbackMeasure.AdditionalStaffBars.Count == 0
+            ? -1
+            : fallbackMeasure.AdditionalStaffBars.Max(staff => staff.StaffIndex);
+        var totalStaffCount = Math.Max(
+            1,
+            Math.Max(currentStaffMetadata.Count, Math.Max(highestStaffIndex + 1, compatibilityHighestStaffIndex + 1)));
+        var trackStaffsByIndex = track.Staves.ToDictionary(staff => staff.StaffIndex);
+        var fallbackStaffBarsByIndex = fallbackMeasure is null
+            ? new Dictionary<int, MeasureStaffModel>()
+            : ResolveMeasureStaffBars(track, fallbackMeasure).ToDictionary(staffBar => staffBar.StaffIndex);
+
+        var resolved = new List<MeasureStaffModel>(totalStaffCount);
+        for (var staffIndex = 0; staffIndex < totalStaffCount; staffIndex++)
+        {
+            if (trackStaffsByIndex.TryGetValue(staffIndex, out var staff)
+                && TryResolveStaffMeasure(staff, timelineIndex, measurePosition, out var staffMeasure))
+            {
+                resolved.Add(ToMeasureStaffModel(staffMeasure));
+                continue;
+            }
+
+            if (fallbackStaffBarsByIndex.TryGetValue(staffIndex, out var fallbackStaffBar))
+            {
+                resolved.Add(fallbackStaffBar);
+                continue;
+            }
+
+            resolved.Add(CreateEmptyMeasureStaffBar(staffIndex));
+        }
+
+        return resolved;
+    }
+
     private static IReadOnlyList<MeasureStaffModel> ResolveMeasureStaffBars(TrackModel track, MeasureModel measure)
     {
-        var expectedStaffCount = Math.Max(1, GetTrackMetadata(track).Staffs.Count);
+        var expectedStaffCount = Math.Max(1, ResolveTrackStaffMetadata(track).Count);
         var highestIndexedAdditionalStaff = measure.AdditionalStaffBars.Count == 0
             ? -1
             : measure.AdditionalStaffBars.Max(s => s.StaffIndex);
@@ -1621,6 +1759,102 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         }
 
         return staffBars;
+    }
+
+    private static bool TryResolveStaffMeasure(
+        StaffModel staff,
+        int timelineIndex,
+        int measurePosition,
+        out StaffMeasureModel staffMeasure)
+    {
+        staffMeasure = staff.Measures.FirstOrDefault(measure => measure.Index == timelineIndex)
+            ?? (measurePosition >= 0 && measurePosition < staff.Measures.Count ? staff.Measures[measurePosition] : null!);
+
+        return staffMeasure is not null;
+    }
+
+    private static MeasureStaffModel ToMeasureStaffModel(StaffMeasureModel source)
+    {
+        var staffMeasure = new MeasureStaffModel
+        {
+            StaffIndex = source.StaffIndex,
+            Clef = source.Clef,
+            SimileMark = source.SimileMark,
+            BarProperties = source.BarProperties,
+            BarXProperties = source.BarXProperties,
+            Voices = source.Voices,
+            Beats = source.Beats
+        };
+        staffMeasure.SetExtension(new GpMeasureStaffExtension
+        {
+            Metadata = GetMeasureStaffMetadata(source)
+        });
+        return staffMeasure;
+    }
+
+    private static IReadOnlyList<MeasureStaffModel> CreateEmptyStaffBars(int count)
+    {
+        var staffBars = new List<MeasureStaffModel>(Math.Max(1, count));
+        for (var staffIndex = 0; staffIndex < Math.Max(1, count); staffIndex++)
+        {
+            staffBars.Add(CreateEmptyMeasureStaffBar(staffIndex));
+        }
+
+        return staffBars;
+    }
+
+    private static MeasureStaffModel CreateEmptyMeasureStaffBar(int staffIndex)
+    {
+        var staffBar = new MeasureStaffModel
+        {
+            StaffIndex = staffIndex
+        };
+        staffBar.SetExtension(new GpMeasureStaffExtension
+        {
+            Metadata = new GpMeasureStaffMetadata
+            {
+                SourceBarId = -1
+            }
+        });
+
+        return staffBar;
+    }
+
+    private static IEnumerable<MeasureStaffModel> EnumeratePreferredStaffBars(TrackModel track)
+    {
+        if (track.Staves.Count > 0 && track.Measures.Count == 0)
+        {
+            return track.Staves
+                .OrderBy(staff => staff.StaffIndex)
+                .SelectMany(staff => staff.Measures.OrderBy(measure => measure.Index))
+                .Select(ToMeasureStaffModel);
+        }
+
+        return track.Measures.SelectMany(measure => ResolveMeasureStaffBars(track, measure));
+    }
+
+    private static IEnumerable<MeasureVoiceModel> EnumeratePreferredVoices(TrackModel track)
+    {
+        if (track.Staves.Count > 0 && track.Measures.Count == 0)
+        {
+            return track.Staves
+                .SelectMany(staff => staff.Measures)
+                .SelectMany(measure => measure.Voices);
+        }
+
+        return track.Measures.SelectMany(measure => measure.Voices);
+    }
+
+    private static IEnumerable<BeatModel> EnumeratePreferredBeats(TrackModel track)
+    {
+        if (track.Staves.Count > 0 && track.Measures.Count == 0)
+        {
+            return track.Staves
+                .SelectMany(staff => staff.Measures)
+                .SelectMany(measure => measure.Voices.Count > 0 ? measure.Voices.SelectMany(voice => voice.Beats) : measure.Beats);
+        }
+
+        return track.Measures.SelectMany(measure => measure.Voices.Count > 0 ? measure.Voices.SelectMany(voice => voice.Beats) : measure.Beats);
     }
 
     private static IReadOnlyList<MeasureVoiceModel> ResolveMeasureVoices(IReadOnlyList<MeasureVoiceModel> measureVoices, IReadOnlyList<BeatModel> measureBeats)

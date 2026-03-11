@@ -345,6 +345,27 @@ public class WriterReferenceReuseTests
     }
 
     [Fact]
+    public async Task Unmapper_preserves_multistaff_master_bar_slot_counts_for_staff_only_tracks()
+    {
+        var sourceRaw = CreateMultiStaffRawDocument();
+        var score = await new DefaultScoreMapper().MapAsync(sourceRaw, TestContext.Current.CancellationToken);
+
+        foreach (var track in score.Tracks)
+        {
+            track.Measures = [];
+        }
+
+        var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
+
+        result.Diagnostics.Warnings.Should().BeEmpty();
+        AssertStructuralCountsEqual(sourceRaw, result.RawDocument);
+        SplitRefs(result.RawDocument.MasterBars[0].BarsReferenceList).Should().Equal([0, 1, 2]);
+        result.RawDocument.BarsById[0].Clef.Should().Be("G2");
+        result.RawDocument.BarsById[1].Clef.Should().Be("F4");
+        result.RawDocument.BarsById[2].Clef.Should().Be("Neutral");
+    }
+
+    [Fact]
     public void To_json_drops_source_rhythm_shape_from_core_json()
     {
         var json = CreateTupletScore().ToJson();

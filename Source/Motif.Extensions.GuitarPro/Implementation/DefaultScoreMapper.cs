@@ -183,6 +183,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 {
                     Id = track.Id,
                     Name = track.Name,
+                    Staves = BuildTrackStaves(trackMetadata, measures),
                     Measures = measures
                 };
 
@@ -284,6 +285,139 @@ internal sealed class DefaultScoreMapper : IScoreMapper
 
         return ValueTask.FromResult(score);
     }
+
+    private static IReadOnlyList<StaffModel> BuildTrackStaves(TrackMetadata trackMetadata, IReadOnlyList<MeasureModel> measures)
+    {
+        var highestAdditionalStaffIndex = measures
+            .SelectMany(measure => measure.AdditionalStaffBars)
+            .Select(staff => staff.StaffIndex)
+            .DefaultIfEmpty(-1)
+            .Max();
+        var totalStaffCount = Math.Max(1, Math.Max(trackMetadata.Staffs.Count, highestAdditionalStaffIndex + 1));
+        var staffMeasures = Enumerable.Range(0, totalStaffCount)
+            .Select(_ => new List<StaffMeasureModel>(measures.Count))
+            .ToArray();
+
+        foreach (var measure in measures.OrderBy(m => m.Index))
+        {
+            staffMeasures[0].Add(CreatePrimaryStaffMeasure(measure));
+
+            var additionalStaffsByIndex = measure.AdditionalStaffBars
+                .ToDictionary(staff => staff.StaffIndex);
+            for (var staffIndex = 1; staffIndex < totalStaffCount; staffIndex++)
+            {
+                staffMeasures[staffIndex].Add(
+                    additionalStaffsByIndex.TryGetValue(staffIndex, out var additionalStaff)
+                        ? CreateStaffMeasure(measure.Index, additionalStaff)
+                        : CreateEmptyStaffMeasure(measure.Index, staffIndex));
+            }
+        }
+
+        var staves = new List<StaffModel>(totalStaffCount);
+        for (var staffIndex = 0; staffIndex < totalStaffCount; staffIndex++)
+        {
+            var staff = new StaffModel
+            {
+                StaffIndex = staffIndex,
+                Measures = staffMeasures[staffIndex]
+            };
+
+            if (staffIndex < trackMetadata.Staffs.Count)
+            {
+                staff.SetExtension(new GpStaffExtension
+                {
+                    Metadata = CloneStaffMetadata(trackMetadata.Staffs[staffIndex])
+                });
+            }
+
+            staves.Add(staff);
+        }
+
+        return staves;
+    }
+
+    private static StaffMeasureModel CreatePrimaryStaffMeasure(MeasureModel measure)
+    {
+        var measureMetadata = measure.GetRequiredGuitarPro().Metadata;
+        var staffMeasure = new StaffMeasureModel
+        {
+            Index = measure.Index,
+            StaffIndex = 0,
+            Clef = measure.Clef,
+            SimileMark = measure.SimileMark,
+            BarProperties = measure.BarProperties,
+            BarXProperties = measure.BarXProperties,
+            Voices = measure.Voices,
+            Beats = measure.Beats
+        };
+        staffMeasure.SetExtension(new GpMeasureStaffExtension
+        {
+            Metadata = new GpMeasureStaffMetadata
+            {
+                BarXml = measureMetadata.BarXml,
+                SourceBarId = measureMetadata.SourceBarId,
+                BarXPropertiesXml = measureMetadata.BarXPropertiesXml
+            }
+        });
+
+        return staffMeasure;
+    }
+
+    private static StaffMeasureModel CreateStaffMeasure(int index, MeasureStaffModel source)
+    {
+        var metadata = source.GetRequiredGuitarPro().Metadata;
+        var staffMeasure = new StaffMeasureModel
+        {
+            Index = index,
+            StaffIndex = source.StaffIndex,
+            Clef = source.Clef,
+            SimileMark = source.SimileMark,
+            BarProperties = source.BarProperties,
+            BarXProperties = source.BarXProperties,
+            Voices = source.Voices,
+            Beats = source.Beats
+        };
+        staffMeasure.SetExtension(new GpMeasureStaffExtension
+        {
+            Metadata = new GpMeasureStaffMetadata
+            {
+                BarXml = metadata.BarXml,
+                SourceBarId = metadata.SourceBarId,
+                BarXPropertiesXml = metadata.BarXPropertiesXml
+            }
+        });
+
+        return staffMeasure;
+    }
+
+    private static StaffMeasureModel CreateEmptyStaffMeasure(int index, int staffIndex)
+    {
+        var staffMeasure = new StaffMeasureModel
+        {
+            Index = index,
+            StaffIndex = staffIndex
+        };
+        staffMeasure.SetExtension(new GpMeasureStaffExtension
+        {
+            Metadata = new GpMeasureStaffMetadata
+            {
+                SourceBarId = -1
+            }
+        });
+
+        return staffMeasure;
+    }
+
+    private static StaffMetadata CloneStaffMetadata(StaffMetadata source)
+        => new()
+        {
+            Id = source.Id,
+            Cref = source.Cref,
+            TuningPitches = source.TuningPitches.ToArray(),
+            CapoFret = source.CapoFret,
+            Properties = source.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
+            Xml = source.Xml
+        };
 
     private static Dictionary<int, int> BuildBarSlotStartByTrackId(IReadOnlyList<GpifTrack> tracks)
     {

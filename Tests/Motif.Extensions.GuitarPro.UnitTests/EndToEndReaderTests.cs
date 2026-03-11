@@ -19,12 +19,14 @@ public class EndToEndReaderTests
         score.PlaybackMasterBarSequence.Should().NotBeEmpty();
 
         var firstTrack = score.Tracks[0];
+        firstTrack.Staves.Should().NotBeEmpty();
         firstTrack.Measures.Should().NotBeEmpty();
 
         firstTrack.Measures.SelectMany(m => m.Beats).Count().Should().BeGreaterThan(0);
 
         var json = score.ToJson();
         json.Should().Contain("\"Tracks\"");
+        json.Should().Contain("\"Staves\"");
         json.Should().Contain("\"TimelineBars\"");
         json.Should().Contain("\"PlaybackMasterBarSequence\"");
     }
