@@ -49,7 +49,7 @@
   Remaining: move surviving Core property/XProperty bags behind GP extensions or normalize them as typed semantics, remove the `*Model` suffix from Core types, keep genuinely cross-format semantics such as golpe in Core, add `GpStaffExtension` after the hierarchy refactor.
 
 - `[~]` Step 3 - Raw cache invariants
-  Landed: explicit GP cache workflow via `InvalidateGuitarProExtensions`, reattachment result reporting from `ReattachGuitarProExtensionsFrom`, and unmapper diagnostics for invalidated source fidelity, partial source reattachment, and mixed attached/missing GP fidelity within a source-derived score tree.
+  Landed: explicit GP cache workflow via `InvalidateGuitarProExtensions`, reattachment result reporting from `ReattachGuitarProExtensionsFrom`, unmapper diagnostics for invalidated source fidelity, partial source reattachment, and mixed attached/missing GP fidelity within a source-derived score tree, plus library workflow guidance in `docs/LIBRARY_WORKFLOW.md`.
   Remaining: broaden diagnostics/defaulting/regeneration coverage beyond the current attachment-state warnings into more specific node/property regeneration cases.
 
 - `[x]` Step 4 - Guitar Pro format I/O ownership
@@ -80,7 +80,6 @@
 
 1. Broaden derived-state and extension-cache diagnostics/docs.
    - Add more specific node/property defaulting-regeneration warnings beyond the current attachment-state signals
-   - Document the recommended edit workflow for library consumers (`invalidate -> edit -> reattach or regenerate -> rebuild navigation`)
    - Add coverage around non-no-op edit paths that intentionally invalidate GP fidelity caches
 
 2. Land the hierarchy refactor.
