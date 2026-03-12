@@ -23,7 +23,9 @@ await MotifScore.SaveAsync(score, "song-edited.gp", cancellationToken);
 extension handlers such as Guitar Pro from referenced Motif assemblies at runtime.
 Current `.motif` archives always contain `manifest.json` and `score.json`, and they now
 preserve namespaced `extensions/` and `resources/` entries so format packages can attach
-supplementary archive data through the new contributor hook.
+supplementary archive data through the new contributor hook. Guitar Pro now uses that
+hook to persist its raw metadata plus non-score archive files in
+`extensions/guitarpro.json` and `resources/guitarpro/...`.
 
 ## When To Use Guitar Pro APIs Directly
 
@@ -39,10 +41,14 @@ Guitar Pro-specific capabilities instead of the format-agnostic unified API:
 
 `GuitarProWriter` writes a valid `.gp` archive in all cases.
 
+- If the score carries restored Guitar Pro archive resources, such as a score opened from
+  `.gp` or from a `.motif` archive that originated from `.gp`, the writer rebuilds the
+  output archive from those preserved resources and replaces only `Content/score.gpif`.
 - If the destination path does not exist, the writer uses the embedded default archive
-  template and replaces `Content/score.gpif`.
+  template and replaces `Content/score.gpif` when no restored resources are attached.
 - If the destination path already exists and is a valid archive, the writer preserves the
-  existing non-score entries and replaces only `Content/score.gpif`.
+  existing non-score entries and replaces only `Content/score.gpif` when no restored
+  resources are attached.
 - If you need to seed a new output path from a different source archive, use the CLI
   `--source-gp` workflow. That behavior is not exposed as a separate library API today.
 

@@ -193,7 +193,7 @@ internal static class ArchiveContributorRegistry
                         $"Assembly '{assembly.GetName().Name}' declared archive contributor '{contributorType.FullName}', but it does not implement {nameof(IArchiveContributor)} as a concrete type.");
                 }
 
-                if (Activator.CreateInstance(contributorType) is not IArchiveContributor contributor)
+                if (Activator.CreateInstance(contributorType, nonPublic: true) is not IArchiveContributor contributor)
                 {
                     throw new InvalidOperationException(
                         $"Assembly '{assembly.GetName().Name}' declared archive contributor '{contributorType.FullName}', but Motif could not create an instance.");

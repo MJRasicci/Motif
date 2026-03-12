@@ -61,11 +61,12 @@ await MotifScore.SaveAsync(score, "song-edited.gp", cancellationToken);
 `MotifScore` handles mapped JSON and native `.motif` archives directly, and discovers
 extension handlers such as Guitar Pro at runtime. `.motif` archives always contain
 `manifest.json` and `score.json`, and now preserve namespaced `extensions/` and
-`resources/` entries so future format packages can round-trip supplementary data without
-the core archive writer knowing format details. Use `GuitarProWriter` directly, or
-resolve it through `MotifScore.CreateWriter("gp")`, when you need Guitar Pro-specific
-write diagnostics or explicit source-archive control such as the CLI `--source-gp`
-workflow.
+`resources/` entries so format packages can round-trip supplementary data without the
+core archive writer knowing format details. Guitar Pro now uses those locations to carry
+raw GP metadata plus non-score archive files through `.gp -> .motif -> .gp` workflows.
+Use `GuitarProWriter` directly, or resolve it through `MotifScore.CreateWriter("gp")`,
+when you need Guitar Pro-specific write diagnostics or explicit source-archive control
+such as the CLI `--source-gp` workflow.
 
 ## CLI Quick Start
 
@@ -121,7 +122,7 @@ pattern everywhere: `--flag`, `--flag=true`, and `--flag=false`.
 | --- | --- | --- | --- |
 | `gp` | Yes | Yes | Guitar Pro ZIP archive containing `Content/score.gpif` |
 | `gpif` | Yes | Yes | Raw GPIF XML |
-| `motif` | Yes | Yes | Native ZIP archive with `manifest.json`, `score.json`, and preserved namespaced extension/resource entries |
+| `motif` | Yes | Yes | Native ZIP archive with `manifest.json`, `score.json`, and preserved namespaced extension/resource entries; GP-origin archives also preserve Guitar Pro metadata/resources |
 | `json` | Yes | Yes | Mapped `Score` JSON, intended for editing and inspection |
 | `musicxml` / `mxl` | No | No | Not part of the current CLI or library surface |
 | `midi` | No | No | Not part of the current CLI or library surface |

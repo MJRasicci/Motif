@@ -273,10 +273,15 @@ public class CliRoundTripRegressionTests
             {
                 motifArchive.GetEntry("manifest.json").Should().NotBeNull();
                 motifArchive.GetEntry("score.json").Should().NotBeNull();
+                motifArchive.GetEntry("extensions/guitarpro.json").Should().NotBeNull();
+                motifArchive.GetEntry("resources/guitarpro/Content/Preferences.json").Should().NotBeNull();
 
                 using var manifest = JsonDocument.Parse(await ReadArchiveEntryTextAsync(motifArchive, "manifest.json", TestContext.Current.CancellationToken));
                 manifest.RootElement.GetProperty("formatVersion").GetString().Should().Be("1.0");
                 manifest.RootElement.GetProperty("createdBy").GetString().Should().Be("Motif.Core");
+                manifest.RootElement.GetProperty("extensions").EnumerateArray()
+                    .Select(element => element.GetString())
+                    .Should().Contain("guitarpro");
             }
 
             await RunDotNetAsync(
@@ -310,8 +315,20 @@ public class CliRoundTripRegressionTests
                 $"run --project \"{toolProject}\" -- \"{motifPath}\" \"{gpFromMotifPath}\"",
                 repoRoot);
 
-            using var archive = ZipFile.OpenRead(gpFromMotifPath);
-            archive.GetEntry("Content/score.gpif").Should().NotBeNull();
+            using (var sourceArchive = ZipFile.OpenRead(sourceGp))
+            using (var archive = ZipFile.OpenRead(gpFromMotifPath))
+            {
+                archive.GetEntry("Content/score.gpif").Should().NotBeNull();
+                archive.Entries.Select(entry => entry.FullName)
+                    .Should().BeEquivalentTo(sourceArchive.Entries.Select(entry => entry.FullName));
+
+                foreach (var entryName in new[] { "VERSION", "meta.json", "Content/Preferences.json", "Content/LayoutConfiguration", "Content/PartConfiguration" })
+                {
+                    var sourceBytes = await ReadArchiveEntryBytesAsync(sourceArchive, entryName, TestContext.Current.CancellationToken);
+                    var outputBytes = await ReadArchiveEntryBytesAsync(archive, entryName, TestContext.Current.CancellationToken);
+                    outputBytes.Should().Equal(sourceBytes, $"entry '{entryName}' should survive gp -> motif -> gp");
+                }
+            }
         }
         finally
         {
@@ -590,7 +607,15 @@ public class CliRoundTripRegressionTests
     private static async Task<byte[]> ReadScoreGpifBytesAsync(string gpPath, CancellationToken cancellationToken)
     {
         using var archive = ZipFile.OpenRead(gpPath);
-        var entry = archive.GetEntry("Content/score.gpif");
+        return await ReadArchiveEntryBytesAsync(archive, "Content/score.gpif", cancellationToken);
+    }
+
+    private static async Task<byte[]> ReadArchiveEntryBytesAsync(
+        ZipArchive archive,
+        string entryName,
+        CancellationToken cancellationToken)
+    {
+        var entry = archive.GetEntry(entryName);
         entry.Should().NotBeNull();
 
         await using var stream = entry!.Open();

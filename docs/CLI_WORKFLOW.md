@@ -98,6 +98,10 @@ dotnet run --project Source/Motif.CLI -- score.json output.gp \
 Current `.motif` archives always contain `manifest.json` and `score.json`, and Motif now
 preserves namespaced `extensions/` and `resources/` entries so format-specific archive
 data can survive `.motif` read/write cycles even before a contributor package is loaded.
+For Guitar Pro sources, those entries now include raw GP metadata plus non-score archive
+files, so `motif-cli song.motif output.gp` can reconstruct the full `.gp` archive
+without `--source-gp`. `--source-gp` remains the explicit template override for JSON-only
+workflows and other cases where no preserved GP archive payload is attached.
 
 ## Batch Export
 

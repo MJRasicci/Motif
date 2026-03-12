@@ -32,7 +32,12 @@ public sealed class GuitarProWriter : IGuitarProWriter
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         var result = await unmapper.UnmapAsync(score, cancellationToken).ConfigureAwait(false);
         await using var buffer = await SerializeToGpifBufferAsync(result, cancellationToken).ConfigureAwait(false);
-        await archiveWriter.WriteArchiveAsync(buffer, filePath, cancellationToken).ConfigureAwait(false);
+        await archiveWriter.WriteArchiveAsync(
+                buffer,
+                filePath,
+                cancellationToken,
+                score.GetGuitarProArchiveResources()?.Entries)
+            .ConfigureAwait(false);
         return result.Diagnostics;
     }
 
@@ -44,7 +49,12 @@ public sealed class GuitarProWriter : IGuitarProWriter
         ArgumentNullException.ThrowIfNull(destination);
         var result = await unmapper.UnmapAsync(score, cancellationToken).ConfigureAwait(false);
         await using var buffer = await SerializeToGpifBufferAsync(result, cancellationToken).ConfigureAwait(false);
-        await archiveWriter.WriteArchiveAsync(buffer, destination, cancellationToken).ConfigureAwait(false);
+        await archiveWriter.WriteArchiveAsync(
+                buffer,
+                destination,
+                cancellationToken,
+                score.GetGuitarProArchiveResources()?.Entries)
+            .ConfigureAwait(false);
         return result.Diagnostics;
     }
 

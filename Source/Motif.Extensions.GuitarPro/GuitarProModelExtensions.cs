@@ -267,6 +267,7 @@ public static class GuitarProModelExtensions
         ArgumentNullException.ThrowIfNull(score);
 
         var removedAny = score.RemoveExtension<GpScoreExtension>();
+        removedAny |= score.RemoveExtension<GpArchiveResourcesExtension>();
         removedAny |= InvalidateTimelineBarExtensions(score);
 
         foreach (var track in score.Tracks)
@@ -354,6 +355,17 @@ public static class GuitarProModelExtensions
         fidelityState.LastReattachment = result;
         target.SetExtension(fidelityState);
 
+        var archiveResources = source.GetExtension<GpArchiveResourcesExtension>();
+        if (archiveResources is not null)
+        {
+            target.SetExtension(new GpArchiveResourcesExtension
+            {
+                Entries = archiveResources.Entries
+                    .Select(entry => new GpArchiveResourceEntry(entry.EntryPath, entry.Data))
+                    .ToArray()
+            });
+        }
+
         return result;
     }
 
@@ -362,6 +374,13 @@ public static class GuitarProModelExtensions
         ArgumentNullException.ThrowIfNull(score);
 
         return score.GetExtension<GpFidelityStateExtension>();
+    }
+
+    internal static GpArchiveResourcesExtension? GetGuitarProArchiveResources(this Score score)
+    {
+        ArgumentNullException.ThrowIfNull(score);
+
+        return score.GetExtension<GpArchiveResourcesExtension>();
     }
 
     internal static string FormatPartialReattachmentMessage(GpExtensionReattachmentResult result)
