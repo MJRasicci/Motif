@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Xml.Linq;
 
 public class CliRoundTripRegressionTests
@@ -340,6 +341,70 @@ public class CliRoundTripRegressionTests
     }
 
     [Fact]
+    public async Task Cli_can_round_trip_gp_through_motif_after_editing_embedded_score_json()
+    {
+        var sourceGp = GuitarProFixture.PathFor("test.gp");
+        File.Exists(sourceGp).Should().BeTrue();
+
+        var repoRoot = FindRepositoryRoot();
+        var toolProject = Path.Combine(repoRoot, "Source", "Motif.CLI", "Motif.CLI.csproj");
+        Directory.Exists(Path.GetDirectoryName(toolProject)!).Should().BeTrue();
+
+        var tempDir = Path.Combine(Path.GetTempPath(), $"motif-cli-edited-archive-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+
+        var motifPath = Path.Combine(tempDir, "test.edited.motif");
+        var gpFromMotifPath = Path.Combine(tempDir, "test.edited.from-motif.gp");
+        var diagnosticsPath = Path.Combine(tempDir, "test.edited.from-motif.diagnostics.json");
+
+        try
+        {
+            await RunDotNetAsync(
+                $"run --project \"{toolProject}\" -- \"{sourceGp}\" \"{motifPath}\"",
+                repoRoot);
+
+            await UpdateMotifScoreJsonAsync(motifPath, root =>
+            {
+                root["Title"] = "Edited From Motif";
+            });
+
+            var result = await RunDotNetForResultAsync(
+                $"run --project \"{toolProject}\" -- \"{motifPath}\" \"{gpFromMotifPath}\" --diagnostics-out \"{diagnosticsPath}\" --diagnostics-json",
+                repoRoot);
+            result.ExitCode.Should().Be(0, result.Stderr);
+            result.Stdout.Should().Contain("Warnings: 0");
+
+            var gpifText = Encoding.UTF8.GetString(await ReadScoreGpifBytesAsync(gpFromMotifPath, TestContext.Current.CancellationToken));
+            var doc = XDocument.Parse(gpifText);
+            doc.Root?
+                .Element("Score")?
+                .Element("Title")?
+                .Value
+                .Should().Be("Edited From Motif");
+
+            File.Exists(diagnosticsPath).Should().BeFalse("the CLI only writes a diagnostics file when warnings are present");
+
+            using (var sourceArchive = ZipFile.OpenRead(sourceGp))
+            using (var archive = ZipFile.OpenRead(gpFromMotifPath))
+            {
+                foreach (var entryName in new[] { "VERSION", "meta.json", "Content/Preferences.json", "Content/LayoutConfiguration", "Content/PartConfiguration" })
+                {
+                    var sourceBytes = await ReadArchiveEntryBytesAsync(sourceArchive, entryName, TestContext.Current.CancellationToken);
+                    var outputBytes = await ReadArchiveEntryBytesAsync(archive, entryName, TestContext.Current.CancellationToken);
+                    outputBytes.Should().Equal(sourceBytes, $"entry '{entryName}' should survive motif score.json edits");
+                }
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task Cli_rejects_non_v1_formats_and_unknown_output_extensions()
     {
         var sourceGp = GuitarProFixture.PathFor("schema-reference.gp");
@@ -608,6 +673,34 @@ public class CliRoundTripRegressionTests
     {
         using var archive = ZipFile.OpenRead(gpPath);
         return await ReadArchiveEntryBytesAsync(archive, "Content/score.gpif", cancellationToken);
+    }
+
+    private static async Task UpdateMotifScoreJsonAsync(string motifPath, Action<JsonObject> update)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(motifPath);
+        ArgumentNullException.ThrowIfNull(update);
+
+        using var archive = ZipFile.Open(motifPath, ZipArchiveMode.Update);
+        var entry = archive.GetEntry("score.json");
+        entry.Should().NotBeNull();
+
+        string json;
+        await using (var stream = entry!.Open())
+        using (var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: false))
+        {
+            json = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
+        }
+
+        entry.Delete();
+
+        var root = JsonNode.Parse(json)?.AsObject();
+        root.Should().NotBeNull();
+        update(root!);
+
+        var updatedEntry = archive.CreateEntry("score.json");
+        await using var output = updatedEntry.Open();
+        using var writer = new StreamWriter(output, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), leaveOpen: false);
+        await writer.WriteAsync(root!.ToJsonString());
     }
 
     private static async Task<byte[]> ReadArchiveEntryBytesAsync(
