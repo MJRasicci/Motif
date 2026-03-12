@@ -45,14 +45,24 @@ internal static class GpifWriteFidelityDiagnostics
         WarnIfReferenceCountsChanged(sourceRaw, outputRaw, diagnostics);
         WarnIfMasterBarSlotCountsChanged(sourceRaw, outputRaw, diagnostics);
         WarnIfEmptyScoreNodesDropped(sourceGpifBytes, outputGpifBytes, diagnostics);
-        AppendXmlDifferenceDiagnostics(sourceGpifBytes, outputGpifBytes, diagnostics);
+        var hasMeaningfulXmlDifference = AppendXmlDifferenceDiagnostics(sourceGpifBytes, outputGpifBytes, diagnostics);
 
         if (!sourceGpifBytes.AsSpan().SequenceEqual(outputGpifBytes))
         {
-            diagnostics.Warn(
-                code: "RAW_GPIF_BYTE_DRIFT",
-                category: "RawFidelity",
-                message: "No-op full write changed Content/score.gpif bytes relative to the source archive.");
+            if (hasMeaningfulXmlDifference)
+            {
+                diagnostics.Warn(
+                    code: "RAW_GPIF_BYTE_DRIFT",
+                    category: "RawFidelity",
+                    message: "No-op full write changed Content/score.gpif bytes relative to the source archive.");
+            }
+            else
+            {
+                diagnostics.Info(
+                    code: "RAW_GPIF_BYTE_DRIFT",
+                    category: "RawFidelity",
+                    message: "No-op full write changed Content/score.gpif bytes relative to the source archive, but the parsed XML remained equivalent.");
+            }
         }
     }
 
@@ -169,11 +179,11 @@ internal static class GpifWriteFidelityDiagnostics
         }
     }
 
-    private static void AppendXmlDifferenceDiagnostics(byte[] sourceGpifBytes, byte[] outputGpifBytes, WriteDiagnostics diagnostics)
+    private static bool AppendXmlDifferenceDiagnostics(byte[] sourceGpifBytes, byte[] outputGpifBytes, WriteDiagnostics diagnostics)
     {
         if (sourceGpifBytes.AsSpan().SequenceEqual(outputGpifBytes))
         {
-            return;
+            return false;
         }
 
         try
@@ -181,7 +191,7 @@ internal static class GpifWriteFidelityDiagnostics
             var differences = GpifXmlDifferenceComparer.Compare(sourceGpifBytes, outputGpifBytes);
             if (differences.Count == 0)
             {
-                return;
+                return false;
             }
 
             diagnostics.Warn(
@@ -199,6 +209,8 @@ internal static class GpifWriteFidelityDiagnostics
                     sourceValue: difference.SourceValue,
                     outputValue: difference.OutputValue);
             }
+
+            return true;
         }
         catch (Exception ex)
         {
@@ -206,6 +218,7 @@ internal static class GpifWriteFidelityDiagnostics
                 code: "RAW_XML_DIFFERENCE_DIAGNOSTICS_FAILED",
                 category: "RawFidelity",
                 message: $"XML difference diagnostics failed: {ex.Message}");
+            return true;
         }
     }
 

@@ -308,6 +308,7 @@ static async Task<WriteDiagnostics> WriteWithoutDiagnosticsAsync(IScoreWriter wr
 static async Task ReportWriteDiagnosticsAsync(CliOptions options, WriteDiagnostics diagnostics)
 {
     Console.WriteLine($"Warnings: {diagnostics.Warnings.Count}");
+    Console.WriteLine($"Infos: {diagnostics.Infos.Count}");
 
     if (diagnostics.Warnings.Count > 0)
     {
@@ -315,23 +316,23 @@ static async Task ReportWriteDiagnosticsAsync(CliOptions options, WriteDiagnosti
         {
             Console.WriteLine($" - [{warning.Code}] {warning.Category}: {warning.Message}");
         }
+    }
 
-        if (!string.IsNullOrWhiteSpace(options.DiagnosticsOutPath))
+    if (diagnostics.Entries.Count > 0 && !string.IsNullOrWhiteSpace(options.DiagnosticsOutPath))
+    {
+        EnsureOutputDirectory(options.DiagnosticsOutPath);
+        if (options.DiagnosticsAsJson)
         {
-            EnsureOutputDirectory(options.DiagnosticsOutPath);
-            if (options.DiagnosticsAsJson)
-            {
-                var jsonDiagnostics = JsonSerializer.Serialize(diagnostics.Entries.ToArray(), CliJsonContext.Default.WriteDiagnosticEntryArray);
-                await File.WriteAllTextAsync(options.DiagnosticsOutPath, jsonDiagnostics).ConfigureAwait(false);
-            }
-            else
-            {
-                var lines = diagnostics.Entries.Select(d => $"[{d.Severity}] [{d.Code}] {d.Category}: {d.Message}").ToArray();
-                await File.WriteAllLinesAsync(options.DiagnosticsOutPath, lines).ConfigureAwait(false);
-            }
-
-            Console.WriteLine($"Diagnostics written: {options.DiagnosticsOutPath}");
+            var jsonDiagnostics = JsonSerializer.Serialize(diagnostics.Entries.ToArray(), CliJsonContext.Default.WriteDiagnosticEntryArray);
+            await File.WriteAllTextAsync(options.DiagnosticsOutPath, jsonDiagnostics).ConfigureAwait(false);
         }
+        else
+        {
+            var lines = diagnostics.Entries.Select(d => $"[{d.Severity}] [{d.Code}] {d.Category}: {d.Message}").ToArray();
+            await File.WriteAllLinesAsync(options.DiagnosticsOutPath, lines).ConfigureAwait(false);
+        }
+
+        Console.WriteLine($"Diagnostics written: {options.DiagnosticsOutPath}");
     }
 }
 

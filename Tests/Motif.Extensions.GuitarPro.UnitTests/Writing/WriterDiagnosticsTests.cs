@@ -550,6 +550,37 @@ public class WriterDiagnosticsTests
             && entry.OutputValue == "true");
     }
 
+    [Fact]
+    public void No_op_source_fidelity_diagnostics_downgrade_pure_byte_drift_to_info_when_xml_is_equivalent()
+    {
+        var raw = new GpifDocument();
+        var diagnostics = new WriteDiagnostics();
+
+        var sourceBytes = Encoding.UTF8.GetBytes("<GPIF><Score><Title>Title</Title></Score></GPIF>");
+        var outputBytes = Encoding.UTF8.GetBytes(
+            """
+            <GPIF>
+              <Score>
+                <Title>Title</Title>
+              </Score>
+            </GPIF>
+            """);
+
+        GpifWriteFidelityDiagnostics.AppendNoOpSourceFidelityWarnings(
+            raw,
+            raw,
+            sourceBytes,
+            outputBytes,
+            diagnostics);
+
+        diagnostics.Warnings.Select(w => w.Code).Should().NotContain("RAW_XML_DIFFERENCE_SUMMARY");
+        diagnostics.Warnings.Select(w => w.Code).Should().NotContain("RAW_GPIF_BYTE_DRIFT");
+        diagnostics.Infos.Should().Contain(entry =>
+            entry.Code == "RAW_GPIF_BYTE_DRIFT"
+            && entry.Category == "RawFidelity"
+            && entry.Message.Contains("parsed XML remained equivalent", StringComparison.Ordinal));
+    }
+
     private static async Task<byte[]> ReadScoreGpifBytesAsync(string gpPath)
     {
         using var archive = ZipFile.OpenRead(gpPath);

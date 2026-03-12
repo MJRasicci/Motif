@@ -94,6 +94,9 @@ dotnet run --project Source/Motif.CLI -- score.json output.gp \
 - `--diagnostics-out <path>` writes diagnostics to a file
 - `--diagnostics-json` switches that file from plain text to JSON
 
+If a write only produces info-level diagnostics, such as XML-equivalent GPIF byte drift,
+`--diagnostics-out` still writes those entries even when the warning count is zero.
+
 `--source-gp` is only valid for `.gp` output.
 Current `.motif` archives always contain `manifest.json` and `score.json`, and Motif now
 preserves namespaced `extensions/` and `resources/` entries so format-specific archive

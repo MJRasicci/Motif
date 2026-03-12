@@ -522,6 +522,8 @@ public class CliRoundTripRegressionTests
             summary.RootElement.GetProperty("FailedFiles").GetInt32().Should().Be(0);
             summary.RootElement.GetProperty("FilesWithDiagnostics").GetInt32().Should().BeGreaterThan(0);
             summary.RootElement.GetProperty("FilesWithByteDrift").GetInt32().Should().BeGreaterThan(0);
+            summary.RootElement.GetProperty("TotalWarnings").GetInt32().Should().Be(0);
+            summary.RootElement.GetProperty("TotalInfos").GetInt32().Should().BeGreaterThan(0);
 
             var diagnosticCodes = summary.RootElement
                 .GetProperty("DiagnosticCodes")
