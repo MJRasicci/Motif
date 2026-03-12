@@ -141,6 +141,11 @@ internal static class ArchiveContributorRegistry
             });
         }
 
+        if (manifest.Sources.Count > 0)
+        {
+            MotifArchiveProvenance.RestoreManifestSources(score, manifest.Sources);
+        }
+
         if (entries.Count == 0)
         {
             return;

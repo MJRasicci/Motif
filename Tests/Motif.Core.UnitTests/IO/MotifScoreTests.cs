@@ -141,6 +141,44 @@ public class MotifScoreTests
     }
 
     [Fact]
+    public async Task Motif_archive_rewrite_preserves_manifest_sources_without_registered_contributors()
+    {
+        var tempDirectory = CreateTempDirectory();
+        var inputPath = Path.Combine(tempDirectory, "input.motif");
+        var outputPath = Path.Combine(tempDirectory, "output.motif");
+        const string importedAt = "2026-03-12T00:00:00.0000000+00:00";
+
+        try
+        {
+            await CreateMotifArchiveWithSupplementalEntriesAsync(
+                inputPath,
+                CreateScore("Preserved Sources"),
+                extensions: [],
+                supplementalEntries: [],
+                sources:
+                [
+                    (".gp", "source-input", importedAt)
+                ]);
+
+            var readBack = await MotifScore.OpenAsync(inputPath, TestContext.Current.CancellationToken);
+            await MotifScore.SaveAsync(readBack, outputPath, TestContext.Current.CancellationToken);
+
+            using var archive = ZipFile.OpenRead(outputPath);
+            using var manifest = JsonDocument.Parse(await ReadArchiveEntryTextAsync(archive, "manifest.json"));
+            var sources = manifest.RootElement.GetProperty("sources").EnumerateArray().ToArray();
+
+            sources.Should().ContainSingle();
+            sources[0].GetProperty("format").GetString().Should().Be(".gp");
+            sources[0].GetProperty("fileName").GetString().Should().Be("source-input");
+            sources[0].GetProperty("importedAt").GetString().Should().Be(importedAt);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Archive_contributors_must_write_inside_their_own_namespace()
     {
         using var registration = MotifScore.RegisterArchiveContributor(new InvalidArchiveContributor());
@@ -188,6 +226,42 @@ public class MotifScoreTests
             streamRead.Title.Should().Be("Custom Format");
             handler.Writer.StreamWrites.Should().Be(1);
             handler.Reader.StreamReads.Should().Be(1);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Explicit_format_path_open_populates_manifest_sources_for_extensionless_input()
+    {
+        var handler = new RecordingFormatHandler();
+        using var registration = MotifScore.RegisterHandler(handler);
+
+        var tempDirectory = CreateTempDirectory();
+        var inputPath = Path.Combine(tempDirectory, "score");
+        var motifPath = Path.Combine(tempDirectory, "score.motif");
+
+        try
+        {
+            await File.WriteAllTextAsync(inputPath, "Extensionless Import", TestContext.Current.CancellationToken);
+
+            var score = await MotifScore.OpenAsync(inputPath, "fake", TestContext.Current.CancellationToken);
+            score.Title.Should().Be("Extensionless Import");
+            handler.Reader.PathReads.Should().Be(1);
+            handler.Reader.StreamReads.Should().Be(0);
+
+            await MotifScore.SaveAsync(score, motifPath, TestContext.Current.CancellationToken);
+
+            using var archive = ZipFile.OpenRead(motifPath);
+            using var manifest = JsonDocument.Parse(await ReadArchiveEntryTextAsync(archive, "manifest.json"));
+            var sources = manifest.RootElement.GetProperty("sources").EnumerateArray().ToArray();
+
+            sources.Should().ContainSingle();
+            sources[0].GetProperty("format").GetString().Should().Be(".fake");
+            sources[0].GetProperty("fileName").GetString().Should().Be("score");
+            DateTimeOffset.TryParse(sources[0].GetProperty("importedAt").GetString(), out _).Should().BeTrue();
         }
         finally
         {
@@ -340,7 +414,8 @@ public class MotifScoreTests
         string filePath,
         Score score,
         IReadOnlyList<string> extensions,
-        IReadOnlyList<ArchiveEntry> supplementalEntries)
+        IReadOnlyList<ArchiveEntry> supplementalEntries,
+        IReadOnlyList<(string Format, string FileName, string ImportedAt)>? sources = null)
     {
         await using var destination = File.Create(filePath);
         using var archive = new ZipArchive(destination, ZipArchiveMode.Create, leaveOpen: true);
@@ -354,7 +429,13 @@ public class MotifScoreTests
                 {
                     formatVersion = "1.0",
                     createdBy = "Motif.Core",
-                    sources = Array.Empty<object>(),
+                    sources = (sources ?? [])
+                        .Select(source => new
+                        {
+                            format = source.Format,
+                            fileName = source.FileName,
+                            importedAt = source.ImportedAt
+                        }),
                     extensions
                 },
                 options: (JsonSerializerOptions?)null,

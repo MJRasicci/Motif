@@ -64,6 +64,9 @@ extension handlers such as Guitar Pro at runtime. `.motif` archives always conta
 `resources/` entries so format packages can round-trip supplementary data without the
 core archive writer knowing format details. Guitar Pro now uses those locations to carry
 raw GP metadata plus non-score archive files through `.gp -> .motif -> .gp` workflows.
+When a score is opened from a file path, `.motif` manifests also record the imported
+format and source file name in `manifest.sources`, including extensionless workflows that
+use an explicit format hint.
 Use `GuitarProWriter` directly, or resolve it through `MotifScore.CreateWriter("gp")`,
 when you need Guitar Pro-specific write diagnostics or explicit source-archive control
 such as the CLI `--source-gp` workflow.

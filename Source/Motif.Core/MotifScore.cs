@@ -15,13 +15,32 @@ public static class MotifScore
     /// <returns>A mapped <see cref="Score"/> instance.</returns>
     /// <exception cref="ArgumentException"><paramref name="filePath"/> is null, empty, whitespace, or has no extension.</exception>
     /// <exception cref="InvalidOperationException">No handler is registered for the inferred extension.</exception>
-    public static async ValueTask<Score> OpenAsync(string filePath, CancellationToken cancellationToken = default)
+    public static ValueTask<Score> OpenAsync(string filePath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
 
         var formatHint = FormatHandlerRegistry.GetFormatHintFromPath(filePath);
+        return OpenAsync(filePath, formatHint, cancellationToken);
+    }
+
+    /// <summary>
+    /// Opens a score from the provided file path using an explicit format hint.
+    /// </summary>
+    /// <param name="filePath">The source file path.</param>
+    /// <param name="formatHint">A file extension or format token such as <c>.gp</c> or <c>json</c>.</param>
+    /// <param name="cancellationToken">Cancels the read operation.</param>
+    /// <returns>A mapped <see cref="Score"/> instance.</returns>
+    /// <exception cref="ArgumentException"><paramref name="filePath"/> or <paramref name="formatHint"/> is null, empty, or whitespace.</exception>
+    /// <exception cref="InvalidOperationException">No handler is registered for <paramref name="formatHint"/>.</exception>
+    public static async ValueTask<Score> OpenAsync(string filePath, string formatHint, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(formatHint);
+
         var reader = CreateReader(formatHint);
-        return await reader.ReadAsync(filePath, cancellationToken).ConfigureAwait(false);
+        var score = await reader.ReadAsync(filePath, cancellationToken).ConfigureAwait(false);
+        MotifArchiveProvenance.AttachImportedSource(score, formatHint, filePath);
+        return score;
     }
 
     /// <summary>

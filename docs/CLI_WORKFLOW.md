@@ -102,6 +102,8 @@ For Guitar Pro sources, those entries now include raw GP metadata plus non-score
 files, so `motif-cli song.motif output.gp` can reconstruct the full `.gp` archive
 without `--source-gp`. `--source-gp` remains the explicit template override for JSON-only
 workflows and other cases where no preserved GP archive payload is attached.
+`.motif` manifests also record the imported source format and file name in
+`manifest.sources`, including extensionless routes that rely on `--input-format`.
 That also means you can edit `score.json` inside an existing `.motif` archive and export
 back to `.gp` while keeping the preserved Guitar Pro archive payload, as long as the
 archive's `extensions/` and `resources/` entries remain intact.

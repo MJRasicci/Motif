@@ -27,6 +27,11 @@ supplementary archive data through the new contributor hook. Guitar Pro now uses
 hook to persist its raw metadata plus non-score archive files in
 `extensions/guitarpro.json` and `resources/guitarpro/...`.
 
+If your source path is extensionless or uses a custom suffix, call
+`MotifScore.OpenAsync("song.data", "gp", cancellationToken: cancellationToken)`.
+When that score is later saved as `.motif`, the archive manifest records the imported
+format and source file name in `manifest.sources`.
+
 ## When To Use Guitar Pro APIs Directly
 
 Use `GuitarProReader` and `GuitarProWriter` directly, or resolve them through

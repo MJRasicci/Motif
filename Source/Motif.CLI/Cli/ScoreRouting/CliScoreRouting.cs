@@ -15,7 +15,6 @@ internal static class CliScoreRouting
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
 
-        using var source = File.OpenRead(filePath);
-        return await MotifScore.OpenAsync(source, format.ToToken(), cancellationToken).ConfigureAwait(false);
+        return await MotifScore.OpenAsync(filePath, format.ToToken(), cancellationToken).ConfigureAwait(false);
     }
 }

@@ -192,6 +192,7 @@ public class CliRoundTripRegressionTests
         var extensionlessJsonPath = Path.Combine(tempDir, "schema-reference.output");
         var extensionlessGpifPath = Path.Combine(tempDir, "schema-reference.raw");
         var jsonFromGpifPath = Path.Combine(tempDir, "schema-reference.from-gpif.output");
+        var motifFromGpPath = Path.Combine(tempDir, "schema-reference.from-gp.archive");
         var extensionlessMotifPath = Path.Combine(tempDir, "schema-reference.archive");
         var jsonFromMotifPath = Path.Combine(tempDir, "schema-reference.from-motif.output");
 
@@ -205,6 +206,19 @@ public class CliRoundTripRegressionTests
 
             var mappedJson = await File.ReadAllTextAsync(extensionlessJsonPath, TestContext.Current.CancellationToken);
             mappedJson.Should().Contain("\"Tracks\"");
+
+            await RunDotNetAsync(
+                $"run --project \"{toolProject}\" -- \"{extensionlessGpPath}\" \"{motifFromGpPath}\" --input-format gp --output-format motif",
+                repoRoot);
+
+            using (var motifArchive = ZipFile.OpenRead(motifFromGpPath))
+            using (var manifest = JsonDocument.Parse(await ReadArchiveEntryTextAsync(motifArchive, "manifest.json", TestContext.Current.CancellationToken)))
+            {
+                var sources = manifest.RootElement.GetProperty("sources").EnumerateArray().ToArray();
+                sources.Should().ContainSingle();
+                sources[0].GetProperty("format").GetString().Should().Be(".gp");
+                sources[0].GetProperty("fileName").GetString().Should().Be("schema-reference.input");
+            }
 
             await RunDotNetAsync(
                 $"run --project \"{toolProject}\" -- \"{sourceGp}\" \"{extensionlessGpifPath}\" --output-format gpif",
@@ -280,6 +294,10 @@ public class CliRoundTripRegressionTests
                 using var manifest = JsonDocument.Parse(await ReadArchiveEntryTextAsync(motifArchive, "manifest.json", TestContext.Current.CancellationToken));
                 manifest.RootElement.GetProperty("formatVersion").GetString().Should().Be("1.0");
                 manifest.RootElement.GetProperty("createdBy").GetString().Should().Be("Motif.Core");
+                var sources = manifest.RootElement.GetProperty("sources").EnumerateArray().ToArray();
+                sources.Should().ContainSingle();
+                sources[0].GetProperty("format").GetString().Should().Be(".gp");
+                sources[0].GetProperty("fileName").GetString().Should().Be("schema-reference.gp");
                 manifest.RootElement.GetProperty("extensions").EnumerateArray()
                     .Select(element => element.GetString())
                     .Should().Contain("guitarpro");
@@ -310,6 +328,12 @@ public class CliRoundTripRegressionTests
             {
                 motifFromGpifArchive.GetEntry("manifest.json").Should().NotBeNull();
                 motifFromGpifArchive.GetEntry("score.json").Should().NotBeNull();
+
+                using var manifest = JsonDocument.Parse(await ReadArchiveEntryTextAsync(motifFromGpifArchive, "manifest.json", TestContext.Current.CancellationToken));
+                var sources = manifest.RootElement.GetProperty("sources").EnumerateArray().ToArray();
+                sources.Should().ContainSingle();
+                sources[0].GetProperty("format").GetString().Should().Be(".gpif");
+                sources[0].GetProperty("fileName").GetString().Should().Be("schema-reference.score.gpif");
             }
 
             await RunDotNetAsync(
