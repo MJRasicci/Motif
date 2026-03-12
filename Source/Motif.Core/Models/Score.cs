@@ -1,13 +1,28 @@
 namespace Motif.Models;
 
+/// <summary>
+/// Root domain object representing a score and its global timeline state.
+/// </summary>
 public sealed class Score : ExtensibleModel
 {
+    /// <summary>
+    /// Gets or sets the display title of the score.
+    /// </summary>
     public string Title { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Gets or sets the primary artist or composer attribution.
+    /// </summary>
     public string Artist { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Gets or sets the album or collection name associated with the score.
+    /// </summary>
     public string Album { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Gets or sets the track list contained in the score.
+    /// </summary>
     public IReadOnlyList<Track> Tracks { get; set; } = Array.Empty<Track>();
 
     /// <summary>
