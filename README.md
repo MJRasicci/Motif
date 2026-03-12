@@ -125,6 +125,8 @@ Formats are inferred from file extensions when possible. Use `--input-format` an
 `--output-format` when extensions are missing or ambiguous. Boolean flags follow the same
 pattern everywhere: `--flag`, `--flag=true`, and `--flag=false`.
 
+Known current fidelity limitations are tracked in [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md).
+
 ## Supported Formats
 
 | Format | Read | Write | Notes |

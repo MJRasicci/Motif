@@ -157,3 +157,6 @@ Common `RawFidelity` warnings include:
 
 These warnings mean the writer produced valid GP output, but some raw XML or reference
 fidelity had to be regenerated instead of preserved exactly.
+
+For the current accepted byte-level GPIF formatting drift boundary, see
+[KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md).

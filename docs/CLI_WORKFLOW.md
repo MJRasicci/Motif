@@ -107,6 +107,7 @@ dotnet run --project Source/Motif.CLI -- score.json output.gp \
 
 If a write only produces info-level diagnostics, such as XML-equivalent GPIF byte drift,
 `--diagnostics-out` still writes those entries even when the warning count is zero.
+That accepted formatting difference is documented in [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md).
 
 `--source-gp` is only valid for `.gp` output.
 `--source-score` is only valid for `.motif`, `.gp`, and `.gpif` output, and batch mode
