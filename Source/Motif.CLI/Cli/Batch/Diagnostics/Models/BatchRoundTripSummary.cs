@@ -26,6 +26,10 @@ internal sealed class BatchRoundTripSummary
 
     public int FilesWithDiagnostics { get; init; }
 
+    public int FilesWithWarnings { get; init; }
+
+    public int FilesWithInfos { get; init; }
+
     public int FilesWithByteDrift { get; init; }
 
     public int TotalDiagnostics { get; init; }

@@ -21,6 +21,8 @@ internal sealed class BatchRoundTripSummaryBuilder
     private int succeededFiles;
     private int cleanFiles;
     private int filesWithDiagnostics;
+    private int filesWithWarnings;
+    private int filesWithInfos;
     private int filesWithByteDrift;
     private int totalDiagnostics;
     private int totalWarnings;
@@ -38,6 +40,16 @@ internal sealed class BatchRoundTripSummaryBuilder
         else
         {
             filesWithDiagnostics++;
+        }
+
+        if (fileResult.WarningCount > 0)
+        {
+            filesWithWarnings++;
+        }
+
+        if (fileResult.InfoCount > 0)
+        {
+            filesWithInfos++;
         }
 
         if (!fileResult.GpifBytesIdentical)
@@ -108,6 +120,8 @@ internal sealed class BatchRoundTripSummaryBuilder
             FailedFiles = failedFiles,
             CleanFiles = cleanFiles,
             FilesWithDiagnostics = filesWithDiagnostics,
+            FilesWithWarnings = filesWithWarnings,
+            FilesWithInfos = filesWithInfos,
             FilesWithByteDrift = filesWithByteDrift,
             TotalDiagnostics = totalDiagnostics,
             TotalWarnings = totalWarnings,

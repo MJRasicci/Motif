@@ -176,6 +176,10 @@ This workflow writes:
 - `batch-diagnostics.jsonl`
 - `batch-failures.jsonl` when failures occur
 
+The summary separates `FilesWithWarnings` from `FilesWithInfos`, so corpus runs can
+distinguish real warning cases from info-only formatting drift such as XML-equivalent
+`RAW_GPIF_BYTE_DRIFT`.
+
 You can also copy the summary to a custom path:
 
 ```bash

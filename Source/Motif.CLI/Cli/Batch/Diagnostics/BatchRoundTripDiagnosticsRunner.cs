@@ -301,6 +301,8 @@ internal sealed class BatchRoundTripDiagnosticsRunner
         builder.AppendLine($"FailedFiles: {summary.FailedFiles}");
         builder.AppendLine($"CleanFiles: {summary.CleanFiles}");
         builder.AppendLine($"FilesWithDiagnostics: {summary.FilesWithDiagnostics}");
+        builder.AppendLine($"FilesWithWarnings: {summary.FilesWithWarnings}");
+        builder.AppendLine($"FilesWithInfos: {summary.FilesWithInfos}");
         builder.AppendLine($"FilesWithByteDrift: {summary.FilesWithByteDrift}");
         builder.AppendLine($"TotalDiagnostics: {summary.TotalDiagnostics}");
         builder.AppendLine($"TotalWarnings: {summary.TotalWarnings}");
