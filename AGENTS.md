@@ -27,13 +27,17 @@ Core as a file-format wrapper should be rejected.
 ## What This Repo Does
 
 Motif exposes a format-agnostic `Score` domain model and a Guitar Pro extension capable of
-reading and writing Guitar Pro archives and raw GPIF XML.
+reading and writing GP7+ Guitar Pro archives and raw GPIF XML.
 
 Current end-to-end supported formats:
 
-- `.gp`
+- `.gp` (GP7+ only)
 - `.gpif`
 - Motif model mapped JSON
+
+Do not treat older pre-GP7 Guitar Pro formats such as `.gpx` as supported. While some of
+those formats may be convertible or structurally similar, they are intentionally out of
+scope for the current product direction.
 
 Do not treat MusicXML, MXL, or MIDI as supported until real implementation and tests exist.
 

@@ -3,6 +3,9 @@
 This document covers the recommended application workflow when using `Motif` and
 `Motif.Extensions.GuitarPro`.
 
+Guitar Pro support currently means GP7+ `.gp` archives and raw `.gpif`. Older pre-GP7
+formats such as `.gpx` are intentionally unsupported at this time.
+
 ## Read, Edit, Write
 
 ```csharp
@@ -95,6 +98,8 @@ directly, then rebuild playback traversal when those edits affect navigation.
 Scores read from `.gp` carry Guitar Pro extensions that preserve raw-format fidelity where
 possible. JSON round-trips do not include those extensions, so fidelity-sensitive edits
 should choose one of these workflows deliberately.
+This applies to GP7+ `.gp` sources; older Guitar Pro generations are intentionally out of
+scope for the current library.
 
 ### 1. Keep Attached Fidelity
 

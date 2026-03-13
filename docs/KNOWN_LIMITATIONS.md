@@ -1,5 +1,18 @@
 # Known Limitations
 
+## Older Guitar Pro Formats
+
+Motif does not currently support older pre-GP7 Guitar Pro formats such as `.gpx`.
+
+- Supported Guitar Pro inputs today are GP7+ `.gp` archives and raw `.gpif`.
+- Rationale: Motif's primary use case is modern inter-application workflows around the
+  current Guitar Pro generation, and Guitar Pro itself can convert older files forward
+  into the GP7+ format family.
+- Implication: older files downloaded from the web may need to be opened and re-saved or
+  exported from Guitar Pro before Motif can consume them.
+
+This is intentional for now, not an unplanned parser gap.
+
 ## Guitar Pro GPIF Byte-Level Drift
 
 Motif currently treats exact raw GPIF byte preservation as out of scope for v1 when the

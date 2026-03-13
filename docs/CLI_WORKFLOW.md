@@ -1,6 +1,6 @@
 # Motif CLI Workflow
 
-Use `motif-cli` to convert between Guitar Pro archives, raw GPIF XML, native `.motif`
+Use `motif-cli` to convert between Guitar Pro GP7+ archives, raw GPIF XML, native `.motif`
 archives, and mapped JSON.
 
 Run during development:
@@ -23,16 +23,18 @@ Formats are inferred from extensions when possible. Use `--input-format` and
 `--output-format` when the file names do not make the route obvious. Standard
 score reads and non-templated GP/GPIF writes use the same `MotifScore` handler
 registry as the library API.
+Supported Guitar Pro inputs here mean GP7+ `.gp` archives and raw `.gpif`; older
+pre-GP7 formats such as `.gpx` are intentionally unsupported.
 
 ## Single-File Workflows
 
-Export a `.gp` archive to editable mapped JSON:
+Export a GP7+ `.gp` archive to editable mapped JSON:
 
 ```bash
 dotnet run --project Source/Motif.CLI -- input.gp score.json
 ```
 
-Extract raw GPIF from a `.gp` archive:
+Extract raw GPIF from a GP7+ `.gp` archive:
 
 ```bash
 dotnet run --project Source/Motif.CLI -- input.gp score.gpif
@@ -59,13 +61,13 @@ Read a native `.motif` archive back to mapped JSON:
 dotnet run --project Source/Motif.CLI -- score.motif score.json
 ```
 
-Write a `.gp` archive from mapped JSON using the built-in default archive template:
+Write a GP7+ `.gp` archive from mapped JSON using the built-in default archive template:
 
 ```bash
 dotnet run --project Source/Motif.CLI -- score.json output.gp
 ```
 
-Write a `.gp` archive while preserving non-score archive payload from another file:
+Write a GP7+ `.gp` archive while preserving non-score archive payload from another file:
 
 ```bash
 dotnet run --project Source/Motif.CLI -- score.json output.gp \
@@ -119,6 +121,9 @@ For Guitar Pro sources, those entries now include raw GP metadata plus non-score
 files, so `motif-cli song.motif output.gp` can reconstruct the full `.gp` archive
 without `--source-gp`. `--source-gp` remains the explicit template override for JSON-only
 workflows and other cases where no preserved GP archive payload is attached.
+Older pre-GP7 Guitar Pro formats, including `.gpx`, are intentionally out of scope; use
+Guitar Pro's own conversion/export features first if you need those files in the
+supported GP7+ `.gp` / `.gpif` workflow.
 `--source-score` fills the remaining standalone JSON gap by reopening an existing source
 score, reattaching its preserved archive context and Guitar Pro fidelity state onto the
 edited mapped JSON score, and then writing from that enriched score.
@@ -217,6 +222,8 @@ Constraints:
 ## Notes
 
 - Supported formats are `json`, `gp`, `gpif`, and `motif`
+- `gp` means the GP7+ Guitar Pro archive format; older pre-GP7 formats such as `.gpx`
+  are intentionally unsupported today
 - MusicXML, MXL, and MIDI are not supported by the current CLI
 - Boolean flags consistently support `--flag`, `--flag=true`, and `--flag=false`
 - `--format` remains an alias for `--output-format`

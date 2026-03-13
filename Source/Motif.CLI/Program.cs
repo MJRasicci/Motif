@@ -476,12 +476,14 @@ FORMAT ROUTING
   Use --input-format / --output-format when extensions are missing or ambiguous.
   Standard score reads and non-templated GP/GPIF writes use the same MotifScore
   handler registry as the library API.
+  Guitar Pro support here means GP7+ .gp archives and raw .gpif.
+  Older pre-GP7 formats such as .gpx are intentionally unsupported.
   --format remains an alias for --output-format.
   --from-json remains a compatibility alias for --input-format json.
 
 SINGLE FILE
   motif-cli song.gp
-    Read a .gp file and export mapped score JSON.
+    Read a GP7+ .gp file and export mapped score JSON.
     Output: song.mapped.json
 
   motif-cli song.gp song.motif
@@ -495,7 +497,7 @@ SINGLE FILE
 
   motif-cli song.gp song.score.gpif
   motif-cli song.gp --output-format gpif
-    Extract the raw GPIF XML embedded in the .gp archive.
+    Extract the raw GPIF XML embedded in the GP7+ .gp archive.
 
   motif-cli song.gpif song.json
   motif-cli song.json song.score.gpif
