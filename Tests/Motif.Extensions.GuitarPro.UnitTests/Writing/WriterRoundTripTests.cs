@@ -41,6 +41,42 @@ public class WriterRoundTripTests
     }
 
     [Fact]
+    public async Task Writer_creates_gp_archive_that_reader_can_open_for_empty_score()
+    {
+        var score = new Score
+        {
+            Title = "Empty",
+            Artist = "GPIO",
+            Album = "Tests"
+        };
+
+        var outFile = Path.Combine(Path.GetTempPath(), $"gpio-empty-roundtrip-{Guid.NewGuid():N}.gp");
+        try
+        {
+            var writer = new Motif.Extensions.GuitarPro.GuitarProWriter();
+            await writer.WriteAsync(score, outFile, TestContext.Current.CancellationToken);
+
+            File.Exists(outFile).Should().BeTrue();
+
+            var reader = new Motif.Extensions.GuitarPro.GuitarProReader();
+            var readBack = await reader.ReadAsync(outFile, cancellationToken: TestContext.Current.CancellationToken);
+
+            readBack.Title.Should().Be("Empty");
+            readBack.Artist.Should().Be("GPIO");
+            readBack.Album.Should().Be("Tests");
+            readBack.Tracks.Should().BeEmpty();
+            readBack.TimelineBars.Should().BeEmpty();
+        }
+        finally
+        {
+            if (File.Exists(outFile))
+            {
+                File.Delete(outFile);
+            }
+        }
+    }
+
+    [Fact]
     public async Task Writer_and_reader_support_stream_based_core_contracts()
     {
         var score = CreateRoundTripScore();

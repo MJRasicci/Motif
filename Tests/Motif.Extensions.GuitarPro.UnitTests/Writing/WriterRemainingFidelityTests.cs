@@ -249,6 +249,80 @@ public class WriterRemainingFidelityTests
     }
 
     [Fact]
+    public async Task Navigation_jumps_and_alternate_endings_round_trip_through_write_path()
+    {
+        var score = new Score
+        {
+            TimelineBars =
+            [
+                new TimelineBar
+                {
+                    Index = 0,
+                    TimeSignature = "4/4",
+                    RepeatStart = true,
+                    Target = "Segno"
+                },
+                new TimelineBar
+                {
+                    Index = 1,
+                    TimeSignature = "4/4",
+                    AlternateEndings = "1"
+                },
+                new TimelineBar
+                {
+                    Index = 2,
+                    TimeSignature = "4/4",
+                    AlternateEndings = "2",
+                    RepeatEnd = true,
+                    RepeatEndAttributePresent = true,
+                    RepeatCount = 2,
+                    RepeatCountAttributePresent = true,
+                    Jump = "DaSegno"
+                },
+                new TimelineBar
+                {
+                    Index = 3,
+                    TimeSignature = "4/4",
+                    Jump = "DaCapo"
+                }
+            ],
+            Tracks =
+            [
+                HierarchyTestHelpers.SingleStaffTrack(
+                    0,
+                    "Track",
+                    new StaffMeasure { Index = 0, StaffIndex = 0, Beats = [] },
+                    new StaffMeasure { Index = 1, StaffIndex = 0, Beats = [] },
+                    new StaffMeasure { Index = 2, StaffIndex = 0, Beats = [] },
+                    new StaffMeasure { Index = 3, StaffIndex = 0, Beats = [] })
+            ]
+        };
+
+        var gpif = await RoundTripThroughWriteText(score);
+        var document = XDocument.Parse(gpif);
+        var masterBars = document.Root!.Element("MasterBars")!.Elements("MasterBar").ToArray();
+
+        masterBars.Should().HaveCount(4);
+        masterBars[0].Element("Directions")!.Element("Target")!.Value.Should().Be("Segno");
+        masterBars[1].Element("AlternateEndings")!.Value.Should().Be("1");
+        masterBars[2].Element("AlternateEndings")!.Value.Should().Be("2");
+        masterBars[2].Element("Directions")!.Element("Jump")!.Value.Should().Be("DaSegno");
+        masterBars[2].Element("Repeat")!.Attribute("end")!.Value.Should().Be("true");
+        masterBars[2].Element("Repeat")!.Attribute("count")!.Value.Should().Be("2");
+        masterBars[3].Element("Directions")!.Element("Jump")!.Value.Should().Be("DaCapo");
+
+        var remapped = await DeserializeAndMap(gpif);
+        remapped.TimelineBars.Should().HaveCount(4);
+        remapped.TimelineBars[0].Target.Should().Be("Segno");
+        remapped.TimelineBars[1].AlternateEndings.Should().Be("1");
+        remapped.TimelineBars[2].AlternateEndings.Should().Be("2");
+        remapped.TimelineBars[2].Jump.Should().Be("DaSegno");
+        remapped.TimelineBars[2].RepeatEnd.Should().BeTrue();
+        remapped.TimelineBars[2].RepeatCount.Should().Be(2);
+        remapped.TimelineBars[3].Jump.Should().Be("DaCapo");
+    }
+
+    [Fact]
     public async Task Packed_structural_node_shapes_round_trip_through_json_write_path()
     {
         const string gpif = """

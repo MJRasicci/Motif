@@ -248,6 +248,43 @@ public class WriterReferenceReuseTests
     }
 
     [Fact]
+    public async Task Unmapper_preserves_eleven_eight_timeline_state_across_large_track_sets()
+    {
+        var score = new Score
+        {
+            TimelineBars =
+            [
+                new TimelineBar
+                {
+                    Index = 0,
+                    TimeSignature = "11/8"
+                }
+            ],
+            Tracks = Enumerable.Range(0, 12)
+                .Select(trackId => HierarchyTestHelpers.SingleStaffTrack(
+                    trackId,
+                    $"Track {trackId}",
+                    new StaffMeasure
+                    {
+                        Index = 0,
+                        StaffIndex = 0,
+                        Beats = []
+                    }))
+                .ToArray()
+        };
+
+        var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
+
+        result.Diagnostics.Warnings.Should().BeEmpty();
+        result.RawDocument.Tracks.Should().HaveCount(12);
+        result.RawDocument.MasterTrack.TrackIds.Should().Equal(Enumerable.Range(0, 12));
+        result.RawDocument.MasterBars.Should().ContainSingle();
+        result.RawDocument.MasterBars[0].Time.Should().Be("11/8");
+        SplitRefs(result.RawDocument.MasterBars[0].BarsReferenceList)
+            .Should().Equal(Enumerable.Range(0, 12));
+    }
+
+    [Fact]
     public async Task Unmapper_does_not_copy_master_bar_xproperties_onto_written_bars()
     {
         var score = new Score
