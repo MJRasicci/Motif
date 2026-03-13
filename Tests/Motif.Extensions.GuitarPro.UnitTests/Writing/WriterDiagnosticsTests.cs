@@ -8,6 +8,7 @@ using Motif.Models;
 using Motif.Extensions.GuitarPro.Models.Raw;
 using Motif.Extensions.GuitarPro.Models.Write;
 using System.IO.Compression;
+using System.Linq;
 using System.Text;
 using System.Xml.Linq;
 
@@ -83,6 +84,22 @@ public class WriterDiagnosticsTests
     }
 
     [Fact]
+    public async Task Invalidated_guitar_pro_source_fidelity_still_round_trips_core_structure()
+    {
+        var fixturePath = GuitarProFixture.PathFor("test.gp");
+        var reader = new GuitarProReader();
+        var original = await reader.ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
+        var invalidated = await reader.ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
+
+        invalidated.InvalidateGuitarProExtensions();
+
+        var (result, roundTripped) = await UnmapSerializeAndRemapAsync(invalidated);
+
+        result.Diagnostics.Warnings.Select(w => w.Code).Should().Contain("GP_SOURCE_FIDELITY_INVALIDATED");
+        AssertCoreInvariants(original, roundTripped);
+    }
+
+    [Fact]
     public async Task Unmapper_warns_when_guitar_pro_reattachment_was_partial_before_write()
     {
         var fixturePath = GuitarProFixture.PathFor("test.gp");
@@ -130,6 +147,51 @@ public class WriterDiagnosticsTests
     }
 
     [Fact]
+    public async Task Partial_guitar_pro_reattachment_still_round_trips_core_structure()
+    {
+        var fixturePath = GuitarProFixture.PathFor("test.gp");
+        var sourceScore = await new GuitarProReader().ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
+        var sourceTrack = sourceScore.Tracks[0];
+        var sourceMeasure = sourceTrack.PrimaryMeasure(0);
+
+        var editedScore = new Score
+        {
+            Tracks =
+            [
+                HierarchyTestHelpers.SingleStaffTrack(
+                    sourceTrack.Id,
+                    sourceTrack.Name,
+                    new StaffMeasure
+                    {
+                        Index = 999,
+                        StaffIndex = 0,
+                        Beats =
+                        [
+                            new Beat
+                            {
+                                Id = -1,
+                                Notes = [new Note { Id = -2 }]
+                            }
+                        ]
+                    },
+                    new StaffMeasure
+                    {
+                        Index = sourceMeasure.Index,
+                        StaffIndex = 0,
+                        Beats = sourceMeasure.Beats.Select(CloneBeat).ToArray()
+                    })
+            ]
+        };
+
+        editedScore.ReattachGuitarProExtensionsFrom(sourceScore);
+
+        var (result, roundTripped) = await UnmapSerializeAndRemapAsync(editedScore);
+
+        result.Diagnostics.Warnings.Select(w => w.Code).Should().Contain("GP_EXTENSION_REATTACHMENT_PARTIAL");
+        AssertCoreInvariants(editedScore, roundTripped);
+    }
+
+    [Fact]
     public async Task Unmapper_warns_when_guitar_pro_extension_graph_is_partial_without_explicit_state_markers()
     {
         var fixturePath = GuitarProFixture.PathFor("test.gp");
@@ -143,6 +205,20 @@ public class WriterDiagnosticsTests
             entry.Code == "GP_EXTENSION_GRAPH_PARTIAL"
             && entry.Category == "RawFidelity"
             && entry.Message.Contains("notes", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Partial_guitar_pro_extension_graph_still_round_trips_core_structure()
+    {
+        var fixturePath = GuitarProFixture.PathFor("test.gp");
+        var score = await new GuitarProReader().ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
+
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].RemoveExtension<GpNoteExtension>();
+
+        var (result, roundTripped) = await UnmapSerializeAndRemapAsync(score);
+
+        result.Diagnostics.Warnings.Select(w => w.Code).Should().Contain("GP_EXTENSION_GRAPH_PARTIAL");
+        AssertCoreInvariants(score, roundTripped);
     }
 
     [Fact]
@@ -647,6 +723,78 @@ public class WriterDiagnosticsTests
         var raw = await new XmlGpifDeserializer().DeserializeAsync(stream, TestContext.Current.CancellationToken);
         return await new DefaultScoreMapper().MapAsync(raw, TestContext.Current.CancellationToken);
     }
+
+    private static async Task<(WriteResult Result, Score RoundTripped)> UnmapSerializeAndRemapAsync(Score score)
+    {
+        var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
+        var gpifBytes = await SerializeRawAsync(result.RawDocument);
+        var roundTripped = await DeserializeAndMapAsync(Encoding.UTF8.GetString(gpifBytes));
+        return (result, roundTripped);
+    }
+
+    private static void AssertCoreInvariants(Score expected, Score actual)
+    {
+        if (expected.TimelineBars.Count > 0)
+        {
+            actual.TimelineBars.Count.Should().Be(expected.TimelineBars.Count);
+        }
+
+        actual.Tracks.Should().HaveCount(expected.Tracks.Count);
+        BuildTrackMetrics(actual).Should().Equal(BuildTrackMetrics(expected));
+    }
+
+    private static TrackMetrics[] BuildTrackMetrics(Score score)
+        => score.Tracks
+            .OrderBy(track => track.Id)
+            .Select(track => new TrackMetrics(
+                TrackId: track.Id,
+                StaffCount: track.Staves.Count,
+                MeasureShapeSignature: string.Join(
+                    "|",
+                    track.Staves
+                        .OrderBy(staff => staff.StaffIndex)
+                        .Select(staff => $"{staff.StaffIndex}:{string.Join(",", staff.Measures.OrderBy(measure => measure.Index).Select(MeasureShapeSignature))}")),
+                BeatCount: EnumerateTrackBeats(track).Count(),
+                NoteCount: EnumerateTrackBeats(track).SelectMany(beat => beat.Notes).Count(),
+                MidiSignature: string.Join(
+                    ",",
+                    EnumerateTrackBeats(track)
+                        .SelectMany(beat => beat.Notes)
+                        .Select(note => note.MidiPitch?.ToString() ?? "null")),
+                SlideNotes: EnumerateTrackBeats(track).SelectMany(beat => beat.Notes).Count(note => note.Articulation.Slides.Count > 0),
+                HarmonicNotes: EnumerateTrackBeats(track).SelectMany(beat => beat.Notes).Count(note => note.Articulation.Harmonic is not null),
+                BendNotes: EnumerateTrackBeats(track).SelectMany(beat => beat.Notes).Count(note => note.Articulation.Bend is not null),
+                TieOriginNotes: EnumerateTrackBeats(track).SelectMany(beat => beat.Notes).Count(note => note.Articulation.TieOrigin),
+                TieDestinationNotes: EnumerateTrackBeats(track).SelectMany(beat => beat.Notes).Count(note => note.Articulation.TieDestination)))
+            .ToArray();
+
+    private static IEnumerable<Beat> EnumerateTrackBeats(Track track)
+        => track.Staves
+            .OrderBy(staff => staff.StaffIndex)
+            .SelectMany(staff => staff.Measures)
+            .OrderBy(measure => measure.Index)
+            .SelectMany(EnumerateMeasureBeats);
+
+    private static IEnumerable<Beat> EnumerateMeasureBeats(StaffMeasure measure)
+        => measure.Voices.Count > 0
+            ? measure.Voices.OrderBy(voice => voice.VoiceIndex).SelectMany(voice => voice.Beats)
+            : measure.Beats;
+
+    private static string MeasureShapeSignature(StaffMeasure measure)
+        => $"{EnumerateMeasureBeats(measure).Count()}x{EnumerateMeasureBeats(measure).SelectMany(beat => beat.Notes).Count()}";
+
+    private readonly record struct TrackMetrics(
+        int TrackId,
+        int StaffCount,
+        string MeasureShapeSignature,
+        int BeatCount,
+        int NoteCount,
+        string MidiSignature,
+        int SlideNotes,
+        int HarmonicNotes,
+        int BendNotes,
+        int TieOriginNotes,
+        int TieDestinationNotes);
 
     private static Beat CloneBeat(Beat beat)
         => new()
