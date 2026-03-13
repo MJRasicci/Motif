@@ -596,21 +596,80 @@ internal sealed class XmlGpifSerializer : IGpifSerializer
             var props = new XElement("Properties");
             foreach (var kv in s.Properties)
             {
-                props.Add(new XElement("Property", new XAttribute("name", kv.Key), new XElement("Value", kv.Value)));
-            }
+                if (ShouldSkipGeneratedStaffProperty(kv.Key))
+                {
+                    continue;
+                }
 
-            if (s.TuningPitches.Length > 0)
-            {
-                props.Add(new XElement("Property", new XAttribute("name", "Tuning"), new XElement("Value", string.Join(' ', s.TuningPitches))));
+                props.Add(new XElement("Property", new XAttribute("name", kv.Key), new XElement("Value", kv.Value)));
             }
 
             if (s.CapoFret.HasValue)
             {
-                props.Add(new XElement("Property", new XAttribute("name", "CapoFret"), new XElement("Value", s.CapoFret.Value)));
+                props.Add(new XElement("Property", new XAttribute("name", "CapoFret"), new XElement("Fret", s.CapoFret.Value)));
+            }
+
+            if (s.FretCount.HasValue)
+            {
+                props.Add(new XElement("Property", new XAttribute("name", "FretCount"), new XElement("Number", s.FretCount.Value)));
+            }
+
+            if (s.PartialCapoFret.HasValue)
+            {
+                props.Add(new XElement("Property", new XAttribute("name", "PartialCapoFret"), new XElement("Fret", s.PartialCapoFret.Value)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(s.PartialCapoStringFlags))
+            {
+                props.Add(new XElement("Property", new XAttribute("name", "PartialCapoStringFlags"), new XElement("Bitset", s.PartialCapoStringFlags)));
+            }
+
+            if (s.TuningPitches.Length > 0)
+            {
+                props.Add(new XElement(
+                    "Property",
+                    new XAttribute("name", "Tuning"),
+                    new XElement("Pitches", string.Join(' ', s.TuningPitches)),
+                    s.EmitTuningFlatElement ? new XElement("Flat", string.Empty) : null,
+                    new XElement("Instrument", s.TuningInstrument ?? string.Empty),
+                    new XElement("Label", s.TuningLabel ?? string.Empty),
+                    s.TuningLabelVisible.HasValue
+                        ? new XElement("LabelVisible", s.TuningLabelVisible.Value.ToString().ToLowerInvariant())
+                        : null));
+            }
+
+            if (s.EmitChordCollection)
+            {
+                props.Add(new XElement("Property", new XAttribute("name", "ChordCollection"), new XElement("Items")));
+            }
+
+            if (s.EmitChordWorkingSet)
+            {
+                props.Add(new XElement("Property", new XAttribute("name", "ChordWorkingSet"), new XElement("Items")));
+            }
+
+            if (s.EmitDiagramCollection)
+            {
+                props.Add(new XElement("Property", new XAttribute("name", "DiagramCollection"), new XElement("Items")));
+            }
+
+            if (s.EmitDiagramWorkingSet)
+            {
+                props.Add(new XElement("Property", new XAttribute("name", "DiagramWorkingSet"), new XElement("Items")));
+            }
+
+            if (s.EmitTuningFlatProperty)
+            {
+                props.Add(new XElement("Property", new XAttribute("name", "TuningFlat"), new XElement("Enable")));
             }
 
             if (props.HasElements)
             {
+                if (!string.IsNullOrWhiteSpace(s.Name))
+                {
+                    props.Add(new XElement("Name", s.Name));
+                }
+
                 staff.Add(props);
             }
 
@@ -619,6 +678,18 @@ internal sealed class XmlGpifSerializer : IGpifSerializer
 
         return root;
     }
+
+    private static bool ShouldSkipGeneratedStaffProperty(string propertyName)
+        => propertyName.Equals("Tuning", StringComparison.OrdinalIgnoreCase)
+           || propertyName.Equals("CapoFret", StringComparison.OrdinalIgnoreCase)
+           || propertyName.Equals("FretCount", StringComparison.OrdinalIgnoreCase)
+           || propertyName.Equals("PartialCapoFret", StringComparison.OrdinalIgnoreCase)
+           || propertyName.Equals("PartialCapoStringFlags", StringComparison.OrdinalIgnoreCase)
+           || propertyName.Equals("ChordCollection", StringComparison.OrdinalIgnoreCase)
+           || propertyName.Equals("ChordWorkingSet", StringComparison.OrdinalIgnoreCase)
+           || propertyName.Equals("DiagramCollection", StringComparison.OrdinalIgnoreCase)
+           || propertyName.Equals("DiagramWorkingSet", StringComparison.OrdinalIgnoreCase)
+           || propertyName.Equals("TuningFlat", StringComparison.OrdinalIgnoreCase);
 
     private static XElement BuildBar(GpifBar b)
         => PreserveSourceElementXmlIfEquivalent(b.Xml, BuildBarCore(b));

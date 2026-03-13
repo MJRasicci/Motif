@@ -158,7 +158,33 @@ public sealed class StaffMetadata
 
     public int[] TuningPitches { get; set; } = Array.Empty<int>();
 
+    public string TuningInstrument { get; set; } = string.Empty;
+
+    public string TuningLabel { get; set; } = string.Empty;
+
+    public bool? TuningLabelVisible { get; set; }
+
+    public bool EmitTuningFlatElement { get; set; }
+
+    public bool EmitTuningFlatProperty { get; set; }
+
     public int? CapoFret { get; set; }
+
+    public int? FretCount { get; set; }
+
+    public int? PartialCapoFret { get; set; }
+
+    public string PartialCapoStringFlags { get; set; } = string.Empty;
+
+    public bool EmitChordCollection { get; set; }
+
+    public bool EmitChordWorkingSet { get; set; }
+
+    public bool EmitDiagramCollection { get; set; }
+
+    public bool EmitDiagramWorkingSet { get; set; }
+
+    public string Name { get; set; } = string.Empty;
 
     public IReadOnlyDictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
 

@@ -891,7 +891,13 @@ internal sealed class XmlGpifDeserializer : IGpifDeserializer
         return staves.Elements("Staff")
             .Select(staff =>
             {
-                var props = ParsePropertyDictionary(staff.Element("Properties"));
+                var propertiesElement = staff.Element("Properties");
+                var props = ParsePropertyDictionary(propertiesElement);
+                var tuningProperty = FindLastProperty(propertiesElement, "Tuning");
+                var capoProperty = FindLastProperty(propertiesElement, "CapoFret");
+                var fretCountProperty = FindLastProperty(propertiesElement, "FretCount");
+                var partialCapoFretProperty = FindLastProperty(propertiesElement, "PartialCapoFret");
+                var partialCapoFlagsProperty = FindLastProperty(propertiesElement, "PartialCapoStringFlags");
 
                 props.TryGetValue("Tuning", out var tuningRaw);
                 var tuningPitches = SplitInts(tuningRaw);
@@ -904,13 +910,31 @@ internal sealed class XmlGpifDeserializer : IGpifDeserializer
                 }
 
                 props.TryGetValue("CapoFret", out var capoRaw);
+                var tuningInstrument = tuningProperty?.Element("Instrument")?.Value?.Trim() ?? string.Empty;
+                var tuningLabel = tuningProperty?.Element("Label")?.Value?.Trim() ?? string.Empty;
+                var tuningLabelVisible = TryParseNullableBool(tuningProperty?.Element("LabelVisible")?.Value);
 
                 return new GpifStaff
                 {
                     Id = TryParseNullableInt(staff.Attribute("id")?.Value),
                     Cref = staff.Attribute("cref")?.Value ?? string.Empty,
                     TuningPitches = tuningPitches,
-                    CapoFret = TryParseNullableInt(capoRaw),
+                    TuningInstrument = tuningInstrument,
+                    TuningLabel = tuningLabel,
+                    TuningLabelVisible = tuningLabelVisible,
+                    EmitTuningFlatElement = tuningProperty?.Element("Flat") is not null,
+                    EmitTuningFlatProperty = FindLastProperty(propertiesElement, "TuningFlat")?.Element("Enable") is not null,
+                    CapoFret = TryParseNullableInt(capoProperty?.Element("Fret")?.Value) ?? TryParseNullableInt(capoRaw),
+                    FretCount = TryParseNullableInt(fretCountProperty?.Element("Number")?.Value),
+                    PartialCapoFret = TryParseNullableInt(partialCapoFretProperty?.Element("Fret")?.Value),
+                    PartialCapoStringFlags = partialCapoFlagsProperty?.Element("Bitset")?.Value?.Trim()
+                        ?? partialCapoFlagsProperty?.Element("Flags")?.Value?.Trim()
+                        ?? string.Empty,
+                    EmitChordCollection = FindLastProperty(propertiesElement, "ChordCollection") is not null,
+                    EmitChordWorkingSet = FindLastProperty(propertiesElement, "ChordWorkingSet") is not null,
+                    EmitDiagramCollection = FindLastProperty(propertiesElement, "DiagramCollection") is not null,
+                    EmitDiagramWorkingSet = FindLastProperty(propertiesElement, "DiagramWorkingSet") is not null,
+                    Name = propertiesElement?.Element("Name")?.Value ?? string.Empty,
                     Properties = props,
                     Xml = staff.ToString(SaveOptions.DisableFormatting)
                 };

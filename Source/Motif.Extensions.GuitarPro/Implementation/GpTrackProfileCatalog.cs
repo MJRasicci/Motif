@@ -239,7 +239,7 @@ internal static class GpTrackProfileCatalog
             InstrumentFamilyKind.Guitar,
             "Steel Guitar",
             "steelGuitar",
-            "Steel Guitar",
+            "Steel Mart",
             "Steel Mart",
             "Stringed/Acoustic Guitars/Steel Guitar",
             25,
@@ -368,6 +368,7 @@ internal static class GpTrackProfileCatalog
             ChannelBank = "Drumkit-Master",
             ChannelStripVersion = "E56",
             ChannelStripParameters = "0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0 0.5 0.5 0.795 0.5 0.5 0.5",
+            ChannelStripAutomations = CreateDefaultChannelStripAutomations(),
             SoundRsePickupsOverloudPosition = string.Empty,
             SoundRsePickupsVolumes = string.Empty,
             SoundRsePickupsTones = string.Empty,
@@ -505,6 +506,7 @@ internal static class GpTrackProfileCatalog
             ChannelBank = "German-APiano",
             ChannelStripVersion = "E56",
             ChannelStripParameters = "0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0 0.5 0.5 0.795 0.5 0.5 0.5",
+            ChannelStripAutomations = CreateDefaultChannelStripAutomations(),
             PlayingStyle = "Default",
             PlaybackState = "Default",
             AudioEngineState = "RSE",
@@ -527,7 +529,14 @@ internal static class GpTrackProfileCatalog
         int[] tuningPitches,
         int transposeOctave,
         string clef)
-        => new()
+    {
+        var isFrettedString = family is InstrumentFamilyKind.Guitar
+            or InstrumentFamilyKind.Bass
+            or InstrumentFamilyKind.Ukulele
+            or InstrumentFamilyKind.Mandolin
+            or InstrumentFamilyKind.Banjo;
+
+        return new GpTrackProfile
         {
             Family = family,
             Kind = kind,
@@ -546,17 +555,36 @@ internal static class GpTrackProfileCatalog
             ChannelBank = soundbankPatch,
             ChannelStripVersion = "E56",
             ChannelStripParameters = "0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0 0.5 0.5 0.795 0.5 0.5 0.5",
+            ChannelStripAutomations = CreateDefaultChannelStripAutomations(),
             SoundRsePickupsOverloudPosition = "0",
             SoundRsePickupsVolumes = "1 1",
             SoundRsePickupsTones = "1 1",
+            TrackColor = isFrettedString ? "237 116 116" : string.Empty,
+            SystemsDefaultLayout = isFrettedString ? "3" : string.Empty,
+            SystemsLayout = isFrettedString ? "2" : string.Empty,
+            AutoBrush = isFrettedString,
+            PalmMute = isFrettedString ? 0.3m : null,
+            AutoAccentuation = isFrettedString ? 0.2m : null,
             PlayingStyle = "StringedPick",
+            UseOneChannelPerString = isFrettedString,
+            IconId = isFrettedString ? 1 : null,
+            ForcedSound = isFrettedString ? -1 : null,
             PlaybackState = "Default",
             AudioEngineState = "RSE",
+            LyricsDispatched = isFrettedString,
+            DefaultLyricsLineCount = isFrettedString ? 5 : 0,
+            InstrumentArticulations = isFrettedString
+                ? CreateDefaultPitchedArticulations()
+                : Array.Empty<InstrumentArticulationMetadata>(),
+            SoundEffectChain = kind == InstrumentKind.SteelStringGuitar
+                ? CreateSteelStringEffectChain()
+                : Array.Empty<RseEffectMetadata>(),
             PrimaryChannel = 0,
             SecondaryChannel = 1,
             ForceOneChannelPerString = false,
             DefaultTuningPitches = tuningPitches,
-            DefaultTuningLabel = "Standard",
+            DefaultTuningLabel = string.Empty,
+            DefaultTuningName = isFrettedString ? "Standard" : string.Empty,
             TuningInstrument = family switch
             {
                 InstrumentFamilyKind.Guitar => "Guitar",
@@ -564,10 +592,20 @@ internal static class GpTrackProfileCatalog
                 InstrumentFamilyKind.BowedStrings => instrumentSetName,
                 _ => instrumentSetName
             },
+            DefaultCapoFret = isFrettedString ? 0 : null,
+            DefaultFretCount = isFrettedString ? 24 : null,
+            DefaultPartialCapoFret = isFrettedString ? 0 : null,
+            IncludeChordCollection = isFrettedString,
+            IncludeChordWorkingSet = isFrettedString,
+            IncludeDiagramCollection = isFrettedString,
+            IncludeDiagramWorkingSet = isFrettedString,
+            IncludeTuningFlatElement = isFrettedString,
+            IncludeTuningFlatProperty = isFrettedString,
             TransposeChromatic = 0,
             TransposeOctave = transposeOctave,
             Clef = clef
         };
+    }
 
     private static GpTrackProfile CreateKeyboardProfile(
         InstrumentKind kind,
@@ -596,6 +634,7 @@ internal static class GpTrackProfileCatalog
             ChannelBank = soundbankPatch,
             ChannelStripVersion = "E56",
             ChannelStripParameters = "0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0 0.5 0.5 0.795 0.5 0.5 0.5",
+            ChannelStripAutomations = CreateDefaultChannelStripAutomations(),
             PlayingStyle = "Default",
             PlaybackState = "Default",
             AudioEngineState = "RSE",
@@ -604,6 +643,65 @@ internal static class GpTrackProfileCatalog
             ForceOneChannelPerString = false,
             Clef = "G2"
         };
+
+    private static InstrumentArticulationMetadata[] CreateDefaultPitchedArticulations()
+        =>
+        [
+            new InstrumentArticulationMetadata
+            {
+                Name = string.Empty,
+                StaffLine = 0,
+                Noteheads = "noteheadBlack noteheadHalf noteheadWhole",
+                TechniquePlacement = "outside",
+                TechniqueSymbol = string.Empty,
+                InputMidiNumbers = string.Empty,
+                OutputRseSound = string.Empty,
+                OutputMidiNumber = 0
+            }
+        ];
+
+    private static RseEffectMetadata[] CreateSteelStringEffectChain()
+        =>
+        [
+            new RseEffectMetadata
+            {
+                Id = "E30_EqGEq",
+                Parameters = "0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.685714"
+            },
+            new RseEffectMetadata
+            {
+                Id = "M07_DynamicClassicDynamic",
+                Parameters = "0.5 0.5 1"
+            },
+            new RseEffectMetadata
+            {
+                Id = "M04_StudioReverbRoomAmbience",
+                Parameters = "1 0.43 0.4 0.5 0.2"
+            }
+        ];
+
+    private static AutomationMetadata[] CreateDefaultChannelStripAutomations()
+        =>
+        [
+            new AutomationMetadata
+            {
+                Type = "DSPParam_11",
+                Linear = false,
+                Bar = 0,
+                Position = 0,
+                Visible = true,
+                Value = "0.5"
+            },
+            new AutomationMetadata
+            {
+                Type = "DSPParam_12",
+                Linear = false,
+                Bar = 0,
+                Position = 0,
+                Visible = true,
+                Value = "0.795"
+            }
+        ];
 }
 
 internal sealed class GpTrackProfile
@@ -644,17 +742,45 @@ internal sealed class GpTrackProfile
 
     public string ChannelStripParameters { get; init; } = string.Empty;
 
+    public IReadOnlyList<AutomationMetadata> ChannelStripAutomations { get; init; } = Array.Empty<AutomationMetadata>();
+
     public string SoundRsePickupsOverloudPosition { get; init; } = string.Empty;
 
     public string SoundRsePickupsVolumes { get; init; } = string.Empty;
 
     public string SoundRsePickupsTones { get; init; } = string.Empty;
 
+    public string TrackColor { get; init; } = string.Empty;
+
+    public string SystemsDefaultLayout { get; init; } = string.Empty;
+
+    public string SystemsLayout { get; init; } = string.Empty;
+
+    public bool AutoBrush { get; init; }
+
+    public decimal? PalmMute { get; init; }
+
+    public decimal? AutoAccentuation { get; init; }
+
     public string PlayingStyle { get; init; } = string.Empty;
+
+    public bool UseOneChannelPerString { get; init; }
+
+    public int? IconId { get; init; }
+
+    public int? ForcedSound { get; init; }
 
     public string PlaybackState { get; init; } = string.Empty;
 
     public string AudioEngineState { get; init; } = string.Empty;
+
+    public bool LyricsDispatched { get; init; }
+
+    public int DefaultLyricsLineCount { get; init; }
+
+    public IReadOnlyList<InstrumentArticulationMetadata> InstrumentArticulations { get; init; } = Array.Empty<InstrumentArticulationMetadata>();
+
+    public IReadOnlyList<RseEffectMetadata> SoundEffectChain { get; init; } = Array.Empty<RseEffectMetadata>();
 
     public int PrimaryChannel { get; init; }
 
@@ -666,7 +792,27 @@ internal sealed class GpTrackProfile
 
     public string DefaultTuningLabel { get; init; } = string.Empty;
 
+    public string DefaultTuningName { get; init; } = string.Empty;
+
     public string TuningInstrument { get; init; } = string.Empty;
+
+    public int? DefaultCapoFret { get; init; }
+
+    public int? DefaultFretCount { get; init; }
+
+    public int? DefaultPartialCapoFret { get; init; }
+
+    public bool IncludeChordCollection { get; init; }
+
+    public bool IncludeChordWorkingSet { get; init; }
+
+    public bool IncludeDiagramCollection { get; init; }
+
+    public bool IncludeDiagramWorkingSet { get; init; }
+
+    public bool IncludeTuningFlatElement { get; init; }
+
+    public bool IncludeTuningFlatProperty { get; init; }
 
     public int TransposeChromatic { get; init; }
 

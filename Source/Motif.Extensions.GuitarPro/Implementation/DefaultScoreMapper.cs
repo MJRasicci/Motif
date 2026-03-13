@@ -172,7 +172,20 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                         Id = s.Id,
                         Cref = s.Cref,
                         TuningPitches = s.TuningPitches,
+                        TuningInstrument = s.TuningInstrument,
+                        TuningLabel = s.TuningLabel,
+                        TuningLabelVisible = s.TuningLabelVisible,
+                        EmitTuningFlatElement = s.EmitTuningFlatElement,
+                        EmitTuningFlatProperty = s.EmitTuningFlatProperty,
                         CapoFret = s.CapoFret,
+                        FretCount = s.FretCount,
+                        PartialCapoFret = s.PartialCapoFret,
+                        PartialCapoStringFlags = s.PartialCapoStringFlags,
+                        EmitChordCollection = s.EmitChordCollection,
+                        EmitChordWorkingSet = s.EmitChordWorkingSet,
+                        EmitDiagramCollection = s.EmitDiagramCollection,
+                        EmitDiagramWorkingSet = s.EmitDiagramWorkingSet,
+                        Name = s.Name,
                         Properties = s.Properties,
                         Xml = s.Xml
                     }).ToArray()
@@ -312,7 +325,9 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 staff.Tuning = new StaffTuning
                 {
                     Pitches = staffMetadata.TuningPitches.ToArray(),
-                    Label = trackMetadata.TuningLabel
+                    Label = string.IsNullOrWhiteSpace(staffMetadata.Name)
+                        ? trackMetadata.TuningLabel
+                        : staffMetadata.Name
                 };
                 staff.CapoFret = staffMetadata.CapoFret;
 
@@ -360,7 +375,20 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             Id = source.Id,
             Cref = source.Cref,
             TuningPitches = source.TuningPitches.ToArray(),
+            TuningInstrument = source.TuningInstrument,
+            TuningLabel = source.TuningLabel,
+            TuningLabelVisible = source.TuningLabelVisible,
+            EmitTuningFlatElement = source.EmitTuningFlatElement,
+            EmitTuningFlatProperty = source.EmitTuningFlatProperty,
             CapoFret = source.CapoFret,
+            FretCount = source.FretCount,
+            PartialCapoFret = source.PartialCapoFret,
+            PartialCapoStringFlags = source.PartialCapoStringFlags,
+            EmitChordCollection = source.EmitChordCollection,
+            EmitChordWorkingSet = source.EmitChordWorkingSet,
+            EmitDiagramCollection = source.EmitDiagramCollection,
+            EmitDiagramWorkingSet = source.EmitDiagramWorkingSet,
+            Name = source.Name,
             Properties = source.Properties.ToDictionary(kv => kv.Key, kv => kv.Value),
             Xml = source.Xml
         };

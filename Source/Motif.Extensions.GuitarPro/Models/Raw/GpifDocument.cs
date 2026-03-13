@@ -197,7 +197,33 @@ internal sealed class GpifStaff
 
     public int[] TuningPitches { get; init; } = Array.Empty<int>();
 
+    public string TuningInstrument { get; init; } = string.Empty;
+
+    public string TuningLabel { get; init; } = string.Empty;
+
+    public bool? TuningLabelVisible { get; init; }
+
+    public bool EmitTuningFlatElement { get; init; }
+
+    public bool EmitTuningFlatProperty { get; init; }
+
     public int? CapoFret { get; init; }
+
+    public int? FretCount { get; init; }
+
+    public int? PartialCapoFret { get; init; }
+
+    public string PartialCapoStringFlags { get; init; } = string.Empty;
+
+    public bool EmitChordCollection { get; init; }
+
+    public bool EmitChordWorkingSet { get; init; }
+
+    public bool EmitDiagramCollection { get; init; }
+
+    public bool EmitDiagramWorkingSet { get; init; }
+
+    public string Name { get; init; } = string.Empty;
 
     public IReadOnlyDictionary<string, string> Properties { get; init; } = new Dictionary<string, string>();
 

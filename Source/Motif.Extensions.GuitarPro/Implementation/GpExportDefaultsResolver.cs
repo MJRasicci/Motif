@@ -300,19 +300,24 @@ internal static class GpExportDefaultsResolver
         return new TrackMetadata
         {
             ShortName = CreateShortName(track.Name),
+            Color = profile.TrackColor,
+            SystemsDefaultLayout = profile.SystemsDefaultLayout,
+            SystemsLayout = profile.SystemsLayout,
+            PalmMute = profile.PalmMute,
+            AutoAccentuation = profile.AutoAccentuation,
+            AutoBrush = profile.AutoBrush,
             PlayingStyle = profile.PlayingStyle,
-            TuningPitches = profile.DefaultTuningPitches.ToArray(),
-            TuningInstrument = profile.TuningInstrument,
-            TuningLabel = profile.DefaultTuningLabel,
-            TuningLabelVisible = profile.DefaultTuningPitches.Length > 0 ? true : null,
-            HasTrackTuningProperty = profile.DefaultTuningPitches.Length > 0,
+            UseOneChannelPerString = profile.UseOneChannelPerString,
+            IconId = profile.IconId,
+            ForcedSound = profile.ForcedSound,
             InstrumentSet = CreateInstrumentSet(profile),
             Sounds = [CreateSound(profile)],
             Rse = new RseMetadata
             {
                 Bank = profile.ChannelBank,
                 ChannelStripVersion = profile.ChannelStripVersion,
-                ChannelStripParameters = profile.ChannelStripParameters
+                ChannelStripParameters = profile.ChannelStripParameters,
+                Automations = profile.ChannelStripAutomations.Select(CloneAutomation).ToArray()
             },
             PlaybackState = new PlaybackStateMetadata
             {
@@ -329,6 +334,7 @@ internal static class GpExportDefaultsResolver
                 SecondaryChannel = profile.SecondaryChannel,
                 ForceOneChannelPerString = profile.ForceOneChannelPerString
             },
+            Lyrics = CreateLyrics(profile),
             Transpose = new TransposeMetadata
             {
                 Chromatic = profile.TransposeChromatic,
@@ -353,20 +359,11 @@ internal static class GpExportDefaultsResolver
 
         if (track.Staves.Count == 1 && track.Staves[0].Tuning.Pitches.Count > 0)
         {
-            target.TuningPitches = track.Staves[0].Tuning.Pitches.ToArray();
-            target.TuningInstrument = string.IsNullOrWhiteSpace(target.TuningInstrument)
-                ? track.Instrument.Family switch
-                {
-                    InstrumentFamilyKind.Guitar => "Guitar",
-                    InstrumentFamilyKind.Bass => "Bass",
-                    _ => target.TuningInstrument
-                }
-                : target.TuningInstrument;
-            target.TuningLabel = string.IsNullOrWhiteSpace(track.Staves[0].Tuning.Label)
-                ? target.TuningLabel
-                : track.Staves[0].Tuning.Label;
-            target.TuningLabelVisible ??= true;
-            target.HasTrackTuningProperty = true;
+            target.HasTrackTuningProperty = false;
+            target.TuningPitches = Array.Empty<int>();
+            target.TuningInstrument = string.Empty;
+            target.TuningLabel = string.Empty;
+            target.TuningLabelVisible = null;
         }
     }
 
@@ -382,7 +379,18 @@ internal static class GpExportDefaultsResolver
                 {
                     Name = profile.InstrumentElementName,
                     Type = profile.InstrumentElementType,
-                    SoundbankName = profile.InstrumentElementSoundbankName
+                    SoundbankName = profile.InstrumentElementSoundbankName,
+                    Articulations = profile.InstrumentArticulations.Select(articulation => new InstrumentArticulationMetadata
+                    {
+                        Name = articulation.Name,
+                        StaffLine = articulation.StaffLine,
+                        Noteheads = articulation.Noteheads,
+                        TechniquePlacement = articulation.TechniquePlacement,
+                        TechniqueSymbol = articulation.TechniqueSymbol,
+                        InputMidiNumbers = articulation.InputMidiNumbers,
+                        OutputRseSound = articulation.OutputRseSound,
+                        OutputMidiNumber = articulation.OutputMidiNumber
+                    }).ToArray()
                 }
             ]
         };
@@ -406,8 +414,27 @@ internal static class GpExportDefaultsResolver
                     OverloudPosition = profile.SoundRsePickupsOverloudPosition,
                     Volumes = profile.SoundRsePickupsVolumes,
                     Tones = profile.SoundRsePickupsTones
-                }
+                },
+                EffectChain = profile.SoundEffectChain.Select(effect => new RseEffectMetadata
+                {
+                    Id = effect.Id,
+                    Bypass = effect.Bypass,
+                    Parameters = effect.Parameters
+                }).ToArray()
             }
+        };
+
+    private static LyricsMetadata CreateLyrics(GpTrackProfile profile)
+        => new()
+        {
+            Dispatched = profile.LyricsDispatched,
+            Lines = Enumerable.Range(0, profile.DefaultLyricsLineCount)
+                .Select(_ => new LyricsLineMetadata
+                {
+                    Text = string.Empty,
+                    Offset = 0
+                })
+                .ToArray()
         };
 
     private static AutomationMetadata CreateSoundAutomation(GpTrackProfile profile)
@@ -422,16 +449,40 @@ internal static class GpExportDefaultsResolver
         };
 
     private static StaffMetadata CreateStaffMetadataFromProfile(GpTrackProfile profile)
-        => new()
+    {
+        var properties = new Dictionary<string, string>();
+        if (profile.DefaultTuningPitches.Length > 0)
+        {
+            properties["Tuning"] = string.Join(' ', profile.DefaultTuningPitches);
+        }
+
+        if (profile.DefaultCapoFret.HasValue)
+        {
+            properties["CapoFret"] = profile.DefaultCapoFret.Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        return new StaffMetadata
         {
             TuningPitches = profile.DefaultTuningPitches.ToArray(),
-            Properties = profile.DefaultTuningPitches.Length == 0
-                ? new Dictionary<string, string>()
-                : new Dictionary<string, string>
-                {
-                    ["Tuning"] = string.Join(' ', profile.DefaultTuningPitches)
-                }
+            TuningInstrument = profile.TuningInstrument,
+            TuningLabel = profile.DefaultTuningLabel,
+            TuningLabelVisible = profile.DefaultTuningPitches.Length > 0 ? true : null,
+            EmitTuningFlatElement = profile.IncludeTuningFlatElement,
+            EmitTuningFlatProperty = profile.IncludeTuningFlatProperty,
+            CapoFret = profile.DefaultCapoFret,
+            FretCount = profile.DefaultFretCount,
+            PartialCapoFret = profile.DefaultPartialCapoFret,
+            PartialCapoStringFlags = profile.IncludeTuningFlatProperty && profile.DefaultTuningPitches.Length > 0
+                ? new string('0', profile.DefaultTuningPitches.Length)
+                : string.Empty,
+            EmitChordCollection = profile.IncludeChordCollection,
+            EmitChordWorkingSet = profile.IncludeChordWorkingSet,
+            EmitDiagramCollection = profile.IncludeDiagramCollection,
+            EmitDiagramWorkingSet = profile.IncludeDiagramWorkingSet,
+            Name = profile.DefaultTuningName,
+            Properties = properties
         };
+    }
 
     private static void ApplyCoreStaffSemantics(Staff staff, StaffMetadata target, GpTrackProfile profile, WriteDiagnostics diagnostics, int trackId)
     {
@@ -442,6 +493,10 @@ internal static class GpExportDefaultsResolver
                 .Where(pair => !string.Equals(pair.Key, "Tuning", StringComparison.OrdinalIgnoreCase))
                 .ToDictionary(pair => pair.Key, pair => pair.Value);
             ((Dictionary<string, string>)target.Properties)["Tuning"] = string.Join(' ', target.TuningPitches);
+            target.TuningInstrument = string.IsNullOrWhiteSpace(target.TuningInstrument)
+                ? profile.TuningInstrument
+                : target.TuningInstrument;
+            target.TuningLabelVisible ??= true;
         }
         else if (target.TuningPitches.Length == 0 && profile.DefaultTuningPitches.Length > 0)
         {
@@ -458,9 +513,19 @@ internal static class GpExportDefaultsResolver
                 path: $"/Score/Tracks[@id='{trackId}']/Staves[@index='{staff.StaffIndex}']");
         }
 
+        if (!string.IsNullOrWhiteSpace(staff.Tuning.Label))
+        {
+            target.Name = staff.Tuning.Label;
+        }
+        else if (string.IsNullOrWhiteSpace(target.Name))
+        {
+            target.Name = profile.DefaultTuningName;
+        }
+
         if (staff.CapoFret.HasValue)
         {
             target.CapoFret = staff.CapoFret;
+            target.PartialCapoFret = staff.CapoFret;
             target.Properties = target.Properties
                 .Where(pair => !string.Equals(pair.Key, "CapoFret", StringComparison.OrdinalIgnoreCase))
                 .ToDictionary(pair => pair.Key, pair => pair.Value);
@@ -756,7 +821,20 @@ internal static class GpExportDefaultsResolver
             Id = source.Id,
             Cref = source.Cref,
             TuningPitches = source.TuningPitches.ToArray(),
+            TuningInstrument = source.TuningInstrument,
+            TuningLabel = source.TuningLabel,
+            TuningLabelVisible = source.TuningLabelVisible,
+            EmitTuningFlatElement = source.EmitTuningFlatElement,
+            EmitTuningFlatProperty = source.EmitTuningFlatProperty,
             CapoFret = source.CapoFret,
+            FretCount = source.FretCount,
+            PartialCapoFret = source.PartialCapoFret,
+            PartialCapoStringFlags = source.PartialCapoStringFlags,
+            EmitChordCollection = source.EmitChordCollection,
+            EmitChordWorkingSet = source.EmitChordWorkingSet,
+            EmitDiagramCollection = source.EmitDiagramCollection,
+            EmitDiagramWorkingSet = source.EmitDiagramWorkingSet,
+            Name = source.Name,
             Properties = source.Properties.ToDictionary(pair => pair.Key, pair => pair.Value),
             Xml = source.Xml
         };
