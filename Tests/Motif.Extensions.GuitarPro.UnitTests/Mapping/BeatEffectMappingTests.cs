@@ -657,6 +657,13 @@ public class BeatEffectMappingTests
                             new Beat
                             {
                                 Id = 1,
+                                Dynamic = "PP",
+                                Golpe = "Finger",
+                                Slashed = true,
+                                Hairpin = "Crescendo",
+                                Ottavia = "8va",
+                                LegatoOrigin = true,
+                                LegatoDestination = false,
                                 Arpeggio = true,
                                 Brush = true,
                                 BrushIsUp = true,
@@ -709,6 +716,13 @@ public class BeatEffectMappingTests
             var readBack = await reader.ReadAsync(outFile, cancellationToken: TestContext.Current.CancellationToken);
 
             var beat = readBack.Tracks[0].PrimaryMeasure(0).Beats[0];
+            beat.Dynamic.Should().Be("PP");
+            beat.Golpe.Should().Be("Finger");
+            beat.Slashed.Should().BeTrue();
+            beat.Hairpin.Should().Be("Crescendo");
+            beat.Ottavia.Should().Be("8va");
+            beat.LegatoOrigin.Should().BeTrue();
+            beat.LegatoDestination.Should().BeFalse();
             beat.Arpeggio.Should().BeTrue();
             beat.Brush.Should().BeTrue();
             beat.BrushIsUp.Should().BeTrue();

@@ -49,9 +49,14 @@ public class WriterArticulationParityTests
                                             RightFingering = "M",
                                             Ornament = "Turn",
                                             LetRing = true,
+                                            Vibrato = "Wide",
                                             AntiAccent = true,
                                             PalmMuted = true,
-                                            HopoOrigin = true,
+                                            Muted = true,
+                                            Tapped = true,
+                                            LeftHandTapped = true,
+                                            Accent = 3,
+                                            TieOrigin = true,
                                             Slides = [SlideType.Shift, SlideType.OutUp],
                                             Harmonic = new Harmonic
                                             {
@@ -75,6 +80,57 @@ public class WriterArticulationParityTests
                                         }
                                     }
                                 ]
+                            },
+                            new Beat
+                            {
+                                Id = 2,
+                                Duration = 0.25m,
+                                Notes =
+                                [
+                                    new Note
+                                    {
+                                        Id = 2,
+                                        MidiPitch = 64,
+                                        Articulation = new NoteArticulation
+                                        {
+                                            TieDestination = true
+                                        }
+                                    }
+                                ]
+                            },
+                            new Beat
+                            {
+                                Id = 3,
+                                Duration = 0.25m,
+                                Notes =
+                                [
+                                    new Note
+                                    {
+                                        Id = 3,
+                                        MidiPitch = 62,
+                                        Articulation = new NoteArticulation
+                                        {
+                                            HopoOrigin = true
+                                        }
+                                    }
+                                ]
+                            },
+                            new Beat
+                            {
+                                Id = 4,
+                                Duration = 0.25m,
+                                Notes =
+                                [
+                                    new Note
+                                    {
+                                        Id = 4,
+                                        MidiPitch = 64,
+                                        Articulation = new NoteArticulation
+                                        {
+                                            HopoDestination = true
+                                        }
+                                    }
+                                ]
                             }
                         ]
                     })
@@ -91,8 +147,12 @@ public class WriterArticulationParityTests
             var reader = new Motif.Extensions.GuitarPro.GuitarProReader();
             var readBack = await reader.ReadAsync(outFile, cancellationToken: TestContext.Current.CancellationToken);
 
-            var beat = readBack.Tracks[0].PrimaryMeasure(0).Beats[0];
+            var beats = readBack.Tracks[0].PrimaryMeasure(0).Beats;
+            var beat = beats[0];
             var note = beat.Notes[0];
+            var tiedNote = beats[1].Notes[0];
+            var hopoOrigin = beats[2].Notes[0];
+            var hopoDestination = beats[3].Notes[0];
             beat.GraceType.Should().Be("BeforeBeat");
             beat.PickStrokeDirection.Should().Be("Up");
             BeatMetadataOf(beat).VibratoWithTremBarStrength.Should().Be("Slight");
@@ -105,9 +165,14 @@ public class WriterArticulationParityTests
             note.Articulation.RightFingering.Should().Be("M");
             note.Articulation.Ornament.Should().Be("Turn");
             note.Articulation.LetRing.Should().BeTrue();
+            note.Articulation.Vibrato.Should().Be("Wide");
+            note.Articulation.Accent.Should().Be(3);
             note.Articulation.AntiAccent.Should().BeTrue();
             note.Articulation.PalmMuted.Should().BeTrue();
-            note.Articulation.HopoOrigin.Should().BeTrue();
+            note.Articulation.Muted.Should().BeTrue();
+            note.Articulation.Tapped.Should().BeTrue();
+            note.Articulation.LeftHandTapped.Should().BeTrue();
+            note.Articulation.TieOrigin.Should().BeTrue();
             note.Articulation.Slides.Should().Contain([SlideType.Shift, SlideType.OutUp]);
             note.Articulation.Harmonic.Should().NotBeNull();
             note.Articulation.Harmonic!.Kind.Should().Be(HarmonicTypeKind.Artificial);
@@ -120,6 +185,16 @@ public class WriterArticulationParityTests
             note.Articulation.Bend.DestinationValue.Should().Be(1m);
             note.Articulation.Bend.MiddleOffset1.Should().Be(0.12m);
             note.Articulation.Bend.DestinationOffset.Should().Be(0.25m);
+
+            tiedNote.Articulation.TieDestination.Should().BeTrue();
+
+            hopoOrigin.Articulation.HopoOrigin.Should().BeTrue();
+            hopoOrigin.Articulation.HopoType.Should().Be(HopoTypeKind.HammerOn);
+            hopoOrigin.Articulation.HopoDestinationNoteId.Should().Be(hopoDestination.Id);
+
+            hopoDestination.Articulation.HopoDestination.Should().BeTrue();
+            hopoDestination.Articulation.HopoType.Should().Be(HopoTypeKind.HammerOn);
+            hopoDestination.Articulation.HopoOriginNoteId.Should().Be(hopoOrigin.Id);
         }
         finally
         {
