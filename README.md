@@ -33,6 +33,7 @@ instead of relying only on format-specific flags.
 | `Motif.Extensions.GuitarPro` | Guitar Pro GP7+ `.gp` / `.gpif` read-write support |
 | `Motif` | Convenience package referencing Core and Guitar Pro support |
 | `Motif.CLI` (`motif-cli`) | CLI for conversion, inspection, and batch diagnostics |
+| `Motif.SchemaExport` | Build-time JSON Schema exporter for native Motif artifacts |
 
 ## Repository Layout
 
@@ -42,6 +43,7 @@ Source/
   Motif.Core/                        Core domain model and navigation helpers
   Motif.Extensions.GuitarPro/        Guitar Pro reader/writer, mapper, raw GPIF model
   Motif.CLI/                         CLI executable project
+  Motif.SchemaExport/                Build-time JSON Schema exporter
 Tests/
   Motif.Core.UnitTests/              Core model, navigation, and serialization tests
   Motif.Extensions.GuitarPro.UnitTests/
@@ -170,6 +172,18 @@ dotnet test
 
 Coverage includes real `.gp` fixtures, mapping fidelity, write diagnostics, public API
 shape, and CLI regression tests.
+
+## Generated Schemas
+
+Normal builds now generate JSON Schema artifacts automatically into `artifacts/schema/`.
+This includes:
+
+- `artifacts/schema/manifest.schema.json`
+- `artifacts/schema/score.schema.json`
+- `artifacts/schema/guitarpro.schema.json`
+
+You do not need to run the old `Temp/schema-export/*` helpers during normal development
+builds.
 
 ## Documentation
 

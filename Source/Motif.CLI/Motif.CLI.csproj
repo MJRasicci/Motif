@@ -20,4 +20,19 @@
     <ProjectReference Include="..\Motif\Motif.csproj" />
   </ItemGroup>
 
+  <Target Name="GenerateJsonSchemasOnBuild"
+          AfterTargets="Build"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipSchemaGeneration)' != 'true'">
+    <MSBuild Projects="..\Motif.SchemaExport\Motif.SchemaExport.csproj"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);SkipSchemaGeneration=true" />
+    <MSBuild Projects="..\Motif.SchemaExport\Motif.SchemaExport.csproj"
+             Targets="GetTargetPath"
+             Properties="Configuration=$(Configuration);SkipSchemaGeneration=true">
+      <Output TaskParameter="TargetOutputs" ItemName="_SchemaExporterTargetPath" />
+    </MSBuild>
+    <MakeDir Directories="$(SchemaOutputDirectory)" />
+    <Exec Command="dotnet exec &quot;%(_SchemaExporterTargetPath.Identity)&quot; &quot;$(SchemaOutputDirectory)&quot;" />
+  </Target>
+
 </Project>

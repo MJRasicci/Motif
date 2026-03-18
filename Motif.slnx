@@ -12,6 +12,7 @@
     <Project Path="Source/Motif/Motif.csproj" />
     <Project Path="Source/Motif.Core/Motif.Core.csproj" />
     <Project Path="Source/Motif.Extensions.GuitarPro/Motif.Extensions.GuitarPro.csproj" />
+    <Project Path="Source/Motif.SchemaExport/Motif.SchemaExport.csproj" />
     <Project Path="Source/Motif.CLI/Motif.CLI.csproj" />
   </Folder>
   <Folder Name="/Tests/">
