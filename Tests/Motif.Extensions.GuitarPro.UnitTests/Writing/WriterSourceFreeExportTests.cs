@@ -29,8 +29,9 @@ public class WriterSourceFreeExportTests
 
             var readBack = await new Motif.Extensions.GuitarPro.GuitarProReader().ReadAsync(outFile, cancellationToken: TestContext.Current.CancellationToken);
 
-            readBack.TempoChanges.Should().ContainSingle();
-            readBack.TempoChanges[0].BeatsPerMinute.Should().Be(96m);
+            readBack.PointControls.Should().ContainSingle(control =>
+                control.Kind == PointControlKind.Tempo
+                && control.NumericValue == 96m);
             readBack.Tracks.Should().ContainSingle();
             readBack.Tracks[0].Instrument.Kind.Should().Be(InstrumentKind.SteelStringGuitar);
             readBack.Tracks[0].Transposition.Octave.Should().Be(-1);
@@ -67,7 +68,9 @@ public class WriterSourceFreeExportTests
             var readBack = await new Motif.Extensions.GuitarPro.GuitarProReader().ReadAsync(outFile, cancellationToken: TestContext.Current.CancellationToken);
             readBack.Tracks[0].Instrument.Kind.Should().Be(InstrumentKind.SteelStringGuitar);
             readBack.Tracks[0].Staves[0].Tuning.Pitches.Should().Equal(40, 45, 50, 55, 59, 64);
-            readBack.TempoChanges[0].BeatsPerMinute.Should().Be(96m);
+            readBack.PointControls.Should().ContainSingle(control =>
+                control.Kind == PointControlKind.Tempo
+                && control.NumericValue == 96m);
         }
         finally
         {
@@ -190,13 +193,18 @@ public class WriterSourceFreeExportTests
             Title = "Source Free Guitar",
             Artist = "Motif",
             Album = "GP Export",
-            TempoChanges =
+            PointControls =
             [
-                new TempoChange
+                new PointControlEvent
                 {
-                    BarIndex = 0,
-                    Offset = ScoreTime.Zero,
-                    BeatsPerMinute = 96m
+                    Kind = PointControlKind.Tempo,
+                    Scope = ControlScopeKind.Score,
+                    Position = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    NumericValue = 96m
                 }
             ],
             TimelineBars =

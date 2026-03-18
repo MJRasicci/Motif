@@ -102,9 +102,20 @@ public sealed class GpTimelineBarMetadata
 
     public IReadOnlyDictionary<string, string> DirectionProperties { get; set; } = new Dictionary<string, string>();
 
+    public IReadOnlyList<GpFermataMetadata> Fermatas { get; set; } = Array.Empty<GpFermataMetadata>();
+
     public IReadOnlyDictionary<string, int> XProperties { get; set; } = new Dictionary<string, int>();
 
     public string MasterBarXPropertiesXml { get; set; } = string.Empty;
+}
+
+public sealed class GpFermataMetadata
+{
+    public string Type { get; set; } = string.Empty;
+
+    public string Offset { get; set; } = string.Empty;
+
+    public decimal? Length { get; set; }
 }
 
 public sealed class GpMeasureStaffMetadata
@@ -137,11 +148,17 @@ public sealed class GpBeatMetadata
 
     public int SourceRhythmId { get; set; } = -1;
 
+    public string Dynamic { get; set; } = string.Empty;
+
     public string Golpe { get; set; } = string.Empty;
 
     public string Hairpin { get; set; } = string.Empty;
 
     public string Ottavia { get; set; } = string.Empty;
+
+    public bool? LegatoOrigin { get; set; }
+
+    public bool? LegatoDestination { get; set; }
 
     public string PickStrokeDirection { get; set; } = string.Empty;
 

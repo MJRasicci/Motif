@@ -18,7 +18,6 @@ public class ScoreJsonTests
         var beat = new Beat
         {
             Id = 100,
-            Dynamic = "mf",
             Offset = ScoreTime.Zero,
             Duration = new ScoreTime(1, 4),
             Rhythm = new RhythmValue
@@ -55,17 +54,19 @@ public class ScoreJsonTests
             Artist = "Motif",
             Album = "Tests",
             Anacrusis = true,
-            TempoChanges =
-            [
-                new TempoChange
-                {
-                    BarIndex = 0,
-                    Offset = ScoreTime.Zero,
-                    BeatsPerMinute = 120m
-                }
-            ],
             PointControls =
             [
+                new PointControlEvent
+                {
+                    Kind = PointControlKind.Tempo,
+                    Scope = ControlScopeKind.Score,
+                    Position = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    NumericValue = 120m
+                },
                 new PointControlEvent
                 {
                     Kind = PointControlKind.Dynamic,
@@ -199,11 +200,16 @@ public class ScoreJsonTests
         roundTripped!.Title.Should().Be(source.Title);
         roundTripped.Artist.Should().Be(source.Artist);
         roundTripped.Anacrusis.Should().BeTrue();
-        roundTripped.TempoChanges.Should().ContainSingle();
-        roundTripped.TempoChanges[0].BeatsPerMinute.Should().Be(120m);
-        roundTripped.PointControls.Should().HaveCount(2);
-        roundTripped.PointControls[0].Kind.Should().Be(PointControlKind.Dynamic);
-        roundTripped.PointControls[1].Placement.Should().Be("Middle");
+        roundTripped.PointControls.Should().HaveCount(3);
+        roundTripped.PointControls.Should().Contain(control =>
+            control.Kind == PointControlKind.Tempo
+            && control.NumericValue == 120m);
+        roundTripped.PointControls.Should().Contain(control =>
+            control.Kind == PointControlKind.Dynamic
+            && control.Value == "mf");
+        roundTripped.PointControls.Should().Contain(control =>
+            control.Kind == PointControlKind.Fermata
+            && control.Placement == "Middle");
         roundTripped.SpanControls.Should().ContainSingle();
         roundTripped.SpanControls[0].Kind.Should().Be(SpanControlKind.Legato);
         roundTripped.PlaybackMasterBarSequence.Should().Equal(0, 1, 0, 1, 2);
@@ -256,7 +262,7 @@ public class ScoreJsonTests
 
         properties["title"].GetString().Should().Be("Example");
         properties["timelineBars"].GetArrayLength().Should().Be(1);
-        properties["tempoChanges"].GetArrayLength().Should().Be(0);
+        properties.ContainsKey("tempoChanges").Should().BeFalse();
         properties["pointControls"].GetArrayLength().Should().Be(0);
         properties["spanControls"].GetArrayLength().Should().Be(0);
         properties["playbackMasterBarSequence"].GetArrayLength().Should().Be(0);

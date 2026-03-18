@@ -18,12 +18,14 @@ public class MutableDomainModelTests
         var timelineBar = new TimelineBar();
         var beat = new Beat();
         var note = new Note();
+        var dynamicControl = new PointControlEvent();
 
         score.Title = "Motif";
         score.Artist = "Artist";
         score.Anacrusis = true;
         score.PlaybackMasterBarSequence = [0, 1];
         score.TimelineBars = [timelineBar];
+        score.PointControls = [dynamicControl];
 
         track.Id = 1;
         track.Name = "Lead";
@@ -55,7 +57,17 @@ public class MutableDomainModelTests
         ];
 
         beat.Id = 10;
-        beat.Dynamic = "mf";
+        dynamicControl.Kind = PointControlKind.Dynamic;
+        dynamicControl.Scope = ControlScopeKind.Voice;
+        dynamicControl.TrackId = 1;
+        dynamicControl.StaffIndex = 0;
+        dynamicControl.VoiceIndex = 0;
+        dynamicControl.Position = new WrittenPosition
+        {
+            BarIndex = 0,
+            Offset = ScoreTime.Zero
+        };
+        dynamicControl.Value = "mf";
 
         note.Id = 20;
         note.Pitch = Pitch.FromMidiNumber(64);
@@ -75,12 +87,14 @@ public class MutableDomainModelTests
         score.PlaybackMasterBarSequence = [0, 1, 2];
         timelineBar.TimeSignature = "7/8";
         timelineBar.SectionLetter = "A";
+        timelineBar.Start = ScoreTime.Zero;
+        timelineBar.Duration = new ScoreTime(7, 8);
 
         track.Name = "Rhythm";
         primaryStaffMeasure.Clef = "Bass";
         secondaryStaffMeasure.Clef = "Tenor";
 
-        beat.Dynamic = "ff";
+        dynamicControl.Value = "ff";
 
         note.Pitch = new Pitch
         {
@@ -115,7 +129,8 @@ public class MutableDomainModelTests
         secondaryStaffMeasure.Clef.Should().Be("Tenor");
         primaryStaffMeasure.Beats.Should().ContainSingle().Which.Should().BeSameAs(beat);
 
-        beat.Dynamic.Should().Be("ff");
+        score.PointControls.Should().ContainSingle().Which.Should().BeSameAs(dynamicControl);
+        dynamicControl.Value.Should().Be("ff");
         beat.Notes.Should().ContainSingle().Which.Should().BeSameAs(note);
 
         note.Pitch.Should().NotBeNull();

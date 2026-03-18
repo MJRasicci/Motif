@@ -161,8 +161,12 @@ public class WriterNotationFidelityTests
         BeatMetadataOf(beat).Hairpin.Should().Be("Crescendo");
         BeatMetadataOf(beat).Variation.Should().Be("2");
         BeatMetadataOf(beat).Ottavia.Should().Be("8va");
-        beat.LegatoOrigin.Should().BeTrue();
-        beat.LegatoDestination.Should().BeFalse();
+        BeatMetadataOf(beat).LegatoOrigin.Should().BeTrue();
+        BeatMetadataOf(beat).LegatoDestination.Should().BeFalse();
+        score.SpanControls.Should().Contain(span =>
+            span.Kind == SpanControlKind.Legato
+            && span.Start.BarIndex == 0
+            && span.Start.Offset == ScoreTime.Zero);
         BeatMetadataOf(beat).LyricsXml.Should().Contain("<Lyrics>");
         BeatMetadataOf(beat).WhammyUsesElement.Should().BeTrue();
         BeatMetadataOf(beat).WhammyExtendUsesElement.Should().BeTrue();

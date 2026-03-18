@@ -87,13 +87,18 @@ public class WriterSourceFreeDefaultsTests
             Title = "Source Free Guitar",
             Artist = "Motif",
             Album = "GP Export",
-            TempoChanges =
+            PointControls =
             [
-                new TempoChange
+                new PointControlEvent
                 {
-                    BarIndex = 0,
-                    Offset = ScoreTime.Zero,
-                    BeatsPerMinute = 96m
+                    Kind = PointControlKind.Tempo,
+                    Scope = ControlScopeKind.Score,
+                    Position = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    NumericValue = 96m
                 }
             ],
             TimelineBars =

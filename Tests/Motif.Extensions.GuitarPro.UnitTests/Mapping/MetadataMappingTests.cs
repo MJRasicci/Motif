@@ -74,8 +74,6 @@ public class MetadataMappingTests
 
         var score = await reader.ReadAsync(fixturePath, cancellationToken: TestContext.Current.CancellationToken);
 
-        score.TempoChanges.Should().ContainSingle();
-        score.TempoChanges[0].BeatsPerMinute.Should().Be(120m);
         score.PointControls.Should().Contain(control =>
             control.Kind == PointControlKind.Tempo
             && control.NumericValue == 120m);
@@ -111,6 +109,22 @@ public class MetadataMappingTests
             Title = "T",
             Artist = "A",
             Album = "B",
+            PointControls =
+            [
+                new PointControlEvent
+                {
+                    Kind = PointControlKind.Fermata,
+                    Scope = ControlScopeKind.Score,
+                    Position = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = new ScoreTime(1, 2)
+                    },
+                    Value = "Short",
+                    Placement = "Middle",
+                    Length = 1.2m
+                }
+            ],
             TimelineBars =
             [
                 new TimelineBar
@@ -120,8 +134,7 @@ public class MetadataMappingTests
                     KeyAccidentalCount = 1,
                     KeyMode = "Major",
                     Jump = "DaCapo",
-                    Target = "Segno",
-                    Fermatas = [new FermataMetadata { Type = "Short", Offset = "Middle", Length = 1.2m }]
+                    Target = "Segno"
                 }
             ],
             Tracks =
@@ -407,7 +420,11 @@ public class MetadataMappingTests
             timelineBar.KeyAccidentalCount.Should().Be(1);
             timelineBar.KeyMode.Should().Be("Major");
             TimelineMetadataOf(timelineBar).KeyTransposeAs.Should().Be("C");
-            timelineBar.Fermatas.Should().ContainSingle();
+            readBack.PointControls.Should().Contain(control =>
+                control.Kind == PointControlKind.Fermata
+                && control.Position.BarIndex == 0
+                && control.Placement == "Middle"
+                && control.Length == 1.2m);
             TimelineMetadataOf(timelineBar).XProperties.Should().ContainKey("1124204545");
             measure.Clef.Should().Be("G2");
             MeasureMetadataOf(measure).Properties.Should().ContainKey("BarDisplay");

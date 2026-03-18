@@ -235,22 +235,19 @@ internal static class GpExportDefaultsResolver
         return !coreTempos.SequenceEqual(sourceTempos, StringComparer.Ordinal);
     }
 
-    private static IReadOnlyList<TempoChange> ResolveCoreTempoChanges(Score score)
-    {
-        var authoredTempoControls = score.PointControls
+    private static IReadOnlyList<ResolvedTempoChange> ResolveCoreTempoChanges(Score score)
+        => score.PointControls
             .Where(control => control.Kind == PointControlKind.Tempo && control.NumericValue.HasValue)
-            .Select(control => new TempoChange
-            {
-                BarIndex = control.Position.BarIndex,
-                Offset = control.Position.Offset,
-                BeatsPerMinute = control.NumericValue!.Value
-            })
+            .Select(control => new ResolvedTempoChange(
+                control.Position.BarIndex,
+                control.Position.Offset,
+                control.NumericValue!.Value))
             .ToArray();
 
-        return authoredTempoControls.Length > 0
-            ? authoredTempoControls
-            : score.TempoChanges;
-    }
+    private sealed record ResolvedTempoChange(
+        int BarIndex,
+        ScoreTime Offset,
+        decimal BeatsPerMinute);
 
     private static void FillMissingTrackDefaults(TrackMetadata target, GpTrackProfile profile)
     {

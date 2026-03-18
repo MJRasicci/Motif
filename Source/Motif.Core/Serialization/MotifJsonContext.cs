@@ -9,7 +9,6 @@ using System.Text.Json.Serialization;
     PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(Score))]
 [JsonSerializable(typeof(TimelineBar))]
-[JsonSerializable(typeof(TempoChange))]
 [JsonSerializable(typeof(PointControlEvent))]
 [JsonSerializable(typeof(SpanControlEvent))]
 [JsonSerializable(typeof(WrittenPosition))]

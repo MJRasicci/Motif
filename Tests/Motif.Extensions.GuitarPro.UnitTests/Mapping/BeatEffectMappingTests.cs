@@ -666,7 +666,17 @@ public class BeatEffectMappingTests
         var gpif = BuildGpif("<Dynamic>FF</Dynamic>");
 
         var score = await DeserializeAndMap(gpif);
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].Dynamic.Should().Be("FF");
+        var beat = score.Tracks[0].PrimaryMeasure(0).Beats[0];
+
+        BeatMetadataOf(beat).Dynamic.Should().Be("FF");
+        score.PointControls.Should().Contain(control =>
+            control.Kind == PointControlKind.Dynamic
+            && control.TrackId == 0
+            && control.StaffIndex == 0
+            && control.VoiceIndex == 0
+            && control.Position.BarIndex == 0
+            && control.Position.Offset == ScoreTime.Zero
+            && control.Value == "FF");
     }
 
     [Fact]
@@ -674,6 +684,23 @@ public class BeatEffectMappingTests
     {
         var score = new Score
         {
+            PointControls =
+            [
+                new PointControlEvent
+                {
+                    Kind = PointControlKind.Dynamic,
+                    Scope = ControlScopeKind.Voice,
+                    TrackId = 0,
+                    StaffIndex = 0,
+                    VoiceIndex = 0,
+                    Position = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    Value = "PP"
+                }
+            ],
             Tracks =
             [
                 HierarchyTestHelpers.SingleStaffTrack(
@@ -689,7 +716,6 @@ public class BeatEffectMappingTests
                             {
                                 Id = 1,
                                 Duration = new ScoreTime(1, 4),
-                                Dynamic = "PP",
                                 Notes =
                                 [
                                     new Note { Id = 1, Pitch = Pitch.FromMidiNumber(60) }
@@ -706,7 +732,10 @@ public class BeatEffectMappingTests
             await new Motif.Extensions.GuitarPro.GuitarProWriter().WriteAsync(score, outFile, TestContext.Current.CancellationToken);
             var readBack = await new Motif.Extensions.GuitarPro.GuitarProReader().ReadAsync(outFile, cancellationToken: TestContext.Current.CancellationToken);
 
-            readBack.Tracks[0].PrimaryMeasure(0).Beats[0].Dynamic.Should().Be("PP");
+            BeatMetadataOf(readBack.Tracks[0].PrimaryMeasure(0).Beats[0]).Dynamic.Should().Be("PP");
+            readBack.PointControls.Should().Contain(control =>
+                control.Kind == PointControlKind.Dynamic
+                && control.Value == "PP");
         }
         finally
         {
@@ -721,6 +750,67 @@ public class BeatEffectMappingTests
     {
         var score = new Score
         {
+            PointControls =
+            [
+                new PointControlEvent
+                {
+                    Kind = PointControlKind.Dynamic,
+                    Scope = ControlScopeKind.Voice,
+                    TrackId = 0,
+                    StaffIndex = 0,
+                    VoiceIndex = 0,
+                    Position = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    Value = "PP"
+                }
+            ],
+            SpanControls =
+            [
+                new SpanControlEvent
+                {
+                    Kind = SpanControlKind.Hairpin,
+                    Scope = ControlScopeKind.Voice,
+                    TrackId = 0,
+                    StaffIndex = 0,
+                    VoiceIndex = 0,
+                    Start = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    Value = "Crescendo"
+                },
+                new SpanControlEvent
+                {
+                    Kind = SpanControlKind.Ottava,
+                    Scope = ControlScopeKind.Voice,
+                    TrackId = 0,
+                    StaffIndex = 0,
+                    VoiceIndex = 0,
+                    Start = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    Value = "8va"
+                },
+                new SpanControlEvent
+                {
+                    Kind = SpanControlKind.Legato,
+                    Scope = ControlScopeKind.Voice,
+                    TrackId = 0,
+                    StaffIndex = 0,
+                    VoiceIndex = 0,
+                    Start = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    }
+                }
+            ],
             Tracks =
             [
                 HierarchyTestHelpers.SingleStaffTrack(
@@ -735,10 +825,7 @@ public class BeatEffectMappingTests
                             new Beat
                             {
                                 Id = 1,
-                                Dynamic = "PP",
                                 Slashed = true,
-                                LegatoOrigin = true,
-                                LegatoDestination = false,
                                 Arpeggio = true,
                                 Brush = true,
                                 BrushIsUp = true,
@@ -778,8 +865,6 @@ public class BeatEffectMappingTests
         };
         score.Tracks[0].PrimaryMeasure(0).Beats[0].GetOrCreateGuitarPro().Metadata.ChordId = "Dm";
         score.Tracks[0].PrimaryMeasure(0).Beats[0].GetRequiredGuitarPro().Metadata.Golpe = "Finger";
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].GetRequiredGuitarPro().Metadata.Hairpin = "Crescendo";
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].GetRequiredGuitarPro().Metadata.Ottavia = "8va";
         score.Tracks[0].PrimaryMeasure(0).Beats[0].GetRequiredGuitarPro().Metadata.BrushDurationTicks = 120;
         score.Tracks[0].PrimaryMeasure(0).Beats[0].GetRequiredGuitarPro().Metadata.TremoloValue = "1/8";
         score.Tracks[0].PrimaryMeasure(0).Beats[0].GetRequiredGuitarPro().Metadata.FreeText = "muted";
@@ -794,13 +879,13 @@ public class BeatEffectMappingTests
             var readBack = await reader.ReadAsync(outFile, cancellationToken: TestContext.Current.CancellationToken);
 
             var beat = readBack.Tracks[0].PrimaryMeasure(0).Beats[0];
-            beat.Dynamic.Should().Be("PP");
+            BeatMetadataOf(beat).Dynamic.Should().Be("PP");
             BeatMetadataOf(beat).Golpe.Should().Be("Finger");
             beat.Slashed.Should().BeTrue();
             BeatMetadataOf(beat).Hairpin.Should().Be("Crescendo");
             BeatMetadataOf(beat).Ottavia.Should().Be("8va");
-            beat.LegatoOrigin.Should().BeTrue();
-            beat.LegatoDestination.Should().BeFalse();
+            BeatMetadataOf(beat).LegatoOrigin.Should().BeTrue();
+            BeatMetadataOf(beat).LegatoDestination.Should().BeFalse();
             beat.Arpeggio.Should().BeTrue();
             beat.Brush.Should().BeTrue();
             beat.BrushIsUp.Should().BeTrue();
@@ -811,6 +896,20 @@ public class BeatEffectMappingTests
             BeatMetadataOf(beat).TremoloValue.Should().Be("1/8");
             BeatMetadataOf(beat).ChordId.Should().Be("Dm");
             BeatMetadataOf(beat).FreeText.Should().Be("muted");
+            readBack.PointControls.Should().Contain(control =>
+                control.Kind == PointControlKind.Dynamic
+                && control.Value == "PP");
+            readBack.SpanControls.Should().Contain(span =>
+                span.Kind == SpanControlKind.Hairpin
+                && span.Value == "Crescendo");
+            readBack.SpanControls.Should().Contain(span =>
+                span.Kind == SpanControlKind.Ottava
+                && span.Value == "8va");
+            readBack.SpanControls.Should().Contain(span =>
+                span.Kind == SpanControlKind.Legato
+                && span.Start.BarIndex == 0
+                && span.Start.Offset == ScoreTime.Zero
+                && span.End == null);
 
             beat.WhammyBar.Should().NotBeNull();
             beat.WhammyBar!.Enabled.Should().BeTrue();
@@ -968,17 +1067,32 @@ public class BeatEffectMappingTests
             await new Motif.Extensions.GuitarPro.GuitarProWriter().WriteAsync(score, outFile, TestContext.Current.CancellationToken);
             var readBack = await new Motif.Extensions.GuitarPro.GuitarProReader().ReadAsync(outFile, cancellationToken: TestContext.Current.CancellationToken);
 
-            readBack.TempoChanges.Should().ContainSingle();
-            readBack.TempoChanges[0].BeatsPerMinute.Should().Be(96m);
+            readBack.PointControls.Should().Contain(control =>
+                control.Kind == PointControlKind.Tempo
+                && control.NumericValue == 96m);
+            readBack.PointControls.Should().Contain(control =>
+                control.Kind == PointControlKind.Dynamic
+                && control.Value == "PP");
+            readBack.SpanControls.Should().Contain(span =>
+                span.Kind == SpanControlKind.Hairpin
+                && span.Value == "Crescendo");
+            readBack.SpanControls.Should().Contain(span =>
+                span.Kind == SpanControlKind.Ottava
+                && span.Value == "8va");
+            readBack.SpanControls.Should().Contain(span =>
+                span.Kind == SpanControlKind.Legato
+                && span.Start.Offset == ScoreTime.Zero
+                && span.End != null
+                && span.End.Offset == new ScoreTime(1, 4));
 
             var beats = readBack.Tracks[0].PrimaryMeasure(0).Voices[0].Beats;
-            beats[0].Dynamic.Should().Be("PP");
+            BeatMetadataOf(beats[0]).Dynamic.Should().Be("PP");
             BeatMetadataOf(beats[0]).Hairpin.Should().Be("Crescendo");
             BeatMetadataOf(beats[0]).Ottavia.Should().Be("8va");
-            beats[0].LegatoOrigin.Should().BeTrue();
-            beats[0].LegatoDestination.Should().BeFalse();
-            beats[1].LegatoOrigin.Should().BeFalse();
-            beats[1].LegatoDestination.Should().BeTrue();
+            BeatMetadataOf(beats[0]).LegatoOrigin.Should().BeTrue();
+            BeatMetadataOf(beats[0]).LegatoDestination.Should().BeFalse();
+            BeatMetadataOf(beats[1]).LegatoOrigin.Should().BeFalse();
+            BeatMetadataOf(beats[1]).LegatoDestination.Should().BeTrue();
         }
         finally
         {

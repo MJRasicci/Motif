@@ -31,11 +31,6 @@ public sealed class Score : ExtensibleModel
     public IReadOnlyList<TimelineBar> TimelineBars { get; set; } = Array.Empty<TimelineBar>();
 
     /// <summary>
-    /// Gets or sets score-level tempo change events.
-    /// </summary>
-    public IReadOnlyList<TempoChange> TempoChanges { get; set; } = Array.Empty<TempoChange>();
-
-    /// <summary>
     /// Gets or sets authored point controls anchored to exact written score positions.
     /// </summary>
     public IReadOnlyList<PointControlEvent> PointControls { get; set; } = Array.Empty<PointControlEvent>();

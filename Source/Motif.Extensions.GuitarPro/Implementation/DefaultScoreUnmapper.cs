@@ -492,16 +492,14 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                 staffBar,
                                 measureVoice,
                                 beat,
-                                SpanControlKind.Hairpin,
-                                beatMetadata.Hairpin);
+                                SpanControlKind.Hairpin);
                             var ottavaValue = ResolveBeatSpanValue(
                                 score,
                                 track.Id,
                                 staffBar,
                                 measureVoice,
                                 beat,
-                                SpanControlKind.Ottava,
-                                beatMetadata.Ottavia);
+                                SpanControlKind.Ottava);
                             var (legatoOrigin, legatoDestination) = ResolveBeatLegatoFlags(
                                 score,
                                 track.Id,
@@ -1376,7 +1374,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             && control.Position.Offset == beat.Offset);
 
         return string.IsNullOrWhiteSpace(authoredControl?.Value)
-            ? beat.Dynamic
+            ? string.Empty
             : authoredControl.Value;
     }
 
@@ -1386,8 +1384,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         StaffMeasure staffMeasure,
         Voice voice,
         Beat beat,
-        SpanControlKind kind,
-        string fallbackValue)
+        SpanControlKind kind)
     {
         var authoredSpan = score.SpanControls.FirstOrDefault(span =>
             span.Kind == kind
@@ -1398,7 +1395,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             && span.Start.Offset == beat.Offset);
 
         return string.IsNullOrWhiteSpace(authoredSpan?.Value)
-            ? fallbackValue
+            ? string.Empty
             : authoredSpan.Value;
     }
 
@@ -1426,7 +1423,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
 
         if (!hasOrigin && !hasDestination)
         {
-            return (beat.LegatoOrigin, beat.LegatoDestination);
+            return (null, null);
         }
 
         return (
@@ -1435,8 +1432,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
     }
 
     private static GpifFermata[] ResolveBarFermatas(Score score, TimelineBar timelineBar)
-    {
-        var authoredFermatas = score.PointControls
+        => score.PointControls
             .Where(control =>
                 control.Kind == PointControlKind.Fermata
                 && control.Position.BarIndex == timelineBar.Index)
@@ -1449,19 +1445,6 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                 Length = control.Length
             })
             .ToArray();
-
-        if (authoredFermatas.Length > 0)
-        {
-            return authoredFermatas;
-        }
-
-        return timelineBar.Fermatas.Select(f => new GpifFermata
-        {
-            Type = f.Type,
-            Offset = f.Offset,
-            Length = f.Length
-        }).ToArray();
-    }
 
     private static string ResolveFermataPlacement(ScoreTime offset, ScoreTime barDuration)
     {

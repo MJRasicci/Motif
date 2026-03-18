@@ -234,7 +234,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             AutomationsXml = source.MasterTrack.AutomationsXml,
             Automations = masterAutomations,
             AutomationTimeline = BuildAutomationTimeline(source),
-            DynamicMap = BuildDynamicMap(tracks),
+            DynamicMap = Array.Empty<DynamicEventMetadata>(),
             Anacrusis = source.MasterTrack.Anacrusis,
             RseXml = source.MasterTrack.RseXml,
             Rse = new MasterTrackRseMetadata
@@ -289,21 +289,13 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             Album = source.Score.Album,
             Tracks = tracks,
             TimelineBars = timelineBars,
-            TempoChanges = tempoMap
-                .Where(tempo => tempo.Bpm.HasValue)
-                .Select(tempo => new TempoChange
-                {
-                    BarIndex = tempo.Bar ?? 0,
-                    Offset = tempo.Offset ?? ScoreTime.Zero,
-                    BeatsPerMinute = tempo.Bpm!.Value
-                })
-                .ToArray(),
             Anacrusis = source.MasterTrack.Anacrusis
         };
 
         PopulateTimelineGeometry(score);
         score.PointControls = BuildPointControls(score, tempoMap);
         score.SpanControls = BuildSpanControls(score);
+        masterTrackMetadata.DynamicMap = BuildDynamicMap(score);
 
         ScoreNavigation.RebuildPlaybackSequence(score);
 
@@ -468,13 +460,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             Jump = masterBar.Jump,
             Target = masterBar.Target,
             KeyAccidentalCount = masterBar.KeyAccidentalCount,
-            KeyMode = masterBar.KeyMode,
-            Fermatas = masterBar.Fermatas.Select(f => new FermataMetadata
-            {
-                Type = f.Type,
-                Offset = f.Offset,
-                Length = f.Length
-            }).ToArray()
+            KeyMode = masterBar.KeyMode
         };
         timelineBar.SetExtension(new GpTimelineBarExtension
         {
@@ -488,6 +474,12 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 HasExplicitEmptySection = masterBar.HasExplicitEmptySection,
                 KeyTransposeAs = masterBar.KeyTransposeAs,
                 DirectionProperties = masterBar.DirectionProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
+                Fermatas = masterBar.Fermatas.Select(f => new GpFermataMetadata
+                {
+                    Type = f.Type,
+                    Offset = f.Offset,
+                    Length = f.Length
+                }).ToArray(),
                 XProperties = masterBar.XProperties.ToDictionary(kv => kv.Key, kv => kv.Value),
                 MasterBarXPropertiesXml = masterBar.XPropertiesXml
             }
@@ -723,10 +715,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             {
                 Id = beat.Id,
                 GraceType = beat.GraceType,
-                Dynamic = beat.Dynamic,
                 Slashed = beat.Slashed,
-                LegatoOrigin = beat.LegatoOrigin,
-                LegatoDestination = beat.LegatoDestination,
                 Slapped = beat.Slapped,
                 Popped = beat.Popped,
                 PalmMuted = notes.Any(n => n.Articulation.PalmMuted),
@@ -748,9 +737,12 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 {
                     Xml = beat.Xml,
                     SourceRhythmId = beat.RhythmRef,
+                    Dynamic = beat.Dynamic,
                     Golpe = beat.Golpe,
                     Hairpin = beat.Hairpin,
                     Ottavia = beat.Ottavia,
+                    LegatoOrigin = beat.LegatoOrigin,
+                    LegatoDestination = beat.LegatoDestination,
                     PickStrokeDirection = beat.PickStrokeDirection,
                     BrushDurationTicks = beat.BrushDurationTicks,
                     RasgueadoPattern = beat.RasgueadoPattern,
@@ -988,12 +980,29 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             .ToArray();
     }
 
-    private static IReadOnlyList<DynamicEventMetadata> BuildDynamicMap(IReadOnlyList<Track> tracks)
+    private static IReadOnlyList<DynamicEventMetadata> BuildDynamicMap(Score score)
     {
         var map = new List<DynamicEventMetadata>();
         var lastDynamicByTrackVoice = new Dictionary<(int TrackId, int VoiceIndex), string>();
+        var dynamicLookup = score.PointControls
+            .Where(control =>
+                control.Kind == PointControlKind.Dynamic
+                && !string.IsNullOrWhiteSpace(control.Value)
+                && control.TrackId.HasValue
+                && control.StaffIndex.HasValue
+                && control.VoiceIndex.HasValue)
+            .GroupBy(control => (
+                TrackId: control.TrackId!.Value,
+                StaffIndex: control.StaffIndex!.Value,
+                VoiceIndex: control.VoiceIndex!.Value,
+                BarIndex: control.Position.BarIndex,
+                control.Position.Offset))
+            .ToDictionary(
+                group => group.Key,
+                group => group.Last().Value!,
+                EqualityComparer<(int TrackId, int StaffIndex, int VoiceIndex, int BarIndex, ScoreTime Offset)>.Default);
 
-        foreach (var track in tracks.OrderBy(t => t.Id))
+        foreach (var track in score.Tracks.OrderBy(t => t.Id))
         {
             foreach (var measure in EnumeratePrimaryStaffMeasures(track))
             {
@@ -1004,7 +1013,9 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                         AppendDynamicEvents(
                             map,
                             lastDynamicByTrackVoice,
+                            dynamicLookup,
                             track.Id,
+                            measure.StaffIndex,
                             measure.Index,
                             voice.VoiceIndex,
                             voice.Beats);
@@ -1015,7 +1026,9 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                     AppendDynamicEvents(
                         map,
                         lastDynamicByTrackVoice,
+                        dynamicLookup,
                         track.Id,
+                        measure.StaffIndex,
                         measure.Index,
                         voiceIndex: 0,
                         measure.Beats);
@@ -1048,7 +1061,9 @@ internal sealed class DefaultScoreMapper : IScoreMapper
     private static void AppendDynamicEvents(
         List<DynamicEventMetadata> map,
         Dictionary<(int TrackId, int VoiceIndex), string> lastDynamicByTrackVoice,
+        IReadOnlyDictionary<(int TrackId, int StaffIndex, int VoiceIndex, int BarIndex, ScoreTime Offset), string> dynamicLookup,
         int trackId,
+        int staffIndex,
         int measureIndex,
         int voiceIndex,
         IReadOnlyList<Beat> beats)
@@ -1057,18 +1072,19 @@ internal sealed class DefaultScoreMapper : IScoreMapper
 
         foreach (var beat in beats)
         {
-            if (string.IsNullOrWhiteSpace(beat.Dynamic))
+            if (!dynamicLookup.TryGetValue((trackId, staffIndex, voiceIndex, measureIndex, beat.Offset), out var dynamic)
+                || string.IsNullOrWhiteSpace(dynamic))
             {
                 continue;
             }
 
             if (lastDynamicByTrackVoice.TryGetValue(key, out var previousDynamic)
-                && string.Equals(previousDynamic, beat.Dynamic, StringComparison.OrdinalIgnoreCase))
+                && string.Equals(previousDynamic, dynamic, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
 
-            lastDynamicByTrackVoice[key] = beat.Dynamic;
+            lastDynamicByTrackVoice[key] = dynamic;
 
             map.Add(new DynamicEventMetadata
             {
@@ -1077,8 +1093,8 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 VoiceIndex = voiceIndex,
                 BeatId = beat.Id,
                 BeatOffset = beat.Offset,
-                Dynamic = beat.Dynamic,
-                Kind = ParseDynamicKind(beat.Dynamic)
+                Dynamic = dynamic,
+                Kind = ParseDynamicKind(dynamic)
             });
         }
     }
@@ -1332,7 +1348,8 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                     {
                         foreach (var beat in voice.Beats)
                         {
-                            if (string.IsNullOrWhiteSpace(beat.Dynamic))
+                            var beatMetadata = beat.GetGuitarPro()?.Metadata;
+                            if (string.IsNullOrWhiteSpace(beatMetadata?.Dynamic))
                             {
                                 continue;
                             }
@@ -1349,7 +1366,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                                     BarIndex = measure.Index,
                                     Offset = beat.Offset
                                 },
-                                Value = beat.Dynamic
+                                Value = beatMetadata.Dynamic
                             });
                         }
                     }
@@ -1359,7 +1376,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
 
         foreach (var timelineBar in score.TimelineBars.OrderBy(bar => bar.Index))
         {
-            foreach (var fermata in timelineBar.Fermatas)
+            foreach (var fermata in timelineBar.GetGuitarPro()?.Metadata.Fermatas ?? Array.Empty<GpFermataMetadata>())
             {
                 pointControls.Add(new PointControlEvent
                 {
@@ -1436,7 +1453,10 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                                 });
                             }
 
-                            if (beat.LegatoOrigin == true)
+                            var legatoOrigin = beatExtension?.Metadata.LegatoOrigin == true;
+                            var legatoDestination = beatExtension?.Metadata.LegatoDestination == true;
+
+                            if (legatoOrigin)
                             {
                                 var end = nextBeat is null
                                     ? null
@@ -1467,7 +1487,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                                     End = end
                                 });
                             }
-                            else if (beat.LegatoDestination == true && beatIndex > 0)
+                            else if (legatoDestination && beatIndex > 0)
                             {
                                 var start = new WrittenPosition
                                 {

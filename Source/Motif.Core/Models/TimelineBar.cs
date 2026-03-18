@@ -90,8 +90,4 @@ public sealed class TimelineBar : ExtensibleModel
     /// </summary>
     public string KeyMode { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Gets or sets fermatas anchored to the bar.
-    /// </summary>
-    public IReadOnlyList<FermataMetadata> Fermatas { get; set; } = Array.Empty<FermataMetadata>();
 }

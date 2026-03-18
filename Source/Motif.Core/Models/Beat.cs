@@ -16,24 +16,9 @@ public sealed class Beat : ExtensibleModel
     public string GraceType { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the dynamic marking applied at the beat.
-    /// </summary>
-    public string Dynamic { get; set; } = string.Empty;
-
-    /// <summary>
     /// Gets or sets a value indicating whether the beat is slashed.
     /// </summary>
     public bool Slashed { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the beat starts a legato span.
-    /// </summary>
-    public bool? LegatoOrigin { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the beat ends a legato span.
-    /// </summary>
-    public bool? LegatoDestination { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the beat uses slapped technique.
