@@ -301,6 +301,10 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             Anacrusis = source.MasterTrack.Anacrusis
         };
 
+        PopulateTimelineGeometry(score);
+        score.PointControls = BuildPointControls(score, tempoMap);
+        score.SpanControls = BuildSpanControls(score);
+
         ScoreNavigation.RebuildPlaybackSequence(score);
 
         score.SetExtension(new GpScoreExtension
@@ -588,12 +592,64 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 .Select(n =>
                 {
                     var stringNumber = GetStringNumber(n);
+                    var slideKinds = ArticulationDecoders.DecodeSlides(n.Articulation.SlideFlags);
+                    var tieOriginNoteId = n.Articulation.TieDestination
+                        ? ResolveAdjacentNoteId(
+                            source,
+                            previousBeat,
+                            n,
+                            stringNumber,
+                            isStringedTrack,
+                            candidate => candidate.Articulation.TieOrigin,
+                            preferMatchingPitch: true)
+                        : null;
+                    var tieDestinationNoteId = n.Articulation.TieOrigin
+                        ? ResolveAdjacentNoteId(
+                            source,
+                            nextBeat,
+                            n,
+                            stringNumber,
+                            isStringedTrack,
+                            candidate => candidate.Articulation.TieDestination,
+                            preferMatchingPitch: true)
+                        : null;
                     var hopoOriginNoteId = n.Articulation.HopoDestination
-                        ? ResolveHopoCounterpartNoteId(source, previousBeat, stringNumber, isStringedTrack, expectOrigin: true)
+                        ? ResolveAdjacentNoteId(
+                            source,
+                            previousBeat,
+                            n,
+                            stringNumber,
+                            isStringedTrack,
+                            candidate => candidate.Articulation.HopoOrigin)
                         : null;
                     var hopoDestinationNoteId = n.Articulation.HopoOrigin
-                        ? ResolveHopoCounterpartNoteId(source, nextBeat, stringNumber, isStringedTrack, expectOrigin: false)
+                        ? ResolveAdjacentNoteId(
+                            source,
+                            nextBeat,
+                            n,
+                            stringNumber,
+                            isStringedTrack,
+                            candidate => candidate.Articulation.HopoDestination)
                         : null;
+                    var slideOriginNoteId = HasIncomingSlide(slideKinds)
+                        ? ResolveAdjacentNoteId(
+                            source,
+                            previousBeat,
+                            n,
+                            stringNumber,
+                            isStringedTrack,
+                            static _ => true)
+                        : null;
+                    var slideDestinationNoteId = HasOutgoingSlide(slideKinds)
+                        ? ResolveAdjacentNoteId(
+                            source,
+                            nextBeat,
+                            n,
+                            stringNumber,
+                            isStringedTrack,
+                            static _ => true)
+                        : null;
+                    var hopoType = InferHopoType(source, n, hopoOriginNoteId, hopoDestinationNoteId);
                     var soundingPitch = n.MidiPitch.HasValue
                         ? Pitch.FromMidiNumber(n.MidiPitch.Value)
                         : MapPitchValue(n.ConcertPitch);
@@ -626,10 +682,19 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                             LeftHandTapped = n.Articulation.LeftHandTapped,
                             HopoOrigin = n.Articulation.HopoOrigin,
                             HopoDestination = n.Articulation.HopoDestination,
-                            HopoType = InferHopoType(source, n, hopoOriginNoteId, hopoDestinationNoteId),
-                            Slides = ArticulationDecoders.DecodeSlides(n.Articulation.SlideFlags),
+                            HopoType = hopoType,
+                            Slides = slideKinds,
                             Bend = ArticulationDecoders.DecodeBend(n.Articulation, n.Articulation.TieDestination),
-                            Harmonic = ArticulationDecoders.DecodeHarmonic(n.Articulation)
+                            Harmonic = ArticulationDecoders.DecodeHarmonic(n.Articulation),
+                            Relations = BuildNoteRelations(
+                                n,
+                                hopoType,
+                                tieOriginNoteId,
+                                tieDestinationNoteId,
+                                hopoOriginNoteId,
+                                hopoDestinationNoteId,
+                                slideOriginNoteId,
+                                slideDestinationNoteId)
                         }
                     };
                     note.SetExtension(new GpNoteExtension
@@ -782,12 +847,14 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return stringProperty.Number;
     }
 
-    private static int? ResolveHopoCounterpartNoteId(
+    private static int? ResolveAdjacentNoteId(
         GpifDocument source,
         GpifBeat? adjacentBeat,
+        GpifNote note,
         int? stringNumber,
         bool isStringedTrack,
-        bool expectOrigin)
+        Func<GpifNote, bool> fallbackPredicate,
+        bool preferMatchingPitch = false)
     {
         if (adjacentBeat is null)
         {
@@ -804,6 +871,17 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             return null;
         }
 
+        if (preferMatchingPitch && note.MidiPitch.HasValue)
+        {
+            var samePitchOnString = adjacentNotes.FirstOrDefault(candidate =>
+                candidate.MidiPitch == note.MidiPitch
+                && (!isStringedTrack || !stringNumber.HasValue || GetStringNumber(candidate) == stringNumber));
+            if (samePitchOnString is not null)
+            {
+                return samePitchOnString.Id;
+            }
+        }
+
         if (isStringedTrack && stringNumber.HasValue)
         {
             var sameStringMatch = adjacentNotes
@@ -815,7 +893,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         }
 
         return adjacentNotes
-            .FirstOrDefault(n => expectOrigin ? n.Articulation.HopoOrigin : n.Articulation.HopoDestination)
+            .FirstOrDefault(fallbackPredicate)
             ?.Id;
     }
 
@@ -1094,20 +1172,393 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return midiPitch.Value - (octave * 12) + chromatic;
     }
 
+    private static IReadOnlyList<NoteRelation> BuildNoteRelations(
+        GpifNote note,
+        HopoTypeKind hopoType,
+        int? tieOriginNoteId,
+        int? tieDestinationNoteId,
+        int? hopoOriginNoteId,
+        int? hopoDestinationNoteId,
+        int? slideOriginNoteId,
+        int? slideDestinationNoteId)
+    {
+        var relations = new List<NoteRelation>();
+
+        AddRelation(relations, NoteRelationKind.Tie, tieOriginNoteId);
+        AddRelation(relations, NoteRelationKind.Tie, tieDestinationNoteId);
+
+        var hopoRelationKind = hopoType switch
+        {
+            HopoTypeKind.HammerOn => NoteRelationKind.HammerOn,
+            HopoTypeKind.PullOff => NoteRelationKind.PullOff,
+            HopoTypeKind.Legato => NoteRelationKind.Legato,
+            _ => (NoteRelationKind?)null
+        };
+        if (hopoRelationKind.HasValue)
+        {
+            AddRelation(relations, hopoRelationKind.Value, hopoOriginNoteId);
+            AddRelation(relations, hopoRelationKind.Value, hopoDestinationNoteId);
+        }
+
+        if (note.Articulation.SlideFlags.HasValue)
+        {
+            AddRelation(relations, NoteRelationKind.Slide, slideOriginNoteId);
+            AddRelation(relations, NoteRelationKind.Slide, slideDestinationNoteId);
+        }
+
+        return relations;
+    }
+
+    private static void AddRelation(List<NoteRelation> relations, NoteRelationKind kind, int? targetNoteId)
+    {
+        if (!targetNoteId.HasValue || relations.Any(relation => relation.Kind == kind && relation.TargetNoteId == targetNoteId.Value))
+        {
+            return;
+        }
+
+        relations.Add(new NoteRelation
+        {
+            Kind = kind,
+            TargetNoteId = targetNoteId.Value
+        });
+    }
+
+    private static bool HasIncomingSlide(IReadOnlyList<SlideType> slideKinds)
+        => slideKinds.Contains(SlideType.IntoFromAbove)
+           || slideKinds.Contains(SlideType.IntoFromBelow);
+
+    private static bool HasOutgoingSlide(IReadOnlyList<SlideType> slideKinds)
+        => slideKinds.Contains(SlideType.Shift)
+           || slideKinds.Contains(SlideType.Legato)
+           || slideKinds.Contains(SlideType.OutDown)
+           || slideKinds.Contains(SlideType.OutUp)
+           || slideKinds.Contains(SlideType.Unknown64)
+           || slideKinds.Contains(SlideType.Unknown128);
+
+    private static void PopulateTimelineGeometry(Score score)
+    {
+        var durationByBarIndex = new Dictionary<int, ScoreTime>();
+
+        foreach (var track in score.Tracks)
+        {
+            foreach (var staff in track.Staves)
+            {
+                foreach (var measure in staff.Measures)
+                {
+                    var duration = ResolveMeasureDuration(measure);
+                    if (durationByBarIndex.TryGetValue(measure.Index, out var existing) && existing >= duration)
+                    {
+                        continue;
+                    }
+
+                    durationByBarIndex[measure.Index] = duration;
+                }
+            }
+        }
+
+        var nextStart = ScoreTime.Zero;
+        foreach (var timelineBar in score.TimelineBars.OrderBy(bar => bar.Index))
+        {
+            var duration = durationByBarIndex.TryGetValue(timelineBar.Index, out var measuredDuration)
+                && measuredDuration > ScoreTime.Zero
+                ? measuredDuration
+                : ParseNominalBarDuration(timelineBar.TimeSignature);
+
+            timelineBar.Start = nextStart;
+            timelineBar.Duration = duration;
+            nextStart += duration;
+        }
+    }
+
+    private static ScoreTime ResolveMeasureDuration(StaffMeasure measure)
+    {
+        if (measure.Voices.Count > 0)
+        {
+            return measure.Voices
+                .Select(voice => ResolveBeatSequenceDuration(voice.Beats))
+                .DefaultIfEmpty(ScoreTime.Zero)
+                .Max();
+        }
+
+        return ResolveBeatSequenceDuration(measure.Beats);
+    }
+
+    private static ScoreTime ResolveBeatSequenceDuration(IReadOnlyList<Beat> beats)
+        => beats.Select(beat => beat.Offset + beat.Duration)
+            .DefaultIfEmpty(ScoreTime.Zero)
+            .Max();
+
+    private static ScoreTime ParseNominalBarDuration(string timeSignature)
+    {
+        var parts = timeSignature.Split('/', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 2
+               && int.TryParse(parts[0], out var numerator)
+               && int.TryParse(parts[1], out var denominator)
+               && denominator > 0
+            ? new ScoreTime(numerator, denominator)
+            : ScoreTime.Zero;
+    }
+
+    private static IReadOnlyList<PointControlEvent> BuildPointControls(
+        Score score,
+        IReadOnlyList<TempoEventMetadata> tempoMap)
+    {
+        var pointControls = tempoMap
+            .Where(tempo => tempo.Bpm.HasValue)
+            .Select(tempo => new PointControlEvent
+            {
+                Kind = PointControlKind.Tempo,
+                Scope = ControlScopeKind.Score,
+                Position = new WrittenPosition
+                {
+                    BarIndex = tempo.Bar ?? 0,
+                    Offset = tempo.Offset ?? ScoreTime.Zero
+                },
+                NumericValue = tempo.Bpm!.Value
+            })
+            .ToList();
+
+        foreach (var track in score.Tracks.OrderBy(track => track.Id))
+        {
+            foreach (var staff in track.Staves.OrderBy(staff => staff.StaffIndex))
+            {
+                foreach (var measure in staff.Measures.OrderBy(measure => measure.Index))
+                {
+                    var voices = measure.Voices.Count > 0
+                        ? measure.Voices.OrderBy(voice => voice.VoiceIndex).ToArray()
+                        : [new Voice { VoiceIndex = 0, Beats = measure.Beats }];
+
+                    foreach (var voice in voices)
+                    {
+                        foreach (var beat in voice.Beats)
+                        {
+                            if (string.IsNullOrWhiteSpace(beat.Dynamic))
+                            {
+                                continue;
+                            }
+
+                            pointControls.Add(new PointControlEvent
+                            {
+                                Kind = PointControlKind.Dynamic,
+                                Scope = ControlScopeKind.Voice,
+                                TrackId = track.Id,
+                                StaffIndex = staff.StaffIndex,
+                                VoiceIndex = voice.VoiceIndex,
+                                Position = new WrittenPosition
+                                {
+                                    BarIndex = measure.Index,
+                                    Offset = beat.Offset
+                                },
+                                Value = beat.Dynamic
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach (var timelineBar in score.TimelineBars.OrderBy(bar => bar.Index))
+        {
+            foreach (var fermata in timelineBar.Fermatas)
+            {
+                pointControls.Add(new PointControlEvent
+                {
+                    Kind = PointControlKind.Fermata,
+                    Scope = ControlScopeKind.Score,
+                    Position = new WrittenPosition
+                    {
+                        BarIndex = timelineBar.Index,
+                        Offset = ResolveFermataOffset(fermata.Offset, timelineBar.Duration)
+                    },
+                    Value = fermata.Type,
+                    Placement = fermata.Offset,
+                    Length = fermata.Length
+                });
+            }
+        }
+
+        return pointControls;
+    }
+
+    private static IReadOnlyList<SpanControlEvent> BuildSpanControls(Score score)
+    {
+        var spanControls = new List<SpanControlEvent>();
+        var seenLegatoSpans = new HashSet<(int TrackId, int StaffIndex, int VoiceIndex, int StartBarIndex, ScoreTime StartOffset, int EndBarIndex, ScoreTime EndOffset)>();
+
+        foreach (var track in score.Tracks.OrderBy(track => track.Id))
+        {
+            foreach (var staff in track.Staves.OrderBy(staff => staff.StaffIndex))
+            {
+                foreach (var measure in staff.Measures.OrderBy(measure => measure.Index))
+                {
+                    var voices = measure.Voices.Count > 0
+                        ? measure.Voices.OrderBy(voice => voice.VoiceIndex).ToArray()
+                        : [new Voice { VoiceIndex = 0, Beats = measure.Beats }];
+
+                    foreach (var voice in voices)
+                    {
+                        for (var beatIndex = 0; beatIndex < voice.Beats.Count; beatIndex++)
+                        {
+                            var beat = voice.Beats[beatIndex];
+                            var beatExtension = beat.GetGuitarPro();
+                            var nextBeat = beatIndex + 1 < voice.Beats.Count ? voice.Beats[beatIndex + 1] : null;
+                            var position = new WrittenPosition
+                            {
+                                BarIndex = measure.Index,
+                                Offset = beat.Offset
+                            };
+
+                            if (!string.IsNullOrWhiteSpace(beatExtension?.Metadata.Hairpin))
+                            {
+                                spanControls.Add(new SpanControlEvent
+                                {
+                                    Kind = SpanControlKind.Hairpin,
+                                    Scope = ControlScopeKind.Voice,
+                                    TrackId = track.Id,
+                                    StaffIndex = staff.StaffIndex,
+                                    VoiceIndex = voice.VoiceIndex,
+                                    Start = position,
+                                    Value = beatExtension.Metadata.Hairpin
+                                });
+                            }
+
+                            if (!string.IsNullOrWhiteSpace(beatExtension?.Metadata.Ottavia))
+                            {
+                                spanControls.Add(new SpanControlEvent
+                                {
+                                    Kind = SpanControlKind.Ottava,
+                                    Scope = ControlScopeKind.Voice,
+                                    TrackId = track.Id,
+                                    StaffIndex = staff.StaffIndex,
+                                    VoiceIndex = voice.VoiceIndex,
+                                    Start = position,
+                                    Value = beatExtension.Metadata.Ottavia
+                                });
+                            }
+
+                            if (beat.LegatoOrigin == true)
+                            {
+                                var end = nextBeat is null
+                                    ? null
+                                    : new WrittenPosition
+                                    {
+                                        BarIndex = measure.Index,
+                                        Offset = nextBeat.Offset
+                                    };
+                                if (!RememberLegatoSpan(
+                                        seenLegatoSpans,
+                                        track.Id,
+                                        staff.StaffIndex,
+                                        voice.VoiceIndex,
+                                        position,
+                                        end))
+                                {
+                                    continue;
+                                }
+
+                                spanControls.Add(new SpanControlEvent
+                                {
+                                    Kind = SpanControlKind.Legato,
+                                    Scope = ControlScopeKind.Voice,
+                                    TrackId = track.Id,
+                                    StaffIndex = staff.StaffIndex,
+                                    VoiceIndex = voice.VoiceIndex,
+                                    Start = position,
+                                    End = end
+                                });
+                            }
+                            else if (beat.LegatoDestination == true && beatIndex > 0)
+                            {
+                                var start = new WrittenPosition
+                                {
+                                    BarIndex = measure.Index,
+                                    Offset = voice.Beats[beatIndex - 1].Offset
+                                };
+                                if (!RememberLegatoSpan(
+                                        seenLegatoSpans,
+                                        track.Id,
+                                        staff.StaffIndex,
+                                        voice.VoiceIndex,
+                                        start,
+                                        position))
+                                {
+                                    continue;
+                                }
+
+                                spanControls.Add(new SpanControlEvent
+                                {
+                                    Kind = SpanControlKind.Legato,
+                                    Scope = ControlScopeKind.Voice,
+                                    TrackId = track.Id,
+                                    StaffIndex = staff.StaffIndex,
+                                    VoiceIndex = voice.VoiceIndex,
+                                    Start = start,
+                                    End = position
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return spanControls;
+    }
+
+    private static bool RememberLegatoSpan(
+        HashSet<(int TrackId, int StaffIndex, int VoiceIndex, int StartBarIndex, ScoreTime StartOffset, int EndBarIndex, ScoreTime EndOffset)> seenLegatoSpans,
+        int trackId,
+        int staffIndex,
+        int voiceIndex,
+        WrittenPosition start,
+        WrittenPosition? end)
+        => seenLegatoSpans.Add((
+            trackId,
+            staffIndex,
+            voiceIndex,
+            start.BarIndex,
+            start.Offset,
+            end?.BarIndex ?? -1,
+            end?.Offset ?? ScoreTime.Zero));
+
+    private static ScoreTime ResolveFermataOffset(string offset, ScoreTime barDuration)
+        => offset.Trim().ToUpperInvariant() switch
+        {
+            "START" => ScoreTime.Zero,
+            "MIDDLE" or "CENTER" => barDuration.Multiply(1, 2),
+            "END" => barDuration,
+            _ => ScoreTime.Zero
+        };
+
     private static void ApplyTieDurationStitching(IReadOnlyList<StaffMeasure> measures)
     {
+        var orderedNotes = measures
+            .SelectMany(m => m.Voices.Count > 0
+                ? m.Voices.SelectMany(v => v.Beats)
+                : m.Beats)
+            .SelectMany(b => b.Notes)
+            .Where(n => n.Pitch is not null)
+            .ToArray();
+        var noteById = new Dictionary<int, Note>();
+        foreach (var note in orderedNotes)
+        {
+            noteById.TryAdd(note.Id, note);
+        }
         var carryByPitch = new Dictionary<int, Note>();
 
-        foreach (var note in measures
-                     .SelectMany(m => m.Voices.Count > 0
-                         ? m.Voices.SelectMany(v => v.Beats)
-                         : m.Beats)
-                     .SelectMany(b => b.Notes)
-                     .Where(n => n.Pitch is not null))
+        foreach (var note in orderedNotes)
         {
             var pitch = note.Pitch!.MidiNumber;
+            var explicitTieOrigin = note.Articulation.Relations
+                .FirstOrDefault(relation => relation.Kind == NoteRelationKind.Tie);
 
-            if (note.Articulation.TieDestination && carryByPitch.TryGetValue(pitch, out var previous))
+            if (note.Articulation.TieDestination
+                && explicitTieOrigin is not null
+                && noteById.TryGetValue(explicitTieOrigin.TargetNoteId, out var explicitPrevious))
+            {
+                explicitPrevious.SoundingDuration += note.Duration;
+            }
+            else if (note.Articulation.TieDestination && carryByPitch.TryGetValue(pitch, out var previous))
             {
                 previous.SoundingDuration += note.Duration;
             }

@@ -78,7 +78,113 @@ public class WriterSourceFreeExportTests
         }
     }
 
+    [Fact]
+    public async Task Writer_can_export_relation_only_hopo_links_from_core_semantics()
+    {
+        var score = CreateSourceFreeGuitarScore(
+        [
+            new Beat
+            {
+                Id = 1,
+                Duration = new ScoreTime(1, 4),
+                Notes =
+                [
+                    new Note
+                    {
+                        Id = 1,
+                        Pitch = Pitch.FromMidiNumber(64),
+                        StringNumber = 0,
+                        Articulation = new NoteArticulation
+                        {
+                            Relations =
+                            [
+                                new NoteRelation
+                                {
+                                    Kind = NoteRelationKind.HammerOn,
+                                    TargetNoteId = 2
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            new Beat
+            {
+                Id = 2,
+                Offset = new ScoreTime(1, 4),
+                Duration = new ScoreTime(1, 4),
+                Notes =
+                [
+                    new Note
+                    {
+                        Id = 2,
+                        Pitch = Pitch.FromMidiNumber(67),
+                        StringNumber = 0,
+                        Articulation = new NoteArticulation
+                        {
+                            Relations =
+                            [
+                                new NoteRelation
+                                {
+                                    Kind = NoteRelationKind.HammerOn,
+                                    TargetNoteId = 1
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]);
+
+        var outFile = Path.Combine(Path.GetTempPath(), $"motif-source-free-relations-{Guid.NewGuid():N}.gp");
+        try
+        {
+            await new Motif.Extensions.GuitarPro.GuitarProWriter().WriteWithDiagnosticsAsync(score, outFile, TestContext.Current.CancellationToken);
+
+            var readBack = await new Motif.Extensions.GuitarPro.GuitarProReader().ReadAsync(outFile, cancellationToken: TestContext.Current.CancellationToken);
+            var notes = readBack.Tracks[0]
+                .PrimaryMeasure()
+                .Beats
+                .SelectMany(beat => beat.Notes)
+                .ToDictionary(note => note.Id);
+
+            notes[1].Articulation.HopoOrigin.Should().BeTrue();
+            notes[1].Articulation.Relations.Should().ContainSingle(relation =>
+                relation.Kind == NoteRelationKind.HammerOn
+                && relation.TargetNoteId == 2);
+            notes[2].Articulation.HopoDestination.Should().BeTrue();
+            notes[2].Articulation.Relations.Should().ContainSingle(relation =>
+                relation.Kind == NoteRelationKind.HammerOn
+                && relation.TargetNoteId == 1);
+        }
+        finally
+        {
+            if (File.Exists(outFile))
+            {
+                File.Delete(outFile);
+            }
+        }
+    }
+
     private static Score CreateSourceFreeGuitarScore()
+        => CreateSourceFreeGuitarScore(
+        [
+            new Beat
+            {
+                Id = 1,
+                Duration = new ScoreTime(1, 4),
+                Notes =
+                [
+                    new Note
+                    {
+                        Id = 1,
+                        Pitch = Pitch.FromMidiNumber(64),
+                    }
+                ]
+            }
+        ]);
+
+    private static Score CreateSourceFreeGuitarScore(IReadOnlyList<Beat> beats)
         => new()
         {
             Title = "Source Free Guitar",
@@ -124,22 +230,7 @@ public class WriterSourceFreeExportTests
                                 {
                                     Index = 0,
                                     StaffIndex = 0,
-                                    Beats =
-                                    [
-                                        new Beat
-                                        {
-                                            Id = 1,
-                                            Duration = new ScoreTime(1, 4),
-                                            Notes =
-                                            [
-                                                new Note
-                                                {
-                                                    Id = 1,
-                                                    Pitch = Pitch.FromMidiNumber(64),
-                                                }
-                                            ]
-                                        }
-                                    ]
+                                    Beats = beats
                                 }
                             ]
                         }

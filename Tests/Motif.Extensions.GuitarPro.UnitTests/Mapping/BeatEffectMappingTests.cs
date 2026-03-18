@@ -171,6 +171,84 @@ public class BeatEffectMappingTests
     }
 
     [Fact]
+    public async Task Mapper_projects_point_and_span_controls_from_gp_authoring_markers()
+    {
+        const string gpif = """
+        <GPIF>
+          <Score><Title>T</Title><Artist>A</Artist><Album>B</Album></Score>
+          <MasterTrack>
+            <Automations>
+              <Automation>
+                <Type>Tempo</Type>
+                <Bar>0</Bar>
+                <Position>0</Position>
+                <Visible>true</Visible>
+                <Value>96 2</Value>
+              </Automation>
+            </Automations>
+          </MasterTrack>
+          <Tracks><Track id="0"><Name>Guitar</Name></Track></Tracks>
+          <MasterBars>
+            <MasterBar>
+              <Time>4/4</Time>
+              <Bars>1</Bars>
+              <Fermatas>
+                <Fermata>
+                  <Type>Short</Type>
+                  <Offset>Middle</Offset>
+                  <Length>1.2</Length>
+                </Fermata>
+              </Fermatas>
+            </MasterBar>
+          </MasterBars>
+          <Bars><Bar id="1"><Voices>10</Voices></Bar></Bars>
+          <Voices><Voice id="10"><Beats>100 101</Beats></Voice></Voices>
+          <Rhythms><Rhythm id="1000"><NoteValue>Quarter</NoteValue></Rhythm></Rhythms>
+          <Beats>
+            <Beat id="100">
+              <Rhythm ref="1000" />
+              <Dynamic>mf</Dynamic>
+              <Hairpin>Crescendo</Hairpin>
+              <Ottavia>8va</Ottavia>
+              <Legato origin="true" destination="false" />
+            </Beat>
+            <Beat id="101">
+              <Rhythm ref="1000" />
+              <Legato origin="false" destination="true" />
+            </Beat>
+          </Beats>
+        </GPIF>
+        """;
+
+        var score = await DeserializeAndMap(gpif);
+
+        score.PointControls.Should().Contain(control =>
+            control.Kind == PointControlKind.Tempo
+            && control.NumericValue == 96m);
+        score.PointControls.Should().Contain(control =>
+            control.Kind == PointControlKind.Dynamic
+            && control.Value == "mf"
+            && control.Position.BarIndex == 0
+            && control.Position.Offset == ScoreTime.Zero);
+        score.PointControls.Should().Contain(control =>
+            control.Kind == PointControlKind.Fermata
+            && control.Value == "Short"
+            && control.Placement == "Middle");
+        score.SpanControls.Should().Contain(span =>
+            span.Kind == SpanControlKind.Hairpin
+            && span.Value == "Crescendo");
+        score.SpanControls.Should().Contain(span =>
+            span.Kind == SpanControlKind.Ottava
+            && span.Value == "8va");
+        var legatoSpan = score.SpanControls.Should().ContainSingle(span =>
+            span.Kind == SpanControlKind.Legato
+            && span.Start.Offset == ScoreTime.Zero)
+            .Subject;
+        legatoSpan.End.Should().NotBeNull();
+        legatoSpan.End!.Offset.Should().Be(new ScoreTime(1, 4));
+    }
+
+    [Fact]
     public async Task AntiAccent_text_round_trips_through_write()
     {
         var gpif = BuildGpif(
@@ -753,6 +831,161 @@ public class BeatEffectMappingTests
         {
             if (File.Exists(outFile))
                 File.Delete(outFile);
+        }
+    }
+
+    [Fact]
+    public async Task Writer_prefers_authored_point_and_span_controls_when_present()
+    {
+        var score = new Score
+        {
+            PointControls =
+            [
+                new PointControlEvent
+                {
+                    Kind = PointControlKind.Tempo,
+                    Scope = ControlScopeKind.Score,
+                    Position = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    NumericValue = 96m
+                },
+                new PointControlEvent
+                {
+                    Kind = PointControlKind.Dynamic,
+                    Scope = ControlScopeKind.Voice,
+                    TrackId = 0,
+                    StaffIndex = 0,
+                    VoiceIndex = 0,
+                    Position = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    Value = "PP"
+                }
+            ],
+            SpanControls =
+            [
+                new SpanControlEvent
+                {
+                    Kind = SpanControlKind.Hairpin,
+                    Scope = ControlScopeKind.Voice,
+                    TrackId = 0,
+                    StaffIndex = 0,
+                    VoiceIndex = 0,
+                    Start = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    Value = "Crescendo"
+                },
+                new SpanControlEvent
+                {
+                    Kind = SpanControlKind.Ottava,
+                    Scope = ControlScopeKind.Voice,
+                    TrackId = 0,
+                    StaffIndex = 0,
+                    VoiceIndex = 0,
+                    Start = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    Value = "8va"
+                },
+                new SpanControlEvent
+                {
+                    Kind = SpanControlKind.Legato,
+                    Scope = ControlScopeKind.Voice,
+                    TrackId = 0,
+                    StaffIndex = 0,
+                    VoiceIndex = 0,
+                    Start = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    End = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = new ScoreTime(1, 4)
+                    }
+                }
+            ],
+            TimelineBars =
+            [
+                new TimelineBar
+                {
+                    Index = 0,
+                    TimeSignature = "4/4",
+                    Duration = new ScoreTime(1, 1)
+                }
+            ],
+            Tracks =
+            [
+                HierarchyTestHelpers.SingleStaffTrack(
+                    0,
+                    "Guitar",
+                    new StaffMeasure
+                    {
+                        Index = 0,
+                        StaffIndex = 0,
+                        Voices =
+                        [
+                            new Voice
+                            {
+                                VoiceIndex = 0,
+                                Beats =
+                                [
+                                    new Beat
+                                    {
+                                        Id = 1,
+                                        Duration = new ScoreTime(1, 4),
+                                        Notes = [new Note { Id = 1, Pitch = Pitch.FromMidiNumber(64) }]
+                                    },
+                                    new Beat
+                                    {
+                                        Id = 2,
+                                        Offset = new ScoreTime(1, 4),
+                                        Duration = new ScoreTime(1, 4),
+                                        Notes = [new Note { Id = 2, Pitch = Pitch.FromMidiNumber(65) }]
+                                    }
+                                ]
+                            }
+                        ],
+                        Beats = []
+                    })
+            ]
+        };
+
+        var outFile = Path.Combine(Path.GetTempPath(), $"gpio-authored-controls-{Guid.NewGuid():N}.gp");
+        try
+        {
+            await new Motif.Extensions.GuitarPro.GuitarProWriter().WriteAsync(score, outFile, TestContext.Current.CancellationToken);
+            var readBack = await new Motif.Extensions.GuitarPro.GuitarProReader().ReadAsync(outFile, cancellationToken: TestContext.Current.CancellationToken);
+
+            readBack.TempoChanges.Should().ContainSingle();
+            readBack.TempoChanges[0].BeatsPerMinute.Should().Be(96m);
+
+            var beats = readBack.Tracks[0].PrimaryMeasure(0).Voices[0].Beats;
+            beats[0].Dynamic.Should().Be("PP");
+            BeatMetadataOf(beats[0]).Hairpin.Should().Be("Crescendo");
+            BeatMetadataOf(beats[0]).Ottavia.Should().Be("8va");
+            beats[0].LegatoOrigin.Should().BeTrue();
+            beats[0].LegatoDestination.Should().BeFalse();
+            beats[1].LegatoOrigin.Should().BeFalse();
+            beats[1].LegatoDestination.Should().BeTrue();
+        }
+        finally
+        {
+            if (File.Exists(outFile))
+            {
+                File.Delete(outFile);
+            }
         }
     }
 

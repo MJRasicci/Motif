@@ -11,5 +11,6 @@ public enum NoteRelationKind
     Legato = 0,
     HammerOn = 1,
     PullOff = 2,
-    Slide = 3
+    Slide = 3,
+    Tie = 4
 }

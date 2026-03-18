@@ -169,9 +169,10 @@ internal static class GpExportDefaultsResolver
             .Select(CloneAutomation)
             .ToList();
 
-        if (score.TempoChanges.Count > 0)
+        var coreTempoChanges = ResolveCoreTempoChanges(score);
+        if (coreTempoChanges.Count > 0)
         {
-            var tempoAutomations = score.TempoChanges
+            var tempoAutomations = coreTempoChanges
                 .OrderBy(change => change.BarIndex)
                 .ThenBy(change => change.Offset)
                 .Select(change => new AutomationMetadata
@@ -219,7 +220,7 @@ internal static class GpExportDefaultsResolver
 
     private static bool HasExplicitCoreTempoChanges(Score score, MasterTrackMetadata resolved)
     {
-        var coreTempos = score.TempoChanges
+        var coreTempos = ResolveCoreTempoChanges(score)
             .OrderBy(change => change.BarIndex)
             .ThenBy(change => change.Offset)
             .Select(change => $"{change.BarIndex}|{change.Offset}|{change.BeatsPerMinute.ToString(CultureInfo.InvariantCulture)}")
@@ -232,6 +233,23 @@ internal static class GpExportDefaultsResolver
             .ToArray();
 
         return !coreTempos.SequenceEqual(sourceTempos, StringComparer.Ordinal);
+    }
+
+    private static IReadOnlyList<TempoChange> ResolveCoreTempoChanges(Score score)
+    {
+        var authoredTempoControls = score.PointControls
+            .Where(control => control.Kind == PointControlKind.Tempo && control.NumericValue.HasValue)
+            .Select(control => new TempoChange
+            {
+                BarIndex = control.Position.BarIndex,
+                Offset = control.Position.Offset,
+                BeatsPerMinute = control.NumericValue!.Value
+            })
+            .ToArray();
+
+        return authoredTempoControls.Length > 0
+            ? authoredTempoControls
+            : score.TempoChanges;
     }
 
     private static void FillMissingTrackDefaults(TrackMetadata target, GpTrackProfile profile)

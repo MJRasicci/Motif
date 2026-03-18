@@ -81,11 +81,23 @@ public class HopoSemanticsMappingTests
         notes[201].StringNumber.Should().Be(2);
 
         notes[200].Articulation.HopoType.Should().Be(HopoTypeKind.HammerOn);
+        notes[200].Articulation.Relations.Should().ContainSingle(relation =>
+            relation.Kind == NoteRelationKind.HammerOn
+            && relation.TargetNoteId == 201);
 
         notes[201].Articulation.HopoType.Should().Be(HopoTypeKind.HammerOn);
+        notes[201].Articulation.Relations.Should().ContainSingle(relation =>
+            relation.Kind == NoteRelationKind.HammerOn
+            && relation.TargetNoteId == 200);
 
         notes[202].Articulation.HopoType.Should().Be(HopoTypeKind.PullOff);
+        notes[202].Articulation.Relations.Should().ContainSingle(relation =>
+            relation.Kind == NoteRelationKind.PullOff
+            && relation.TargetNoteId == 203);
 
         notes[203].Articulation.HopoType.Should().Be(HopoTypeKind.PullOff);
+        notes[203].Articulation.Relations.Should().ContainSingle(relation =>
+            relation.Kind == NoteRelationKind.PullOff
+            && relation.TargetNoteId == 202);
     }
 }

@@ -76,6 +76,10 @@ public class MetadataMappingTests
 
         score.TempoChanges.Should().ContainSingle();
         score.TempoChanges[0].BeatsPerMinute.Should().Be(120m);
+        score.PointControls.Should().Contain(control =>
+            control.Kind == PointControlKind.Tempo
+            && control.NumericValue == 120m);
+        score.TimelineBars[0].Duration.Should().Be(new ScoreTime(1, 1));
 
         var track = score.Tracks.Should().ContainSingle().Subject;
         track.Instrument.Family.Should().Be(InstrumentFamilyKind.Guitar);
