@@ -128,7 +128,9 @@ public class RhythmAndTieMappingTests
         var score = await mapper.MapAsync(raw, TestContext.Current.CancellationToken);
 
         var notes = score.Tracks[0].PrimaryMeasure(0).Beats.SelectMany(b => b.Notes).ToArray();
-        notes[0].Duration.Should().Be(new ScoreTime(1, 2));
-        notes[1].TieExtendedFromPrevious.Should().BeTrue();
+        notes[0].Duration.Should().Be(new ScoreTime(1, 4));
+        notes[0].SoundingDuration.Should().Be(new ScoreTime(1, 2));
+        notes[1].Duration.Should().Be(new ScoreTime(1, 4));
+        notes[1].SoundingDuration.Should().Be(new ScoreTime(1, 4));
     }
 }

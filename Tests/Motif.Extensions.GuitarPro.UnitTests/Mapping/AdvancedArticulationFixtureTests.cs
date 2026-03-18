@@ -57,16 +57,10 @@ public class AdvancedArticulationFixtureTests
         byId[68].Articulation.Slides.Should().ContainSingle().Which.Should().Be(SlideType.OutUp);
 
         byId[69].Articulation.HopoType.Should().Be(HopoTypeKind.HammerOn);
-        byId[69].Articulation.HopoDestinationNoteId.Should().Be(70);
         byId[70].Articulation.HopoType.Should().Be(HopoTypeKind.HammerOn);
-        byId[70].Articulation.HopoOriginNoteId.Should().Be(69);
         byId[71].Articulation.HopoType.Should().Be(HopoTypeKind.PullOff);
-        byId[71].Articulation.HopoDestinationNoteId.Should().Be(72);
         byId[72].Articulation.HopoType.Should().Be(HopoTypeKind.PullOff);
-        byId[72].Articulation.HopoOriginNoteId.Should().Be(71);
         byId[73].Articulation.HopoType.Should().Be(HopoTypeKind.PullOff);
-        byId[73].Articulation.HopoOriginNoteId.Should().Be(69);
-        byId[73].Articulation.HopoDestinationNoteId.Should().Be(72);
 
         byId[43].Articulation.Harmonic!.Kind.Should().Be(HarmonicTypeKind.Natural);
         byId[44].Articulation.Harmonic!.Kind.Should().Be(HarmonicTypeKind.Artificial);

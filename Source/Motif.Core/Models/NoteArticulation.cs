@@ -96,16 +96,6 @@ public sealed class NoteArticulation
     public HopoTypeKind HopoType { get; set; } = HopoTypeKind.None;
 
     /// <summary>
-    /// Gets or sets the linked origin note identifier for hammer-on or pull-off relationships.
-    /// </summary>
-    public int? HopoOriginNoteId { get; set; }
-
-    /// <summary>
-    /// Gets or sets the linked destination note identifier for hammer-on or pull-off relationships.
-    /// </summary>
-    public int? HopoDestinationNoteId { get; set; }
-
-    /// <summary>
     /// Gets or sets the applied slide techniques.
     /// </summary>
     public IReadOnlyList<SlideType> Slides { get; set; } = Array.Empty<SlideType>();

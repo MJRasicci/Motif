@@ -190,11 +190,9 @@ public class WriterArticulationParityTests
 
             hopoOrigin.Articulation.HopoOrigin.Should().BeTrue();
             hopoOrigin.Articulation.HopoType.Should().Be(HopoTypeKind.HammerOn);
-            hopoOrigin.Articulation.HopoDestinationNoteId.Should().Be(hopoDestination.Id);
 
             hopoDestination.Articulation.HopoDestination.Should().BeTrue();
             hopoDestination.Articulation.HopoType.Should().Be(HopoTypeKind.HammerOn);
-            hopoDestination.Articulation.HopoOriginNoteId.Should().Be(hopoOrigin.Id);
         }
         finally
         {

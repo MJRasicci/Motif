@@ -80,16 +80,12 @@ public class HopoSemanticsMappingTests
         notes[200].StringNumber.Should().Be(2);
         notes[201].StringNumber.Should().Be(2);
 
-        notes[200].Articulation.HopoDestinationNoteId.Should().Be(201);
         notes[200].Articulation.HopoType.Should().Be(HopoTypeKind.HammerOn);
 
-        notes[201].Articulation.HopoOriginNoteId.Should().Be(200);
         notes[201].Articulation.HopoType.Should().Be(HopoTypeKind.HammerOn);
 
-        notes[202].Articulation.HopoDestinationNoteId.Should().Be(203);
         notes[202].Articulation.HopoType.Should().Be(HopoTypeKind.PullOff);
 
-        notes[203].Articulation.HopoOriginNoteId.Should().Be(202);
         notes[203].Articulation.HopoType.Should().Be(HopoTypeKind.PullOff);
     }
 }

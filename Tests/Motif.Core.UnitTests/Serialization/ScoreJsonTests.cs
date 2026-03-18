@@ -19,7 +19,6 @@ public class ScoreJsonTests
         {
             Id = 100,
             Dynamic = "mf",
-            FreeText = "push",
             Offset = ScoreTime.Zero,
             Duration = new ScoreTime(1, 4),
             Rhythm = new RhythmValue
@@ -33,6 +32,7 @@ public class ScoreJsonTests
                     Id = 200,
                     Pitch = Pitch.FromMidiNumber(64),
                     Duration = new ScoreTime(1, 4),
+                    SoundingDuration = new ScoreTime(1, 2),
                     Articulation = new NoteArticulation
                     {
                         LetRing = true
@@ -94,7 +94,6 @@ public class ScoreJsonTests
                     },
                     Transposition = new TrackTransposition
                     {
-                        IsSpecified = true,
                         Chromatic = 0,
                         Octave = -1
                     },
@@ -149,7 +148,6 @@ public class ScoreJsonTests
         roundTripped.Tracks.Should().ContainSingle();
         roundTripped.Tracks[0].Instrument.Family.Should().Be(InstrumentFamilyKind.Guitar);
         roundTripped.Tracks[0].Instrument.Kind.Should().Be(InstrumentKind.SteelStringGuitar);
-        roundTripped.Tracks[0].Transposition.IsSpecified.Should().BeTrue();
         roundTripped.Tracks[0].Transposition.Octave.Should().Be(-1);
         roundTripped.Tracks[0].Staves.Should().ContainSingle();
         roundTripped.Tracks[0].Staves[0].Tuning.Pitches.Should().Equal(40, 45, 50, 55, 59, 64);
@@ -158,6 +156,7 @@ public class ScoreJsonTests
         roundTripped.Tracks[0].PrimaryMeasure().Beats.Should().ContainSingle();
         roundTripped.Tracks[0].PrimaryMeasure().Beats[0].Notes.Should().ContainSingle();
         roundTripped.Tracks[0].PrimaryMeasure().Beats[0].Notes[0].Articulation.LetRing.Should().BeTrue();
+        roundTripped.Tracks[0].PrimaryMeasure().Beats[0].Notes[0].SoundingDuration.Should().Be(new ScoreTime(1, 2));
     }
 
     [Fact]

@@ -607,6 +607,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                         ShowStringNumber = n.ShowStringNumber,
                         StringNumber = stringNumber,
                         Duration = duration,
+                        SoundingDuration = duration,
                         Articulation = new NoteArticulation
                         {
                             LeftFingering = n.Articulation.LeftFingering,
@@ -627,8 +628,6 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                             HopoOrigin = n.Articulation.HopoOrigin,
                             HopoDestination = n.Articulation.HopoDestination,
                             HopoType = InferHopoType(source, n, hopoOriginNoteId, hopoDestinationNoteId),
-                            HopoOriginNoteId = hopoOriginNoteId,
-                            HopoDestinationNoteId = hopoDestinationNoteId,
                             Slides = ArticulationDecoders.DecodeSlides(n.Articulation.SlideFlags),
                             Bend = ArticulationDecoders.DecodeBend(n.Articulation, n.Articulation.TieDestination),
                             Harmonic = ArticulationDecoders.DecodeHarmonic(n.Articulation)
@@ -1111,8 +1110,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
 
             if (note.Articulation.TieDestination && carryByPitch.TryGetValue(pitch, out var previous))
             {
-                previous.Duration += note.Duration;
-                note.TieExtendedFromPrevious = true;
+                previous.SoundingDuration += note.Duration;
             }
 
             if (note.Articulation.TieOrigin)

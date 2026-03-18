@@ -31,15 +31,14 @@ public sealed class Note : ExtensibleModel
     public int? StringNumber { get; set; }
 
     /// <summary>
-    /// Gets or sets the effective sounding duration of the note.
-    /// Tied destinations may extend an earlier note without starting a new sound.
+    /// Gets or sets the written duration of the note as notated on the page.
     /// </summary>
     public ScoreTime Duration { get; set; } = ScoreTime.Zero;
 
     /// <summary>
-    /// Gets or sets a value indicating whether this note only extends a tie from a previous note.
+    /// Gets or sets the effective sounding duration of the note after ties or sustain semantics are applied.
     /// </summary>
-    public bool TieExtendedFromPrevious { get; set; }
+    public ScoreTime SoundingDuration { get; set; } = ScoreTime.Zero;
 
     /// <summary>
     /// Gets or sets note-level articulations and techniques.
