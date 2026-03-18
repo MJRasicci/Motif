@@ -16,6 +16,16 @@ public sealed class TimelineBar : ExtensibleModel
     public string TimeSignature { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the written start time of the bar.
+    /// </summary>
+    public ScoreTime Start { get; set; } = ScoreTime.Zero;
+
+    /// <summary>
+    /// Gets or sets the written duration of the bar.
+    /// </summary>
+    public ScoreTime Duration { get; set; } = ScoreTime.Zero;
+
+    /// <summary>
     /// Gets or sets a value indicating whether the barline should be rendered as a double barline.
     /// </summary>
     public bool DoubleBar { get; set; }

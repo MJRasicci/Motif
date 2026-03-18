@@ -36,6 +36,16 @@ public sealed class Score : ExtensibleModel
     public IReadOnlyList<TempoChange> TempoChanges { get; set; } = Array.Empty<TempoChange>();
 
     /// <summary>
+    /// Gets or sets authored point controls anchored to exact written score positions.
+    /// </summary>
+    public IReadOnlyList<PointControlEvent> PointControls { get; set; } = Array.Empty<PointControlEvent>();
+
+    /// <summary>
+    /// Gets or sets authored span controls anchored to written score positions.
+    /// </summary>
+    public IReadOnlyList<SpanControlEvent> SpanControls { get; set; } = Array.Empty<SpanControlEvent>();
+
+    /// <summary>
     /// True when playback should treat the score as beginning with a pickup bar.
     /// </summary>
     public bool Anacrusis { get; set; }

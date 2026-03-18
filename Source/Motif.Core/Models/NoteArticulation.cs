@@ -109,4 +109,9 @@ public sealed class NoteArticulation
     /// Gets or sets the bend curve details.
     /// </summary>
     public Bend? Bend { get; set; }
+
+    /// <summary>
+    /// Gets or sets directed links to related notes when the source or caller can resolve them.
+    /// </summary>
+    public IReadOnlyList<NoteRelation> Relations { get; set; } = Array.Empty<NoteRelation>();
 }

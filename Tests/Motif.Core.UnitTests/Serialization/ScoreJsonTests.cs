@@ -35,7 +35,15 @@ public class ScoreJsonTests
                     SoundingDuration = new ScoreTime(1, 2),
                     Articulation = new NoteArticulation
                     {
-                        LetRing = true
+                        LetRing = true,
+                        Relations =
+                        [
+                            new NoteRelation
+                            {
+                                Kind = NoteRelationKind.Legato,
+                                TargetNoteId = 201
+                            }
+                        ]
                     }
                 }
             ]
@@ -56,6 +64,57 @@ public class ScoreJsonTests
                     BeatsPerMinute = 120m
                 }
             ],
+            PointControls =
+            [
+                new PointControlEvent
+                {
+                    Kind = PointControlKind.Dynamic,
+                    Scope = ControlScopeKind.Voice,
+                    TrackId = 1,
+                    StaffIndex = 0,
+                    VoiceIndex = 0,
+                    Position = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    Value = "mf"
+                },
+                new PointControlEvent
+                {
+                    Kind = PointControlKind.Fermata,
+                    Scope = ControlScopeKind.Score,
+                    Position = new WrittenPosition
+                    {
+                        BarIndex = 1,
+                        Offset = ScoreTime.Zero
+                    },
+                    Value = "Short",
+                    Placement = "Middle",
+                    Length = 1.2m
+                }
+            ],
+            SpanControls =
+            [
+                new SpanControlEvent
+                {
+                    Kind = SpanControlKind.Legato,
+                    Scope = ControlScopeKind.Voice,
+                    TrackId = 1,
+                    StaffIndex = 0,
+                    VoiceIndex = 0,
+                    Start = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = ScoreTime.Zero
+                    },
+                    End = new WrittenPosition
+                    {
+                        BarIndex = 0,
+                        Offset = new ScoreTime(1, 4)
+                    }
+                }
+            ],
             PlaybackMasterBarSequence = [0, 1, 0, 1, 2],
             TimelineBars =
             [
@@ -63,6 +122,8 @@ public class ScoreJsonTests
                 {
                     Index = 0,
                     TimeSignature = "4/4",
+                    Start = ScoreTime.Zero,
+                    Duration = new ScoreTime(1, 1),
                     RepeatStart = true,
                     SectionLetter = "A",
                     SectionText = "Verse"
@@ -71,6 +132,8 @@ public class ScoreJsonTests
                 {
                     Index = 1,
                     TimeSignature = "4/4",
+                    Start = new ScoreTime(1, 1),
+                    Duration = new ScoreTime(1, 1),
                     RepeatEnd = true,
                     RepeatCount = 2,
                     Jump = "DaCapoAlFine",
@@ -138,8 +201,14 @@ public class ScoreJsonTests
         roundTripped.Anacrusis.Should().BeTrue();
         roundTripped.TempoChanges.Should().ContainSingle();
         roundTripped.TempoChanges[0].BeatsPerMinute.Should().Be(120m);
+        roundTripped.PointControls.Should().HaveCount(2);
+        roundTripped.PointControls[0].Kind.Should().Be(PointControlKind.Dynamic);
+        roundTripped.PointControls[1].Placement.Should().Be("Middle");
+        roundTripped.SpanControls.Should().ContainSingle();
+        roundTripped.SpanControls[0].Kind.Should().Be(SpanControlKind.Legato);
         roundTripped.PlaybackMasterBarSequence.Should().Equal(0, 1, 0, 1, 2);
         roundTripped.TimelineBars.Should().HaveCount(2);
+        roundTripped.TimelineBars[0].Duration.Should().Be(new ScoreTime(1, 1));
         roundTripped.TimelineBars[0].SectionText.Should().Be("Verse");
         roundTripped.TimelineBars[1].Target.Should().Be("Fine");
         roundTripped.Tracks.Should().ContainSingle();
@@ -153,6 +222,7 @@ public class ScoreJsonTests
         roundTripped.Tracks[0].PrimaryMeasure().Beats.Should().ContainSingle();
         roundTripped.Tracks[0].PrimaryMeasure().Beats[0].Notes.Should().ContainSingle();
         roundTripped.Tracks[0].PrimaryMeasure().Beats[0].Notes[0].Articulation.LetRing.Should().BeTrue();
+        roundTripped.Tracks[0].PrimaryMeasure().Beats[0].Notes[0].Articulation.Relations.Should().ContainSingle();
         roundTripped.Tracks[0].PrimaryMeasure().Beats[0].Notes[0].SoundingDuration.Should().Be(new ScoreTime(1, 2));
     }
 
@@ -187,6 +257,8 @@ public class ScoreJsonTests
         properties["title"].GetString().Should().Be("Example");
         properties["timelineBars"].GetArrayLength().Should().Be(1);
         properties["tempoChanges"].GetArrayLength().Should().Be(0);
+        properties["pointControls"].GetArrayLength().Should().Be(0);
+        properties["spanControls"].GetArrayLength().Should().Be(0);
         properties["playbackMasterBarSequence"].GetArrayLength().Should().Be(0);
         properties["tracks"].GetArrayLength().Should().Be(1);
     }
