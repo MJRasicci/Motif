@@ -5,6 +5,12 @@ domain model. The current production extension is Guitar Pro support via
 `Motif.Extensions.GuitarPro`, focused on GP7+ `.gp` archives and raw `.gpif`, plus a
 companion CLI for inspection, conversion, and round-trip diagnostics.
 
+In the current core model, notes store a single sounding `Pitch`, written-versus-sounding
+transposition lives at the track level, exact score time uses rational `ScoreTime`
+fractions, and note duration semantics distinguish written `Duration` from
+`SoundingDuration`. Guitar Pro-specific fidelity state stays on attached GP extensions
+rather than in the core JSON shape.
+
 ## Current Scope
 
 - Read Guitar Pro GP7+ `.gp` archives and extract `Content/score.gpif`
