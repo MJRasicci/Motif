@@ -38,7 +38,7 @@ public class MultiVoiceMappingTests
                 new Note
                 {
                     Id = 1,
-                    MidiPitch = 60
+                    Pitch = Pitch.FromMidiNumber(60),
                 }
             ]
         };
@@ -52,7 +52,7 @@ public class MultiVoiceMappingTests
                 new Note
                 {
                     Id = 2,
-                    MidiPitch = 67
+                    Pitch = Pitch.FromMidiNumber(67),
                 }
             ]
         };
@@ -106,8 +106,8 @@ public class MultiVoiceMappingTests
             measure.Voices[1].VoiceIndex.Should().Be(1);
             measure.Voices[0].Beats.Should().ContainSingle();
             measure.Voices[1].Beats.Should().ContainSingle();
-            measure.Voices[0].Beats[0].Notes[0].MidiPitch.Should().Be(60);
-            measure.Voices[1].Beats[0].Notes[0].MidiPitch.Should().Be(67);
+            measure.Voices[0].Beats[0].Notes[0].Pitch!.MidiNumber.Should().Be(60);
+            measure.Voices[1].Beats[0].Notes[0].Pitch!.MidiNumber.Should().Be(67);
             measure.Beats.Select(b => b.Id).Should().Equal(measure.Voices[0].Beats.Select(b => b.Id));
         }
         finally

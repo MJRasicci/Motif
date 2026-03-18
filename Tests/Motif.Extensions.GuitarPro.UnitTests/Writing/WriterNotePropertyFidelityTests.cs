@@ -112,7 +112,7 @@ public class WriterNotePropertyFidelityTests
                                                 new Note
                                                 {
                                                     Id = 22,
-                                                    MidiPitch = 40,
+                                                    Pitch = Pitch.FromMidiNumber(40),
                                                     StringNumber = 3
                                                 }
                                             ]
@@ -170,15 +170,16 @@ public class WriterNotePropertyFidelityTests
         var score = await DeserializeAndMap(gpif);
         var note = score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0];
 
-        note.MidiPitch.Should().Be(36);
+        note.Pitch.Should().NotBeNull();
+        note.Pitch!.MidiNumber.Should().Be(36);
         NoteMetadataOf(note).SourceMidiPitch.Should().Be(36);
         NoteMetadataOf(note).SourceTransposedMidiPitch.Should().Be(36);
-        note.ConcertPitch.Should().NotBeNull();
-        note.ConcertPitch!.Step.Should().Be("C");
-        note.ConcertPitch.Octave.Should().Be(-1);
-        note.TransposedPitch.Should().NotBeNull();
-        note.TransposedPitch!.Step.Should().Be("C");
-        note.TransposedPitch.Octave.Should().Be(-1);
+        NoteMetadataOf(note).SourceConcertPitch.Should().NotBeNull();
+        NoteMetadataOf(note).SourceConcertPitch!.Step.Should().Be("C");
+        NoteMetadataOf(note).SourceConcertPitch.Octave.Should().Be(-1);
+        NoteMetadataOf(note).SourceTransposedPitch.Should().NotBeNull();
+        NoteMetadataOf(note).SourceTransposedPitch!.Step.Should().Be("C");
+        NoteMetadataOf(note).SourceTransposedPitch.Octave.Should().Be(-1);
 
         var roundTrip = await RoundTripThroughJsonAndWrite(gpif);
         var outputProperties = roundTrip.Root!
@@ -221,18 +222,11 @@ public class WriterNotePropertyFidelityTests
                                     new Note
                                     {
                                         Id = 200,
-                                        MidiPitch = 38,
-                                        ConcertPitch = new PitchValue
+                                        Pitch = new Pitch
                                         {
-                                            Step = "C",
+                                            Step = "D",
                                             Accidental = string.Empty,
-                                            Octave = -1
-                                        },
-                                        TransposedPitch = new PitchValue
-                                        {
-                                            Step = "C",
-                                            Accidental = string.Empty,
-                                            Octave = -1
+                                            Octave = 3
                                         },
                                         StringNumber = 0
                                     }
@@ -244,6 +238,18 @@ public class WriterNotePropertyFidelityTests
         };
         score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].GetOrCreateGuitarPro().Metadata.SourceMidiPitch = 36;
         score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].GetOrCreateGuitarPro().Metadata.SourceTransposedMidiPitch = 36;
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].GetRequiredGuitarPro().Metadata.SourceConcertPitch = new Pitch
+        {
+            Step = "C",
+            Accidental = string.Empty,
+            Octave = -1
+        };
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].GetRequiredGuitarPro().Metadata.SourceTransposedPitch = new Pitch
+        {
+            Step = "C",
+            Accidental = string.Empty,
+            Octave = -1
+        };
 
         var roundTrip = await RoundTripThroughWrite(score);
         var outputProperties = roundTrip.Root!
@@ -279,7 +285,7 @@ public class WriterNotePropertyFidelityTests
             """);
 
         var score = await DeserializeAndMap(gpif);
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].MidiPitch = 38;
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].Pitch = Pitch.FromMidiNumber(38);
 
         var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
         result.Diagnostics.Warnings.Select(entry => entry.Code)
@@ -290,15 +296,15 @@ public class WriterNotePropertyFidelityTests
         var remapped = await DeserializeAndMap(Encoding.UTF8.GetString(stream.ToArray()));
         var note = remapped.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0];
 
-        note.MidiPitch.Should().Be(38);
-        note.ConcertPitch.Should().NotBeNull();
-        note.ConcertPitch!.Step.Should().Be("D");
-        note.ConcertPitch.Accidental.Should().BeEmpty();
-        note.ConcertPitch.Octave.Should().Be(3);
-        note.TransposedPitch.Should().NotBeNull();
-        note.TransposedPitch!.Step.Should().Be("D");
-        note.TransposedPitch.Accidental.Should().BeEmpty();
-        note.TransposedPitch.Octave.Should().Be(3);
+        note.Pitch.Should().NotBeNull();
+        note.Pitch!.MidiNumber.Should().Be(38);
+        note.Pitch.Step.Should().Be("D");
+        note.Pitch.Accidental.Should().BeEmpty();
+        note.Pitch.Octave.Should().Be(3);
+        NoteMetadataOf(note).SourceTransposedPitch.Should().NotBeNull();
+        NoteMetadataOf(note).SourceTransposedPitch!.Step.Should().Be("D");
+        NoteMetadataOf(note).SourceTransposedPitch.Accidental.Should().BeEmpty();
+        NoteMetadataOf(note).SourceTransposedPitch.Octave.Should().Be(3);
     }
 
     [Fact]
@@ -324,7 +330,7 @@ public class WriterNotePropertyFidelityTests
             Chromatic = 2,
             Octave = 0
         };
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].MidiPitch = 38;
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].Pitch = Pitch.FromMidiNumber(38);
 
         var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
         result.Diagnostics.Warnings.Select(entry => entry.Code).Should().Contain("NOTE_TRANSPOSED_PITCH_REGENERATED");
@@ -337,14 +343,14 @@ public class WriterNotePropertyFidelityTests
 
         trackMetadata.Transpose.Chromatic.Should().Be(2);
         trackMetadata.Transpose.Octave.Should().Be(0);
-        note.MidiPitch.Should().Be(38);
-        note.ConcertPitch.Should().NotBeNull();
-        note.ConcertPitch!.Step.Should().Be("D");
-        note.ConcertPitch.Octave.Should().Be(3);
-        note.TransposedPitch.Should().NotBeNull();
-        note.TransposedPitch!.Step.Should().Be("E");
-        note.TransposedPitch.Accidental.Should().BeEmpty();
-        note.TransposedPitch.Octave.Should().Be(3);
+        note.Pitch.Should().NotBeNull();
+        note.Pitch!.MidiNumber.Should().Be(38);
+        note.Pitch.Step.Should().Be("D");
+        note.Pitch.Octave.Should().Be(3);
+        NoteMetadataOf(note).SourceTransposedPitch.Should().NotBeNull();
+        NoteMetadataOf(note).SourceTransposedPitch!.Step.Should().Be("E");
+        NoteMetadataOf(note).SourceTransposedPitch.Accidental.Should().BeEmpty();
+        NoteMetadataOf(note).SourceTransposedPitch.Octave.Should().Be(3);
     }
 
     [Fact]

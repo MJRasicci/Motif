@@ -295,7 +295,7 @@ public class WriterDiagnosticsTests
                 </Note>
                 """));
 
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].MidiPitch = 47;
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].Pitch = Pitch.FromMidiNumber(47);
 
         var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
 
@@ -322,7 +322,7 @@ public class WriterDiagnosticsTests
                 </Note>
                 """));
 
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].MidiPitch = 38;
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].Pitch = Pitch.FromMidiNumber(38);
 
         var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
 
@@ -760,7 +760,7 @@ public class WriterDiagnosticsTests
                     ",",
                     EnumerateTrackBeats(track)
                         .SelectMany(beat => beat.Notes)
-                        .Select(note => note.MidiPitch?.ToString() ?? "null")),
+                        .Select(note => note.Pitch is null ? "null" : note.Pitch.MidiNumber.ToString())),
                 SlideNotes: EnumerateTrackBeats(track).SelectMany(beat => beat.Notes).Count(note => note.Articulation.Slides.Count > 0),
                 HarmonicNotes: EnumerateTrackBeats(track).SelectMany(beat => beat.Notes).Count(note => note.Articulation.Harmonic is not null),
                 BendNotes: EnumerateTrackBeats(track).SelectMany(beat => beat.Notes).Count(note => note.Articulation.Bend is not null),

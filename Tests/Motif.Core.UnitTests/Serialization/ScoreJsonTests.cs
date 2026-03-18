@@ -27,15 +27,14 @@ public class ScoreJsonTests
                 new Note
                 {
                     Id = 200,
-                    MidiPitch = 64,
+                    Pitch = Pitch.FromMidiNumber(64),
                     Duration = 0.25m,
                     Articulation = new NoteArticulation
                     {
                         LetRing = true
                     }
                 }
-            ],
-            MidiPitches = [64]
+            ]
         };
 
         var source = new Score

@@ -242,7 +242,7 @@ public class WriterRoundTripTests
                                     new Note
                                     {
                                         Id = 1,
-                                        MidiPitch = 64,
+                                        Pitch = Pitch.FromMidiNumber(64),
                                         Articulation = new NoteArticulation { LetRing = true }
                                     }
                                 ]

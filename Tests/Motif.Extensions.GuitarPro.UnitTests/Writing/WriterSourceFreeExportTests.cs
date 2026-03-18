@@ -135,7 +135,7 @@ public class WriterSourceFreeExportTests
                                                 new Note
                                                 {
                                                     Id = 1,
-                                                    MidiPitch = 64
+                                                    Pitch = Pitch.FromMidiNumber(64),
                                                 }
                                             ]
                                         }

@@ -167,7 +167,7 @@ public class BeatEffectMappingTests
                 """);
 
         var score = await DeserializeAndMap(gpif);
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].MidiPitch.Should().Be(36);
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0].Pitch!.MidiNumber.Should().Be(36);
     }
 
     [Fact]
@@ -231,7 +231,7 @@ public class BeatEffectMappingTests
                                     MiddleOffset2 = 0.5m,
                                     DestinationOffset = 1m
                                 },
-                                Notes = [new Note { Id = 1, MidiPitch = 60 }]
+                                Notes = [new Note { Id = 1, Pitch = Pitch.FromMidiNumber(60) }]
                             }
                         ]
                     })
@@ -491,7 +491,7 @@ public class BeatEffectMappingTests
                                     new Note
                                     {
                                         Id = 1,
-                                        MidiPitch = 64,
+                                        Pitch = Pitch.FromMidiNumber(64),
                                         Articulation = new NoteArticulation
                                         {
                                             Trill = 7,
@@ -614,7 +614,7 @@ public class BeatEffectMappingTests
                                 Dynamic = "PP",
                                 Notes =
                                 [
-                                    new Note { Id = 1, MidiPitch = 60 }
+                                    new Note { Id = 1, Pitch = Pitch.FromMidiNumber(60) }
                                 ]
                             }
                         ]
@@ -691,7 +691,7 @@ public class BeatEffectMappingTests
                                     new Note
                                     {
                                         Id = 1,
-                                        MidiPitch = 64,
+                                        Pitch = Pitch.FromMidiNumber(64),
                                         Articulation = new NoteArticulation
                                         {
                                             Trill = 7,
@@ -784,7 +784,7 @@ public class BeatEffectMappingTests
                                 },
                                 Notes =
                                 [
-                                    new Note { Id = 1, MidiPitch = 60 }
+                                    new Note { Id = 1, Pitch = Pitch.FromMidiNumber(60) }
                                 ]
                             }
                         ]

@@ -595,14 +595,15 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                     var hopoDestinationNoteId = n.Articulation.HopoOrigin
                         ? ResolveHopoCounterpartNoteId(source, nextBeat, stringNumber, isStringedTrack, expectOrigin: false)
                         : null;
+                    var soundingPitch = n.MidiPitch.HasValue
+                        ? Pitch.FromMidiNumber(n.MidiPitch.Value)
+                        : MapPitchValue(n.ConcertPitch);
 
                     var note = new Note
                     {
                         Id = n.Id,
                         Velocity = n.Velocity,
-                        MidiPitch = n.MidiPitch,
-                        ConcertPitch = MapPitchValue(n.ConcertPitch),
-                        TransposedPitch = MapPitchValue(n.TransposedPitch),
+                        Pitch = soundingPitch,
                         ShowStringNumber = n.ShowStringNumber,
                         StringNumber = stringNumber,
                         Duration = duration,
@@ -640,8 +641,8 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                             Xml = n.Xml,
                             SourceMidiPitch = n.MidiPitch,
                             SourceTransposedMidiPitch = ResolveSourceTransposedMidiPitch(n.MidiPitch, track.Transpose),
-                            HadSourceConcertPitch = n.ConcertPitch is not null,
-                            HadSourceTransposedPitch = n.TransposedPitch is not null,
+                            SourceConcertPitch = MapPitchValue(n.ConcertPitch),
+                            SourceTransposedPitch = MapPitchValue(n.TransposedPitch),
                             SourceFret = n.SourceFret,
                             SourceStringNumber = n.SourceStringNumber,
                             SourceSlideFlags = n.Articulation.SlideFlags,
@@ -653,11 +654,6 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                     });
                     return note;
                 })
-                .ToArray();
-
-            var midi = notes
-                .Where(n => n.MidiPitch.HasValue)
-                .Select(n => n.MidiPitch!.Value)
                 .ToArray();
 
             var mappedBeat = new Beat
@@ -688,8 +684,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 WhammyBar = ArticulationDecoders.DecodeWhammyBar(beat),
                 Offset = offset,
                 Duration = duration,
-                Notes = notes,
-                MidiPitches = midi
+                Notes = notes
             };
             mappedBeat.SetExtension(new GpBeatExtension
             {
@@ -1091,14 +1086,14 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return (numericValue, referenceHint);
     }
 
-    private static PitchValue? MapPitchValue(GpifPitchValue? pitch)
+    private static Pitch? MapPitchValue(GpifPitchValue? pitch)
         => pitch is null
             ? null
-            : new PitchValue
+            : new Pitch
             {
                 Step = pitch.Step,
                 Accidental = pitch.Accidental,
-                Octave = pitch.Octave
+                Octave = pitch.Octave ?? 0
             };
 
     private static int? ResolveSourceTransposedMidiPitch(int? midiPitch, GpifTranspose transpose)
@@ -1122,9 +1117,9 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                          ? m.Voices.SelectMany(v => v.Beats)
                          : m.Beats)
                      .SelectMany(b => b.Notes)
-                     .Where(n => n.MidiPitch.HasValue))
+                     .Where(n => n.Pitch is not null))
         {
-            var pitch = note.MidiPitch!.Value;
+            var pitch = note.Pitch!.MidiNumber;
 
             if (note.Articulation.TieDestination && carryByPitch.TryGetValue(pitch, out var previous))
             {

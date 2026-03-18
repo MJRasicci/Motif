@@ -320,19 +320,21 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                     }
 
                                     var (resolvedStringNumber, resolvedFret) = ResolveStringAndFret(note, track, staffBar.StaffIndex, preserveSourceStringAndFret);
+                                    var soundingMidiPitch = ResolveSoundingMidiPitch(note);
+                                    var writtenPitch = ResolveWrittenPitch(note, track);
                                     var transposedMidiPitch = ResolveTransposedMidiPitch(note, track);
                                     var preserveSourceConcertPitch = ShouldPreserveSourceConcertPitch(note);
                                     if (regenerationDiagnostics is not null
-                                        && noteMetadata.HadSourceConcertPitch
+                                        && noteMetadata.SourceConcertPitch is not null
                                         && !preserveSourceConcertPitch)
                                     {
                                         regenerationDiagnostics.RecordNoteConcertPitch(
                                             FormatNotePath(track, timelineIndex, staffBar, measureVoice, beatIndex, noteIndex));
                                     }
 
-                                    var preserveSourceTransposedPitch = ShouldPreserveSourceTransposedPitch(note, transposedMidiPitch);
+                                    var preserveSourceTransposedPitch = ShouldPreserveSourceTransposedPitch(note, writtenPitch, transposedMidiPitch);
                                     if (regenerationDiagnostics is not null
-                                        && noteMetadata.HadSourceTransposedPitch
+                                        && noteMetadata.SourceTransposedPitch is not null
                                         && !preserveSourceTransposedPitch)
                                     {
                                         regenerationDiagnostics.RecordNoteTransposedPitch(
@@ -352,18 +354,18 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                         Xml = noteMetadata.Xml,
                                         Id = 0,
                                         Velocity = note.Velocity,
-                                        MidiPitch = note.MidiPitch,
+                                        MidiPitch = soundingMidiPitch,
                                         TransposedMidiPitch = transposedMidiPitch,
                                         ConcertPitch = preserveSourceConcertPitch
-                                            ? ToRawPitchValue(note.ConcertPitch)
-                                            : null,
+                                            ? ToRawPitchValue(noteMetadata.SourceConcertPitch)
+                                            : ToRawPitchValue(note.Pitch),
                                         TransposedPitch = preserveSourceTransposedPitch
-                                            ? ToRawPitchValue(note.TransposedPitch)
-                                            : null,
+                                            ? ToRawPitchValue(noteMetadata.SourceTransposedPitch)
+                                            : ToRawPitchValue(writtenPitch),
                                         SourceFret = noteMetadata.SourceFret,
                                         SourceStringNumber = noteMetadata.SourceStringNumber,
                                         ShowStringNumber = note.ShowStringNumber,
-                                        Properties = BuildCoreNoteProperties(note.MidiPitch, resolvedStringNumber, resolvedFret),
+                                        Properties = BuildCoreNoteProperties(soundingMidiPitch, resolvedStringNumber, resolvedFret),
                                         XProperties = noteXProperties,
                                         XPropertiesXml = noteMetadata.XPropertiesXml,
                                         Articulation = new GpifNoteArticulation
@@ -1122,7 +1124,8 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             return (noteMetadata.SourceStringNumber ?? note.StringNumber, noteMetadata.SourceFret);
         }
 
-        if (!note.MidiPitch.HasValue)
+        var midiPitch = ResolveSoundingMidiPitch(note);
+        if (!midiPitch.HasValue)
         {
             return (note.StringNumber, null);
         }
@@ -1133,7 +1136,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             return (note.StringNumber, null);
         }
 
-        var midi = note.MidiPitch.Value;
+        var midi = midiPitch.Value;
 
         if (note.StringNumber is >= 0 and < int.MaxValue)
         {
@@ -1332,7 +1335,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             return false;
         }
 
-        if (note.MidiPitch != noteMetadata.SourceMidiPitch
+        if (ResolveSoundingMidiPitch(note) != noteMetadata.SourceMidiPitch
             || note.StringNumber != noteMetadata.SourceStringNumber
             || ResolveTransposedMidiPitch(note, track) != noteMetadata.SourceTransposedMidiPitch)
         {
@@ -1475,22 +1478,41 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
 
     private static int? ResolveTransposedMidiPitch(Note note, Track track)
     {
-        if (!note.MidiPitch.HasValue)
+        return ResolveWrittenPitch(note, track)?.MidiNumber;
+    }
+
+    private static int? ResolveSoundingMidiPitch(Note note)
+        => note.Pitch?.MidiNumber;
+
+    private static Pitch? ResolveWrittenPitch(Note note, Track track)
+    {
+        if (note.Pitch is null)
         {
             return null;
         }
 
+        var transposition = ResolveTrackTransposition(track);
+        return transposition.ToWrittenPitch(note.Pitch);
+    }
+
+    private static TrackTransposition ResolveTrackTransposition(Track track)
+    {
         var metadata = GetTrackMetadata(track);
         var useCoreTransposition = track.Transposition.IsSpecified
             || track.Transposition.Chromatic != 0
             || track.Transposition.Octave != 0;
-        var chromatic = useCoreTransposition
-            ? track.Transposition.Chromatic
-            : metadata.Transpose.Chromatic ?? 0;
-        var octave = useCoreTransposition
-            ? track.Transposition.Octave
-            : metadata.Transpose.Octave ?? 0;
-        return note.MidiPitch.Value - (octave * 12) + chromatic;
+
+        if (useCoreTransposition)
+        {
+            return track.Transposition;
+        }
+
+        return new TrackTransposition
+        {
+            IsSpecified = metadata.Transpose.Chromatic.HasValue || metadata.Transpose.Octave.HasValue,
+            Chromatic = metadata.Transpose.Chromatic ?? 0,
+            Octave = metadata.Transpose.Octave ?? 0
+        };
     }
 
     private static int? ResolveTrillSpeedXPropertyValue(Note note)
@@ -1537,18 +1559,22 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
     private static bool ShouldPreserveSourceConcertPitch(Note note)
     {
         var noteMetadata = GetNoteMetadata(note);
-        return note.ConcertPitch is not null
-               && note.MidiPitch == noteMetadata.SourceMidiPitch;
+        return note.Pitch is not null
+               && noteMetadata.SourceConcertPitch is not null
+               && ResolveSoundingMidiPitch(note) == noteMetadata.SourceMidiPitch
+               && MatchesSourceOrCanonicalPitch(note.Pitch, noteMetadata.SourceConcertPitch, noteMetadata.SourceMidiPitch);
     }
 
-    private static bool ShouldPreserveSourceTransposedPitch(Note note, int? transposedMidiPitch)
+    private static bool ShouldPreserveSourceTransposedPitch(Note note, Pitch? writtenPitch, int? transposedMidiPitch)
     {
         var noteMetadata = GetNoteMetadata(note);
-        return note.TransposedPitch is not null
-               && transposedMidiPitch == noteMetadata.SourceTransposedMidiPitch;
+        return writtenPitch is not null
+               && noteMetadata.SourceTransposedPitch is not null
+               && transposedMidiPitch == noteMetadata.SourceTransposedMidiPitch
+               && MatchesSourceOrCanonicalPitch(writtenPitch, noteMetadata.SourceTransposedPitch, transposedMidiPitch);
     }
 
-    private static GpifPitchValue? ToRawPitchValue(PitchValue? pitch)
+    private static GpifPitchValue? ToRawPitchValue(Pitch? pitch)
         => pitch is null
             ? null
             : new GpifPitchValue
@@ -1557,6 +1583,10 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                 Accidental = pitch.Accidental,
                 Octave = pitch.Octave
             };
+
+    private static bool MatchesSourceOrCanonicalPitch(Pitch currentPitch, Pitch sourcePitch, int? midiPitch)
+        => currentPitch == sourcePitch
+           || (midiPitch.HasValue && currentPitch == Pitch.FromMidiNumber(midiPitch.Value));
 
     private static bool StaffMatchesSource(StaffMetadata staff, SourceStaffShape source)
         => staff.Id == source.Id

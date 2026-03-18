@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(Score))]
-[JsonSerializable(typeof(PitchValue))]
+[JsonSerializable(typeof(Pitch))]
 [JsonSerializable(typeof(TupletRatio))]
 [JsonSerializable(typeof(WriteDiagnosticEntry[]))]
 [JsonSerializable(typeof(BatchFailure))]

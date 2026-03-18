@@ -139,9 +139,4 @@ public sealed class Beat : ExtensibleModel
     /// Gets or sets the notes sounded by the beat.
     /// </summary>
     public IReadOnlyList<Note> Notes { get; set; } = Array.Empty<Note>();
-
-    /// <summary>
-    /// Gets or sets the aggregate MIDI pitches for the beat.
-    /// </summary>
-    public IReadOnlyList<int> MidiPitches { get; set; } = Array.Empty<int>();
 }

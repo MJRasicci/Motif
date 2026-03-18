@@ -59,7 +59,7 @@ public class MutableDomainModelTests
         beat.FreeText = "quarter pulse";
 
         note.Id = 20;
-        note.MidiPitch = 64;
+        note.Pitch = Pitch.FromMidiNumber(64);
         note.Duration = 1m;
         note.Articulation = new NoteArticulation
         {
@@ -83,11 +83,10 @@ public class MutableDomainModelTests
         beat.Dynamic = "ff";
         beat.FreeText = "eighth pulse";
 
-        note.MidiPitch = 67;
-        note.ConcertPitch = new PitchValue
+        note.Pitch = new Pitch
         {
             Step = "G",
-            Octave = 4
+            Octave = 5
         };
         note.Articulation.Bend = new Bend
         {
@@ -121,9 +120,9 @@ public class MutableDomainModelTests
         beat.FreeText.Should().Be("eighth pulse");
         beat.Notes.Should().ContainSingle().Which.Should().BeSameAs(note);
 
-        note.MidiPitch.Should().Be(67);
-        note.ConcertPitch.Should().NotBeNull();
-        note.ConcertPitch!.Step.Should().Be("G");
+        note.Pitch.Should().NotBeNull();
+        note.Pitch!.MidiNumber.Should().Be(67);
+        note.Pitch.Step.Should().Be("G");
         note.Articulation.LetRing.Should().BeTrue();
         note.Articulation.Bend.Should().NotBeNull();
         note.Articulation.Bend!.Enabled.Should().BeTrue();

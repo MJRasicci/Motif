@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 [JsonSerializable(typeof(TrackInstrument))]
 [JsonSerializable(typeof(TrackTransposition))]
 [JsonSerializable(typeof(StaffTuning))]
-[JsonSerializable(typeof(PitchValue))]
+[JsonSerializable(typeof(Pitch))]
 [JsonSerializable(typeof(TupletRatio))]
 internal sealed partial class MotifJsonContext : JsonSerializerContext
 {

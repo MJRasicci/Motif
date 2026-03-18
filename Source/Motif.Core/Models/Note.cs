@@ -16,19 +16,9 @@ public sealed class Note : ExtensibleModel
     public int? Velocity { get; set; }
 
     /// <summary>
-    /// Gets or sets the resolved MIDI pitch, when available.
+    /// Gets or sets the sounding pitch of the note when the note is pitched.
     /// </summary>
-    public int? MidiPitch { get; set; }
-
-    /// <summary>
-    /// Gets or sets the concert-pitch spelling of the note.
-    /// </summary>
-    public PitchValue? ConcertPitch { get; set; }
-
-    /// <summary>
-    /// Gets or sets the transposed-pitch spelling of the note.
-    /// </summary>
-    public PitchValue? TransposedPitch { get; set; }
+    public Pitch? Pitch { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the written string number should be shown.

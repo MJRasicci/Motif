@@ -187,9 +187,9 @@ public sealed class GpNoteMetadata
 
     public int? SourceTransposedMidiPitch { get; set; }
 
-    public bool HadSourceConcertPitch { get; set; }
+    public Pitch? SourceConcertPitch { get; set; }
 
-    public bool HadSourceTransposedPitch { get; set; }
+    public Pitch? SourceTransposedPitch { get; set; }
 
     public int? SourceFret { get; set; }
 

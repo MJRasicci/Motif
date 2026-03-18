@@ -467,7 +467,7 @@ public class WriterReferenceReuseTests
         => new()
         {
             Id = id,
-            MidiPitch = midiPitch,
+            Pitch = Pitch.FromMidiNumber(midiPitch),
             Articulation = new NoteArticulation
             {
                 PalmMuted = palmMuted
@@ -705,7 +705,7 @@ public class WriterReferenceReuseTests
                                     new Note
                                     {
                                         Id = 1,
-                                        MidiPitch = 64
+                                        Pitch = Pitch.FromMidiNumber(64),
                                     }
                                 ]
                             }

@@ -19,4 +19,27 @@ public sealed class TrackTransposition
     /// Gets or sets the octave transposition component.
     /// </summary>
     public int Octave { get; set; }
+
+    /// <summary>
+    /// Gets the chromatic interval between sounding pitch and written pitch.
+    /// </summary>
+    public int WrittenMinusSoundingSemitones => Chromatic - (Octave * 12);
+
+    /// <summary>
+    /// Transposes a sounding pitch into its written staff pitch for this track.
+    /// </summary>
+    public Pitch ToWrittenPitch(Pitch soundingPitch)
+    {
+        ArgumentNullException.ThrowIfNull(soundingPitch);
+        return soundingPitch.TransposeChromatically(WrittenMinusSoundingSemitones);
+    }
+
+    /// <summary>
+    /// Transposes a written staff pitch into its sounding pitch for this track.
+    /// </summary>
+    public Pitch ToSoundingPitch(Pitch writtenPitch)
+    {
+        ArgumentNullException.ThrowIfNull(writtenPitch);
+        return writtenPitch.TransposeChromatically(-WrittenMinusSoundingSemitones);
+    }
 }

@@ -239,7 +239,7 @@ public class WriterNotationFidelityTests
                                     new Note
                                     {
                                         Id = note.Id,
-                                        MidiPitch = 69,
+                                        Pitch = Pitch.FromMidiNumber(69),
                                         Articulation = new NoteArticulation
                                         {
                                             TrillSpeed = TrillSpeedKind.ThirtySecond
@@ -298,7 +298,7 @@ public class WriterNotationFidelityTests
                                     new Note
                                     {
                                         Id = note.Id,
-                                        MidiPitch = 71,
+                                        Pitch = Pitch.FromMidiNumber(71),
                                         StringNumber = note.StringNumber
                                     }
                                 ]

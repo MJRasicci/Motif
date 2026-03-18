@@ -71,7 +71,7 @@ public class ArticulationMappingTests
         var score = await mapper.MapAsync(raw, TestContext.Current.CancellationToken);
 
         var note = score.Tracks[0].PrimaryMeasure(0).Beats[0].Notes[0];
-        note.MidiPitch.Should().Be(53); // E#4
+        note.Pitch!.MidiNumber.Should().Be(53); // E#4
         note.Articulation.LetRing.Should().BeTrue();
         note.Articulation.Vibrato.Should().Be("Wide");
         note.Articulation.TieOrigin.Should().BeTrue();

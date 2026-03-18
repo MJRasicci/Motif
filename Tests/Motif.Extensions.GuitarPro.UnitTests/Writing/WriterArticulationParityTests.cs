@@ -42,7 +42,7 @@ public class WriterArticulationParityTests
                                     new Note
                                     {
                                         Id = 1,
-                                        MidiPitch = 64,
+                                        Pitch = Pitch.FromMidiNumber(64),
                                         Articulation = new NoteArticulation
                                         {
                                             LeftFingering = "I",
@@ -90,7 +90,7 @@ public class WriterArticulationParityTests
                                     new Note
                                     {
                                         Id = 2,
-                                        MidiPitch = 64,
+                                        Pitch = Pitch.FromMidiNumber(64),
                                         Articulation = new NoteArticulation
                                         {
                                             TieDestination = true
@@ -107,7 +107,7 @@ public class WriterArticulationParityTests
                                     new Note
                                     {
                                         Id = 3,
-                                        MidiPitch = 62,
+                                        Pitch = Pitch.FromMidiNumber(62),
                                         Articulation = new NoteArticulation
                                         {
                                             HopoOrigin = true
@@ -124,7 +124,7 @@ public class WriterArticulationParityTests
                                     new Note
                                     {
                                         Id = 4,
-                                        MidiPitch = 64,
+                                        Pitch = Pitch.FromMidiNumber(64),
                                         Articulation = new NoteArticulation
                                         {
                                             HopoDestination = true
