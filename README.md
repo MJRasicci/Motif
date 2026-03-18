@@ -9,7 +9,10 @@ In the current core model, notes store a single sounding `Pitch`, written-versus
 transposition lives at the track level, exact score time uses rational `ScoreTime`
 fractions, and note duration semantics distinguish written `Duration` from
 `SoundingDuration`. Guitar Pro-specific fidelity state stays on attached GP extensions
-rather than in the core JSON shape.
+rather than in the core JSON shape. Canonical authored control data now lives on
+`Score.PointControls` and `Score.SpanControls`, timeline bars can carry explicit written
+`Start` and `Duration`, and linked-note techniques can use `NoteArticulation.Relations`
+instead of relying only on format-specific flags.
 
 ## Current Scope
 

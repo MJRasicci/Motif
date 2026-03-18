@@ -102,9 +102,24 @@ Typical traversal-affecting edits include:
   no `Track.Measures` compatibility path.
 - Edit timeline-global state such as repeats, sections, jump targets, key changes, and
   fermatas through `Score.TimelineBars`.
+- `TimelineBar.Start` and `TimelineBar.Duration` capture explicit written bar geometry
+  when a reader or tool has resolved it.
 
 Navigation no longer mirrors timeline state onto measures. Update `Score.TimelineBars`
 directly, then rebuild playback traversal when those edits affect navigation.
+
+## Authored Controls and Note Links
+
+Use the explicit control collections when you want canonical authored state rather than
+format-local markers.
+
+- `Score.PointControls` is the home for point-local authored events such as tempo changes,
+  beat dynamics, and fermatas.
+- `Score.SpanControls` is the home for authored spans such as hairpins, ottava markings,
+  and explicit legato spans.
+- `NoteArticulation.Relations` carries linked-note targets such as ties, hammer-ons,
+  pull-offs, and slides when the source format or your tooling knows the exact note
+  pairing.
 
 ## Guitar Pro Fidelity Workflow
 
