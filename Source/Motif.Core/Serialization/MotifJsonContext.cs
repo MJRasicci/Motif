@@ -3,7 +3,10 @@ namespace Motif;
 using Motif.Models;
 using System.Text.Json.Serialization;
 
-[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSourceGenerationOptions(
+    WriteIndented = true,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(Score))]
 [JsonSerializable(typeof(TimelineBar))]
 [JsonSerializable(typeof(TempoChange))]

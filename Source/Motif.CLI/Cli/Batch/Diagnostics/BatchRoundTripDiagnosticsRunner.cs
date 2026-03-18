@@ -13,6 +13,7 @@ internal sealed class BatchRoundTripDiagnosticsRunner
 {
     private static readonly CliJsonContext CompactJsonContext = new(new JsonSerializerOptions
     {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         WriteIndented = false
     });

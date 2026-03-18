@@ -4,7 +4,10 @@ using Motif.Models;
 using Motif.Extensions.GuitarPro.Models.Write;
 using System.Text.Json.Serialization;
 
-[JsonSourceGenerationOptions(WriteIndented = true, PropertyNameCaseInsensitive = true)]
+[JsonSourceGenerationOptions(
+    WriteIndented = true,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(Score))]
 [JsonSerializable(typeof(PitchValue))]
 [JsonSerializable(typeof(TupletRatio))]

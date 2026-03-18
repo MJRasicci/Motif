@@ -25,9 +25,9 @@ public class EndToEndReaderTests
         firstTrack.Staves[0].Measures.SelectMany(m => m.Beats).Count().Should().BeGreaterThan(0);
 
         var json = score.ToJson();
-        json.Should().Contain("\"Tracks\"");
-        json.Should().Contain("\"Staves\"");
-        json.Should().Contain("\"TimelineBars\"");
-        json.Should().Contain("\"PlaybackMasterBarSequence\"");
+        json.Should().Contain("\"tracks\"");
+        json.Should().Contain("\"staves\"");
+        json.Should().Contain("\"timelineBars\"");
+        json.Should().Contain("\"playbackMasterBarSequence\"");
     }
 }

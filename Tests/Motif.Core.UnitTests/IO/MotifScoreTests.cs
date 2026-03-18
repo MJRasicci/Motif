@@ -19,6 +19,14 @@ public class MotifScoreTests
         try
         {
             await MotifScore.SaveAsync(score, filePath, TestContext.Current.CancellationToken);
+            using (var jsonDocument = JsonDocument.Parse(await File.ReadAllTextAsync(filePath, TestContext.Current.CancellationToken)))
+            {
+                jsonDocument.RootElement.TryGetProperty("title", out var titleProperty).Should().BeTrue();
+                titleProperty.GetString().Should().Be("Json Native");
+                jsonDocument.RootElement.TryGetProperty("tracks", out _).Should().BeTrue();
+                jsonDocument.RootElement.TryGetProperty("Title", out _).Should().BeFalse();
+            }
+
             var readBack = await MotifScore.OpenAsync(filePath, TestContext.Current.CancellationToken);
 
             readBack.Title.Should().Be("Json Native");
@@ -53,6 +61,16 @@ public class MotifScoreTests
 
             await using var stream = new MemoryStream();
             await MotifScore.SaveAsync(score, stream, "motif", TestContext.Current.CancellationToken);
+            stream.Position = 0;
+
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true))
+            {
+                using var scoreJson = JsonDocument.Parse(await ReadArchiveEntryTextAsync(archive, "score.json"));
+                scoreJson.RootElement.TryGetProperty("title", out var titleProperty).Should().BeTrue();
+                titleProperty.GetString().Should().Be("Motif Archive");
+                scoreJson.RootElement.TryGetProperty("timelineBars", out _).Should().BeTrue();
+                scoreJson.RootElement.TryGetProperty("Title", out _).Should().BeFalse();
+            }
             stream.Position = 0;
 
             var streamRead = await MotifScore.OpenAsync(stream, ".motif", TestContext.Current.CancellationToken);

@@ -69,7 +69,7 @@ public class CliRoundTripRegressionTests
             using var diagnostics = JsonDocument.Parse(await File.ReadAllTextAsync(diagnosticsPath, TestContext.Current.CancellationToken));
             var codes = diagnostics.RootElement
                 .EnumerateArray()
-                .Select(entry => entry.GetProperty("Code").GetString())
+                .Select(entry => entry.GetProperty("code").GetString())
                 .ToArray();
 
             codes.Should().Contain("RAW_GPIF_BYTE_DRIFT");
@@ -205,7 +205,7 @@ public class CliRoundTripRegressionTests
                 repoRoot);
 
             var mappedJson = await File.ReadAllTextAsync(extensionlessJsonPath, TestContext.Current.CancellationToken);
-            mappedJson.Should().Contain("\"Tracks\"");
+            mappedJson.Should().Contain("\"tracks\"");
 
             await RunDotNetAsync(
                 $"run --project \"{toolProject}\" -- \"{extensionlessGpPath}\" \"{motifFromGpPath}\" --input-format gp --output-format motif",
@@ -229,7 +229,7 @@ public class CliRoundTripRegressionTests
                 repoRoot);
 
             var jsonFromGpif = await File.ReadAllTextAsync(jsonFromGpifPath, TestContext.Current.CancellationToken);
-            jsonFromGpif.Should().Contain("\"TimelineBars\"");
+            jsonFromGpif.Should().Contain("\"timelineBars\"");
 
             await RunDotNetAsync(
                 $"run --project \"{toolProject}\" -- \"{extensionlessJsonPath}\" \"{extensionlessMotifPath}\" --input-format json --output-format motif",
@@ -242,7 +242,7 @@ public class CliRoundTripRegressionTests
                 repoRoot);
 
             var jsonFromMotif = await File.ReadAllTextAsync(jsonFromMotifPath, TestContext.Current.CancellationToken);
-            jsonFromMotif.Should().Contain("\"Tracks\"");
+            jsonFromMotif.Should().Contain("\"tracks\"");
         }
         finally
         {
@@ -309,8 +309,9 @@ public class CliRoundTripRegressionTests
 
             File.Exists(jsonFromMotifPath).Should().BeTrue();
             var jsonFromMotif = await File.ReadAllTextAsync(jsonFromMotifPath, TestContext.Current.CancellationToken);
-            jsonFromMotif.Should().Contain("\"Tracks\"");
-            jsonFromMotif.Should().Contain("\"TimelineBars\"");
+            jsonFromMotif.Should().Contain("\"tracks\"");
+            jsonFromMotif.Should().Contain("\"timelineBars\"");
+            jsonFromMotif.Should().NotContain("\"Tracks\"");
 
             await RunDotNetAsync(
                 $"run --project \"{toolProject}\" -- \"{jsonPath}\" \"{gpifPath}\"",
@@ -389,7 +390,7 @@ public class CliRoundTripRegressionTests
 
             await UpdateMotifScoreJsonAsync(motifPath, root =>
             {
-                root["Title"] = "Edited From Motif";
+                root["title"] = "Edited From Motif";
             });
 
             var result = await RunDotNetForResultAsync(
@@ -458,7 +459,7 @@ public class CliRoundTripRegressionTests
 
             await UpdateScoreJsonFileAsync(editedJsonPath, root =>
             {
-                root["Title"] = "Edited Via Source Score";
+                root["title"] = "Edited Via Source Score";
             });
 
             await RunDotNetAsync(
@@ -600,20 +601,20 @@ public class CliRoundTripRegressionTests
             File.Exists(diagnosticsPath).Should().BeTrue();
 
             using var summary = JsonDocument.Parse(await File.ReadAllTextAsync(summaryPath, TestContext.Current.CancellationToken));
-            summary.RootElement.GetProperty("TotalFiles").GetInt32().Should().Be(1);
-            summary.RootElement.GetProperty("SucceededFiles").GetInt32().Should().Be(1);
-            summary.RootElement.GetProperty("FailedFiles").GetInt32().Should().Be(0);
-            summary.RootElement.GetProperty("FilesWithDiagnostics").GetInt32().Should().BeGreaterThan(0);
-            summary.RootElement.GetProperty("FilesWithWarnings").GetInt32().Should().Be(0);
-            summary.RootElement.GetProperty("FilesWithInfos").GetInt32().Should().BeGreaterThan(0);
-            summary.RootElement.GetProperty("FilesWithByteDrift").GetInt32().Should().BeGreaterThan(0);
-            summary.RootElement.GetProperty("TotalWarnings").GetInt32().Should().Be(0);
-            summary.RootElement.GetProperty("TotalInfos").GetInt32().Should().BeGreaterThan(0);
+            summary.RootElement.GetProperty("totalFiles").GetInt32().Should().Be(1);
+            summary.RootElement.GetProperty("succeededFiles").GetInt32().Should().Be(1);
+            summary.RootElement.GetProperty("failedFiles").GetInt32().Should().Be(0);
+            summary.RootElement.GetProperty("filesWithDiagnostics").GetInt32().Should().BeGreaterThan(0);
+            summary.RootElement.GetProperty("filesWithWarnings").GetInt32().Should().Be(0);
+            summary.RootElement.GetProperty("filesWithInfos").GetInt32().Should().BeGreaterThan(0);
+            summary.RootElement.GetProperty("filesWithByteDrift").GetInt32().Should().BeGreaterThan(0);
+            summary.RootElement.GetProperty("totalWarnings").GetInt32().Should().Be(0);
+            summary.RootElement.GetProperty("totalInfos").GetInt32().Should().BeGreaterThan(0);
 
             var diagnosticCodes = summary.RootElement
-                .GetProperty("DiagnosticCodes")
+                .GetProperty("diagnosticCodes")
                 .EnumerateArray()
-                .Select(entry => entry.GetProperty("Name").GetString())
+                .Select(entry => entry.GetProperty("name").GetString())
                 .ToArray();
 
             diagnosticCodes.Should().Contain("RAW_GPIF_BYTE_DRIFT");
@@ -622,8 +623,8 @@ public class CliRoundTripRegressionTests
             fileResults.Should().ContainSingle();
 
             using var fileResult = JsonDocument.Parse(fileResults[0]);
-            fileResult.RootElement.GetProperty("RelativePath").GetString().Should().Be(Path.Combine("nested", "schema-reference.gp"));
-            fileResult.RootElement.GetProperty("DiagnosticCount").GetInt32().Should().BeGreaterThan(0);
+            fileResult.RootElement.GetProperty("relativePath").GetString().Should().Be(Path.Combine("nested", "schema-reference.gp"));
+            fileResult.RootElement.GetProperty("diagnosticCount").GetInt32().Should().BeGreaterThan(0);
 
             var diagnostics = await File.ReadAllLinesAsync(diagnosticsPath, TestContext.Current.CancellationToken);
             diagnostics.Should().NotBeEmpty();
