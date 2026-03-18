@@ -90,6 +90,18 @@ public sealed class GpTimelineBarMetadata
 
     public string DirectionsXml { get; set; } = string.Empty;
 
+    public bool RepeatStartAttributePresent { get; set; }
+
+    public bool RepeatEndAttributePresent { get; set; }
+
+    public bool RepeatCountAttributePresent { get; set; }
+
+    public bool HasExplicitEmptySection { get; set; }
+
+    public string KeyTransposeAs { get; set; } = string.Empty;
+
+    public IReadOnlyDictionary<string, string> DirectionProperties { get; set; } = new Dictionary<string, string>();
+
     public IReadOnlyDictionary<string, int> XProperties { get; set; } = new Dictionary<string, int>();
 
     public string MasterBarXPropertiesXml { get; set; } = string.Empty;
@@ -124,6 +136,22 @@ public sealed class GpBeatMetadata
     public string Xml { get; set; } = string.Empty;
 
     public int SourceRhythmId { get; set; } = -1;
+
+    public string Golpe { get; set; } = string.Empty;
+
+    public string Hairpin { get; set; } = string.Empty;
+
+    public string Ottavia { get; set; } = string.Empty;
+
+    public string PickStrokeDirection { get; set; } = string.Empty;
+
+    public int? BrushDurationTicks { get; set; }
+
+    public string RasgueadoPattern { get; set; } = string.Empty;
+
+    public string TremoloValue { get; set; } = string.Empty;
+
+    public string FreeText { get; set; } = string.Empty;
 
     public GpRhythmShapeMetadata? SourceRhythm { get; set; }
 

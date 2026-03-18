@@ -36,29 +36,14 @@ public sealed class TimelineBar : ExtensibleModel
     public bool RepeatStart { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the source format explicitly emitted the repeat-start attribute.
-    /// </summary>
-    public bool RepeatStartAttributePresent { get; set; }
-
-    /// <summary>
     /// Gets or sets a value indicating whether the bar ends a repeat section.
     /// </summary>
     public bool RepeatEnd { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the source format explicitly emitted the repeat-end attribute.
-    /// </summary>
-    public bool RepeatEndAttributePresent { get; set; }
-
-    /// <summary>
     /// Gets or sets the repeat count applied when <see cref="RepeatEnd"/> is set.
     /// </summary>
     public int RepeatCount { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the source format explicitly emitted the repeat-count attribute.
-    /// </summary>
-    public bool RepeatCountAttributePresent { get; set; }
 
     /// <summary>
     /// Gets or sets the alternate-ending mask or label for the bar.
@@ -74,11 +59,6 @@ public sealed class TimelineBar : ExtensibleModel
     /// Gets or sets the section text shown at the bar.
     /// </summary>
     public string SectionText { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether an explicit empty section element should be preserved.
-    /// </summary>
-    public bool HasExplicitEmptySection { get; set; }
 
     /// <summary>
     /// Gets or sets the navigation jump declared at this bar, such as D.S. or D.C.
@@ -99,16 +79,6 @@ public sealed class TimelineBar : ExtensibleModel
     /// Gets or sets the key mode, such as major or minor.
     /// </summary>
     public string KeyMode { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the transposed key signature spelling hint.
-    /// </summary>
-    public string KeyTransposeAs { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets format-specific direction properties that supplement <see cref="Jump"/> and <see cref="Target"/>.
-    /// </summary>
-    public IReadOnlyDictionary<string, string> DirectionProperties { get; set; } = new Dictionary<string, string>();
 
     /// <summary>
     /// Gets or sets fermatas anchored to the bar.

@@ -561,8 +561,7 @@ internal static class GpExportDefaultsResolver
     }
 
     private static bool HasExplicitCoreTransposition(Track track)
-        => track.Transposition.IsSpecified
-           || track.Transposition.Chromatic != 0
+        => track.Transposition.Chromatic != 0
            || track.Transposition.Octave != 0;
 
     private static void MergeScoreMetadata(ScoreMetadata target, ScoreMetadata source)

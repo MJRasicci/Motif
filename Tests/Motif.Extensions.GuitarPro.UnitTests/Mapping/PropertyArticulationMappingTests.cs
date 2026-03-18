@@ -82,7 +82,7 @@ public class PropertyArticulationMappingTests
         var articulation = beat.Notes[0].Articulation;
 
         beat.GraceType.Should().Be("BeforeBeat");
-        beat.PickStrokeDirection.Should().Be("Down");
+        BeatMetadataOf(beat).PickStrokeDirection.Should().Be("Down");
         BeatMetadataOf(beat).VibratoWithTremBarStrength.Should().Be("Slight");
         beat.Slapped.Should().BeTrue();
         beat.Popped.Should().BeTrue();

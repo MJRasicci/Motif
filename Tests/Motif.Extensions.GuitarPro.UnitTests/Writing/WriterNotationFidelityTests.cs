@@ -151,16 +151,16 @@ public class WriterNotationFidelityTests
         timelineBar.DoubleBar.Should().BeTrue();
         timelineBar.TripletFeel.Should().Be("Triplet8th");
         timelineBar.RepeatStart.Should().BeFalse();
-        timelineBar.RepeatStartAttributePresent.Should().BeTrue();
+        TimelineMetadataOf(timelineBar).RepeatStartAttributePresent.Should().BeTrue();
         timelineBar.RepeatEnd.Should().BeFalse();
-        timelineBar.RepeatEndAttributePresent.Should().BeTrue();
+        TimelineMetadataOf(timelineBar).RepeatEndAttributePresent.Should().BeTrue();
         timelineBar.RepeatCount.Should().Be(0);
-        timelineBar.RepeatCountAttributePresent.Should().BeTrue();
+        TimelineMetadataOf(timelineBar).RepeatCountAttributePresent.Should().BeTrue();
         TimelineMetadataOf(timelineBar).XProperties.Should().Contain("1124073985", 2);
         MeasureMetadataOf(measure).XProperties.Should().Contain("1124139521", 7);
-        beat.Hairpin.Should().Be("Crescendo");
+        BeatMetadataOf(beat).Hairpin.Should().Be("Crescendo");
         BeatMetadataOf(beat).Variation.Should().Be("2");
-        beat.Ottavia.Should().Be("8va");
+        BeatMetadataOf(beat).Ottavia.Should().Be("8va");
         beat.LegatoOrigin.Should().BeTrue();
         beat.LegatoDestination.Should().BeFalse();
         BeatMetadataOf(beat).LyricsXml.Should().Contain("<Lyrics>");
@@ -233,7 +233,6 @@ public class WriterNotationFidelityTests
                             {
                                 Id = beat.Id,
                                 Duration = new ScoreTime(1, 4),
-                                BrushDurationTicks = 120,
                                 Notes =
                                 [
                                     new Note
@@ -254,6 +253,7 @@ public class WriterNotationFidelityTests
         var createdBeat = score.Tracks[0].PrimaryMeasure(0).Beats[0];
         var createdNote = createdBeat.Notes[0];
         createdBeat.GetOrCreateGuitarPro().Metadata.XProperties = BeatMetadataOf(beat).XProperties;
+        createdBeat.GetRequiredGuitarPro().Metadata.BrushDurationTicks = 120;
         createdBeat.GetRequiredGuitarPro().Metadata.BrushDurationXPropertyId = BeatMetadataOf(beat).BrushDurationXPropertyId;
         createdBeat.GetRequiredGuitarPro().Metadata.XPropertiesXml = BeatMetadataOf(beat).XPropertiesXml;
         createdNote.GetOrCreateGuitarPro().Metadata.XProperties = NoteMetadataOf(note).XProperties;

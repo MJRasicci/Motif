@@ -21,24 +21,9 @@ public sealed class Beat : ExtensibleModel
     public string Dynamic { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the golpe marking carried by the beat.
-    /// </summary>
-    public string Golpe { get; set; } = string.Empty;
-
-    /// <summary>
     /// Gets or sets a value indicating whether the beat is slashed.
     /// </summary>
     public bool Slashed { get; set; }
-
-    /// <summary>
-    /// Gets or sets the hairpin marking that begins or applies at the beat.
-    /// </summary>
-    public string Hairpin { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the ottava indication applied at the beat.
-    /// </summary>
-    public string Ottavia { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets a value indicating whether the beat starts a legato span.
@@ -49,11 +34,6 @@ public sealed class Beat : ExtensibleModel
     /// Gets or sets a value indicating whether the beat ends a legato span.
     /// </summary>
     public bool? LegatoDestination { get; set; }
-
-    /// <summary>
-    /// Gets or sets the pick-stroke direction.
-    /// </summary>
-    public string PickStrokeDirection { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets a value indicating whether the beat uses slapped technique.
@@ -86,19 +66,9 @@ public sealed class Beat : ExtensibleModel
     public bool Arpeggio { get; set; }
 
     /// <summary>
-    /// Gets or sets the brush duration in ticks when the source format provides one.
-    /// </summary>
-    public int? BrushDurationTicks { get; set; }
-
-    /// <summary>
     /// Gets or sets a value indicating whether the beat uses rasgueado.
     /// </summary>
     public bool Rasgueado { get; set; }
-
-    /// <summary>
-    /// Gets or sets the rasgueado pattern identifier.
-    /// </summary>
-    public string RasgueadoPattern { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets a value indicating whether the beat uses dead slap technique.
@@ -109,16 +79,6 @@ public sealed class Beat : ExtensibleModel
     /// Gets or sets a value indicating whether tremolo picking applies to the beat.
     /// </summary>
     public bool Tremolo { get; set; }
-
-    /// <summary>
-    /// Gets or sets the tremolo subdivision or variant identifier.
-    /// </summary>
-    public string TremoloValue { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets free-form text attached to the beat.
-    /// </summary>
-    public string FreeText { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the whammy-bar automation for the beat.

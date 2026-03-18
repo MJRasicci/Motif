@@ -6,11 +6,6 @@ namespace Motif.Models;
 public sealed class TrackTransposition
 {
     /// <summary>
-    /// Gets or sets a value indicating whether the transposition was explicitly authored.
-    /// </summary>
-    public bool IsSpecified { get; set; }
-
-    /// <summary>
     /// Gets or sets the chromatic transposition component.
     /// </summary>
     public int Chromatic { get; set; }

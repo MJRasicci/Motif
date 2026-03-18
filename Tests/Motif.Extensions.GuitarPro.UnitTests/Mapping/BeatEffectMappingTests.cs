@@ -306,11 +306,11 @@ public class BeatEffectMappingTests
 
         BeatMetadataOf(beat).HasTransposedPitchStemOrientationUserDefinedElement.Should().BeTrue();
         BeatMetadataOf(beat).Wah.Should().Be("Open");
-        beat.Golpe.Should().Be("Finger");
+        BeatMetadataOf(beat).Golpe.Should().Be("Finger");
         BeatMetadataOf(beat).Fadding.Should().Be("FadeIn");
         beat.Slashed.Should().BeTrue();
         beat.Rasgueado.Should().BeTrue();
-        beat.RasgueadoPattern.Should().Be("mii_1");
+        BeatMetadataOf(beat).RasgueadoPattern.Should().Be("mii_1");
         BeatMetadataOf(beat).Properties["BarreFret"].Should().Be("7");
         BeatMetadataOf(beat).Properties["BarreString"].Should().Be("0");
 
@@ -391,7 +391,7 @@ public class BeatEffectMappingTests
         beat.Brush.Should().BeTrue();
         beat.Arpeggio.Should().BeFalse();
         beat.BrushIsUp.Should().BeFalse();
-        beat.BrushDurationTicks.Should().Be(60);
+        BeatMetadataOf(beat).BrushDurationTicks.Should().Be(60);
     }
 
     [Fact]
@@ -405,7 +405,7 @@ public class BeatEffectMappingTests
             """);
 
         var score = await DeserializeAndMap(gpif);
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].BrushDurationTicks.Should().Be(120);
+        BeatMetadataOf(score.Tracks[0].PrimaryMeasure(0).Beats[0]).BrushDurationTicks.Should().Be(120);
     }
 
     [Fact]
@@ -419,7 +419,7 @@ public class BeatEffectMappingTests
             """);
 
         var score = await DeserializeAndMap(gpif);
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].BrushDurationTicks.Should().Be(60);
+        BeatMetadataOf(score.Tracks[0].PrimaryMeasure(0).Beats[0]).BrushDurationTicks.Should().Be(60);
     }
 
     // ── Trill speed ─────────────────────────────────────────────────────
@@ -547,7 +547,7 @@ public class BeatEffectMappingTests
         var beat = score.Tracks[0].PrimaryMeasure(0).Beats[0];
 
         beat.Tremolo.Should().BeTrue();
-        beat.TremoloValue.Should().Be("1/8");
+        BeatMetadataOf(beat).TremoloValue.Should().Be("1/8");
     }
 
     [Fact]
@@ -557,7 +557,7 @@ public class BeatEffectMappingTests
         var score = await DeserializeAndMap(gpif);
         var beat = score.Tracks[0].PrimaryMeasure(0).Beats[0];
         beat.Tremolo.Should().BeFalse();
-        beat.TremoloValue.Should().BeEmpty();
+        BeatMetadataOf(beat).TremoloValue.Should().BeEmpty();
     }
 
     // ── Chord ───────────────────────────────────────────────────────────
@@ -579,7 +579,7 @@ public class BeatEffectMappingTests
         var gpif = BuildGpif("<FreeText>let ring</FreeText>");
 
         var score = await DeserializeAndMap(gpif);
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].FreeText.Should().Be("let ring");
+        BeatMetadataOf(score.Tracks[0].PrimaryMeasure(0).Beats[0]).FreeText.Should().Be("let ring");
     }
 
     [Fact]
@@ -658,21 +658,15 @@ public class BeatEffectMappingTests
                             {
                                 Id = 1,
                                 Dynamic = "PP",
-                                Golpe = "Finger",
                                 Slashed = true,
-                                Hairpin = "Crescendo",
-                                Ottavia = "8va",
                                 LegatoOrigin = true,
                                 LegatoDestination = false,
                                 Arpeggio = true,
                                 Brush = true,
                                 BrushIsUp = true,
-                                BrushDurationTicks = 120,
                                 Rasgueado = true,
                                 DeadSlapped = true,
                                 Tremolo = true,
-                                TremoloValue = "1/8",
-                                FreeText = "muted",
                                 WhammyBar = new WhammyBar
                                 {
                                     Enabled = true,
@@ -701,10 +695,16 @@ public class BeatEffectMappingTests
                                 ]
                             }
                         ]
-                    })
+                })
             ]
         };
         score.Tracks[0].PrimaryMeasure(0).Beats[0].GetOrCreateGuitarPro().Metadata.ChordId = "Dm";
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].GetRequiredGuitarPro().Metadata.Golpe = "Finger";
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].GetRequiredGuitarPro().Metadata.Hairpin = "Crescendo";
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].GetRequiredGuitarPro().Metadata.Ottavia = "8va";
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].GetRequiredGuitarPro().Metadata.BrushDurationTicks = 120;
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].GetRequiredGuitarPro().Metadata.TremoloValue = "1/8";
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].GetRequiredGuitarPro().Metadata.FreeText = "muted";
 
         var outFile = Path.Combine(Path.GetTempPath(), $"gpio-beatfx-{Guid.NewGuid():N}.gp");
         try
@@ -717,22 +717,22 @@ public class BeatEffectMappingTests
 
             var beat = readBack.Tracks[0].PrimaryMeasure(0).Beats[0];
             beat.Dynamic.Should().Be("PP");
-            beat.Golpe.Should().Be("Finger");
+            BeatMetadataOf(beat).Golpe.Should().Be("Finger");
             beat.Slashed.Should().BeTrue();
-            beat.Hairpin.Should().Be("Crescendo");
-            beat.Ottavia.Should().Be("8va");
+            BeatMetadataOf(beat).Hairpin.Should().Be("Crescendo");
+            BeatMetadataOf(beat).Ottavia.Should().Be("8va");
             beat.LegatoOrigin.Should().BeTrue();
             beat.LegatoDestination.Should().BeFalse();
             beat.Arpeggio.Should().BeTrue();
             beat.Brush.Should().BeTrue();
             beat.BrushIsUp.Should().BeTrue();
-            beat.BrushDurationTicks.Should().Be(120);
+            BeatMetadataOf(beat).BrushDurationTicks.Should().Be(120);
             beat.Rasgueado.Should().BeTrue();
             beat.DeadSlapped.Should().BeTrue();
             beat.Tremolo.Should().BeTrue();
-            beat.TremoloValue.Should().Be("1/8");
+            BeatMetadataOf(beat).TremoloValue.Should().Be("1/8");
             BeatMetadataOf(beat).ChordId.Should().Be("Dm");
-            beat.FreeText.Should().Be("muted");
+            BeatMetadataOf(beat).FreeText.Should().Be("muted");
 
             beat.WhammyBar.Should().NotBeNull();
             beat.WhammyBar!.Enabled.Should().BeTrue();

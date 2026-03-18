@@ -110,24 +110,6 @@ public static class ScoreNavigation
             return true;
         }
 
-        if (measure.DirectionProperties.TryGetValue("Jump", out var jump) && TokenEquals(jump, token))
-        {
-            return true;
-        }
-
-        if (measure.DirectionProperties.TryGetValue("Target", out var target) && TokenEquals(target, token))
-        {
-            return true;
-        }
-
-        foreach (var kvp in measure.DirectionProperties)
-        {
-            if (TokenEquals(kvp.Key, token) || TokenEquals(kvp.Value, token))
-            {
-                return true;
-            }
-        }
-
         return false;
     }
 
@@ -841,8 +823,7 @@ public static class ScoreNavigation
         int RepeatCount,
         int AlternateEndingMask,
         string Jump,
-        string Target,
-        IReadOnlyDictionary<string, string> DirectionProperties)
+        string Target)
     {
         public bool HasAlternateEndings => AlternateEndingMask != 0;
 
@@ -854,8 +835,7 @@ public static class ScoreNavigation
                 RepeatCount: Math.Max(0, source.RepeatCount),
                 AlternateEndingMask: ParseAlternateEndingMask(source.AlternateEndings),
                 Jump: source.Jump,
-                Target: source.Target,
-                DirectionProperties: source.DirectionProperties);
+                Target: source.Target);
 
         private static int ParseAlternateEndingMask(string endings)
         {

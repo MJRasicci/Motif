@@ -154,22 +154,6 @@ public class ScoreNavigationTests
     }
 
     [Fact]
-    public void BuildPlaybackSequence_can_read_direction_tokens_from_direction_properties()
-    {
-        var timelineBars = new[]
-        {
-            TimelineBar(0),
-            TimelineBar(1, directionProperties: new Dictionary<string, string> { ["DaCapoAlFine"] = "1" }),
-            TimelineBar(2, directionProperties: new Dictionary<string, string> { ["Fine"] = "1" }),
-            TimelineBar(3)
-        };
-
-        var sequence = ScoreNavigation.BuildPlaybackSequence(timelineBars);
-
-        sequence.Should().Equal(0, 1, 0, 1, 2);
-    }
-
-    [Fact]
     public void BuildPlaybackSequence_prevents_da_double_coda_until_da_coda_allows_it_when_da_coda_exists()
     {
         var timelineBars = new[]
@@ -353,8 +337,7 @@ public class ScoreNavigationTests
         int repeatCount = 0,
         string alternateEndings = "",
         string jump = "",
-        string target = "",
-        IReadOnlyDictionary<string, string>? directionProperties = null)
+        string target = "")
         => new()
         {
             Index = index,
@@ -364,7 +347,6 @@ public class ScoreNavigationTests
             RepeatCount = repeatCount,
             AlternateEndings = alternateEndings,
             Jump = jump,
-            Target = target,
-            DirectionProperties = directionProperties ?? new Dictionary<string, string>()
+            Target = target
         };
 }

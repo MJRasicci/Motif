@@ -30,7 +30,6 @@ public class WriterArticulationParityTests
                             {
                                 Id = 1,
                                 GraceType = "BeforeBeat",
-                                PickStrokeDirection = "Up",
                                 Slapped = true,
                                 Popped = true,
                                 PalmMuted = true,
@@ -133,9 +132,10 @@ public class WriterArticulationParityTests
                                 ]
                             }
                         ]
-                    })
+                })
             ]
         };
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].GetOrCreateGuitarPro().Metadata.PickStrokeDirection = "Up";
         score.Tracks[0].PrimaryMeasure(0).Beats[0].GetOrCreateGuitarPro().Metadata.VibratoWithTremBarStrength = "Slight";
 
         var outFile = Path.Combine(Path.GetTempPath(), $"gpio-articulation-{Guid.NewGuid():N}.gp");
@@ -154,7 +154,7 @@ public class WriterArticulationParityTests
             var hopoOrigin = beats[2].Notes[0];
             var hopoDestination = beats[3].Notes[0];
             beat.GraceType.Should().Be("BeforeBeat");
-            beat.PickStrokeDirection.Should().Be("Up");
+            BeatMetadataOf(beat).PickStrokeDirection.Should().Be("Up");
             BeatMetadataOf(beat).VibratoWithTremBarStrength.Should().Be("Slight");
             beat.Slapped.Should().BeTrue();
             beat.Popped.Should().BeTrue();

@@ -136,7 +136,7 @@ public class WriterRemainingFidelityTests
         scoreMetadata.Copyright.Should().Be("   ");
         scoreMetadata.Tabber.Should().Be(" ");
         timelineBar.FreeTime.Should().BeTrue();
-        timelineBar.HasExplicitEmptySection.Should().BeTrue();
+        TimelineMetadataOf(timelineBar).HasExplicitEmptySection.Should().BeTrue();
         TimelineMetadataOf(timelineBar).DirectionsXml.Should().Contain("<Jump>DaCoda</Jump>");
         TimelineMetadataOf(timelineBar).DirectionsXml.Should().Contain("<Target>SegnoSegno</Target>");
 
@@ -240,7 +240,7 @@ public class WriterRemainingFidelityTests
 
         timelineBar.SectionLetter.Should().BeEmpty();
         timelineBar.SectionText.Should().BeEmpty();
-        timelineBar.HasExplicitEmptySection.Should().BeTrue();
+        TimelineMetadataOf(timelineBar).HasExplicitEmptySection.Should().BeTrue();
 
         var roundTrip = await RoundTripThroughWrite(score);
         var section = roundTrip.Root!.Element("MasterBars")!.Element("MasterBar")!.Element("Section")!;
@@ -274,9 +274,7 @@ public class WriterRemainingFidelityTests
                     TimeSignature = "4/4",
                     AlternateEndings = "2",
                     RepeatEnd = true,
-                    RepeatEndAttributePresent = true,
                     RepeatCount = 2,
-                    RepeatCountAttributePresent = true,
                     Jump = "DaSegno"
                 },
                 new TimelineBar
@@ -297,6 +295,8 @@ public class WriterRemainingFidelityTests
                     new StaffMeasure { Index = 3, StaffIndex = 0, Beats = [] })
             ]
         };
+        score.TimelineBars[2].GetOrCreateGuitarPro().Metadata.RepeatEndAttributePresent = true;
+        score.TimelineBars[2].GetOrCreateGuitarPro().Metadata.RepeatCountAttributePresent = true;
 
         var gpif = await RoundTripThroughWriteText(score);
         var document = XDocument.Parse(gpif);
@@ -519,7 +519,7 @@ public class WriterRemainingFidelityTests
         var beat = score.Tracks[0].PrimaryMeasure(0).Beats[0];
 
         beat.Brush.Should().BeTrue();
-        beat.BrushDurationTicks.Should().Be(60);
+        BeatMetadataOf(beat).BrushDurationTicks.Should().Be(60);
         BeatMetadataOf(beat).HasExplicitBrushDurationXProperty.Should().BeFalse();
 
         var roundTrip = await RoundTripThroughJsonAndWrite(gpif);

@@ -81,9 +81,9 @@ public class MetadataMappingTests
         track.Instrument.Family.Should().Be(InstrumentFamilyKind.Guitar);
         track.Instrument.Kind.Should().Be(InstrumentKind.SteelStringGuitar);
         track.Instrument.Role.Should().Be(TrackRoleKind.Pitched);
-        track.Transposition.IsSpecified.Should().BeTrue();
         track.Transposition.Chromatic.Should().Be(0);
         track.Transposition.Octave.Should().Be(-1);
+        TrackMetadataOf(track).Transpose.Octave.Should().Be(-1);
         track.Staves.Should().ContainSingle();
         track.Staves[0].Tuning.Pitches.Should().Equal(40, 45, 50, 55, 59, 64);
     }
@@ -115,8 +115,8 @@ public class MetadataMappingTests
                     TimeSignature = "4/4",
                     KeyAccidentalCount = 1,
                     KeyMode = "Major",
-                    KeyTransposeAs = "C",
-                    DirectionProperties = new Dictionary<string, string> { ["Jump"] = "DaCapo", ["Target"] = "Segno", ["Fine"] = "1" },
+                    Jump = "DaCapo",
+                    Target = "Segno",
                     Fermatas = [new FermataMetadata { Type = "Short", Offset = "Middle", Length = 1.2m }]
                 }
             ],
@@ -136,6 +136,9 @@ public class MetadataMappingTests
             ]
         };
         score.TimelineBars[0].GetOrCreateGuitarPro().Metadata.XProperties = new Dictionary<string, int> { ["1124204545"] = 2 };
+        score.TimelineBars[0].GetRequiredGuitarPro().Metadata.KeyTransposeAs = "C";
+        score.TimelineBars[0].GetRequiredGuitarPro().Metadata.DirectionProperties =
+            new Dictionary<string, string> { ["Jump"] = "DaCapo", ["Target"] = "Segno", ["Fine"] = "1" };
         score.Tracks[0].PrimaryMeasure(0).GetOrCreateGuitarPro().Metadata.Properties =
             new Dictionary<string, string> { ["BarDisplay"] = "Both" };
         score.GetOrCreateGuitarPro().Metadata = new ScoreMetadata
@@ -399,12 +402,12 @@ public class MetadataMappingTests
             var measure = track.PrimaryMeasure(0);
             timelineBar.KeyAccidentalCount.Should().Be(1);
             timelineBar.KeyMode.Should().Be("Major");
-            timelineBar.KeyTransposeAs.Should().Be("C");
+            TimelineMetadataOf(timelineBar).KeyTransposeAs.Should().Be("C");
             timelineBar.Fermatas.Should().ContainSingle();
             TimelineMetadataOf(timelineBar).XProperties.Should().ContainKey("1124204545");
             measure.Clef.Should().Be("G2");
             MeasureMetadataOf(measure).Properties.Should().ContainKey("BarDisplay");
-            timelineBar.DirectionProperties.Should().ContainKey("Fine");
+            TimelineMetadataOf(timelineBar).DirectionProperties.Should().ContainKey("Fine");
             timelineBar.Jump.Should().Be("DaCapo");
             timelineBar.Target.Should().Be("Segno");
             VoiceMetadataOf(measure.Voices[0]).Properties.Should().ContainKey("PartedSlur");

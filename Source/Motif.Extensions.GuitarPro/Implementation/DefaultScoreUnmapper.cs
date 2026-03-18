@@ -285,12 +285,12 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                 beatXProperties.Remove("687935489");
                             }
 
-                            if (beat.BrushDurationTicks.HasValue)
+                            if (beatMetadata.BrushDurationTicks.HasValue)
                             {
                                 var shouldWriteBrushDurationXProperty = beatMetadata.HasExplicitBrushDurationXProperty
                                     || beatMetadata.XProperties.ContainsKey("687931393")
                                     || beatMetadata.XProperties.ContainsKey("687935489")
-                                    || beat.BrushDurationTicks.Value != 60;
+                                    || beatMetadata.BrushDurationTicks.Value != 60;
 
                                 if (shouldWriteBrushDurationXProperty)
                                 {
@@ -299,7 +299,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                         : beat.Arpeggio
                                             ? "687931393"
                                             : "687935489";
-                                    beatXProperties[brushDurationXPropertyId] = beat.BrushDurationTicks.Value;
+                                    beatXProperties[brushDurationXPropertyId] = beatMetadata.BrushDurationTicks.Value;
                                 }
                             }
                             if (beat.Notes.Count > 0)
@@ -483,32 +483,32 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                                 HasTransposedPitchStemOrientationUserDefinedElement = beatMetadata.HasTransposedPitchStemOrientationUserDefinedElement,
                                 ConcertPitchStemOrientation = beatMetadata.ConcertPitchStemOrientation,
                                 Wah = beatMetadata.Wah,
-                                Golpe = beat.Golpe,
+                                Golpe = beatMetadata.Golpe,
                                 Fadding = beatMetadata.Fadding,
                                 Slashed = beat.Slashed,
-                                Hairpin = beat.Hairpin,
+                                Hairpin = beatMetadata.Hairpin,
                                 Variation = beatMetadata.Variation,
-                                Ottavia = beat.Ottavia,
+                                Ottavia = beatMetadata.Ottavia,
                                 LegatoOrigin = beat.LegatoOrigin,
                                 LegatoDestination = beat.LegatoDestination,
                                 LyricsXml = beatMetadata.LyricsXml,
-                                PickStrokeDirection = beat.PickStrokeDirection,
+                                PickStrokeDirection = beatMetadata.PickStrokeDirection,
                                 VibratoWithTremBarStrength = beatMetadata.VibratoWithTremBarStrength,
                                 Slapped = beat.Slapped,
                                 Popped = beat.Popped,
                                 Brush = beat.Brush,
                                 BrushIsUp = beat.BrushIsUp,
                                 Arpeggio = beat.Arpeggio,
-                                BrushDurationTicks = beat.BrushDurationTicks,
+                                BrushDurationTicks = beatMetadata.BrushDurationTicks,
                                 BrushDurationXPropertyId = beatMetadata.BrushDurationXPropertyId,
                                 HasExplicitBrushDurationXProperty = beatMetadata.HasExplicitBrushDurationXProperty,
                                 Rasgueado = beat.Rasgueado,
-                                RasgueadoPattern = beat.RasgueadoPattern,
+                                RasgueadoPattern = beatMetadata.RasgueadoPattern,
                                 DeadSlapped = beat.DeadSlapped,
                                 Tremolo = beat.Tremolo,
-                                TremoloValue = beat.TremoloValue,
+                                TremoloValue = beatMetadata.TremoloValue,
                                 ChordId = beatMetadata.ChordId,
-                                FreeText = beat.FreeText,
+                                FreeText = beatMetadata.FreeText,
                                 WhammyBar = encodedWhammy.Enabled,
                                 WhammyBarExtended = encodedWhammy.Extended,
                                 WhammyBarOriginValue = encodedWhammy.OriginValue,
@@ -733,8 +733,8 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
     private static GpifMasterBar CreateMasterBar(TimelineBar timelineBar)
     {
         var timelineMetadata = GetTimelineBarMetadata(timelineBar);
-        var jump = ResolveDirectionValue(timelineBar.Jump, timelineBar.DirectionProperties, "Jump");
-        var target = ResolveDirectionValue(timelineBar.Target, timelineBar.DirectionProperties, "Target");
+        var jump = ResolveDirectionValue(timelineBar.Jump, timelineMetadata.DirectionProperties, "Jump");
+        var target = ResolveDirectionValue(timelineBar.Target, timelineMetadata.DirectionProperties, "Target");
 
         return new GpifMasterBar
         {
@@ -745,22 +745,22 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             FreeTime = timelineBar.FreeTime,
             TripletFeel = timelineBar.TripletFeel,
             RepeatStart = timelineBar.RepeatStart,
-            RepeatStartAttributePresent = timelineBar.RepeatStartAttributePresent,
+            RepeatStartAttributePresent = timelineMetadata.RepeatStartAttributePresent,
             RepeatEnd = timelineBar.RepeatEnd,
-            RepeatEndAttributePresent = timelineBar.RepeatEndAttributePresent,
+            RepeatEndAttributePresent = timelineMetadata.RepeatEndAttributePresent,
             RepeatCount = timelineBar.RepeatCount,
-            RepeatCountAttributePresent = timelineBar.RepeatCountAttributePresent,
+            RepeatCountAttributePresent = timelineMetadata.RepeatCountAttributePresent,
             AlternateEndings = timelineBar.AlternateEndings,
             SectionLetter = timelineBar.SectionLetter,
             SectionText = timelineBar.SectionText,
-            HasExplicitEmptySection = timelineBar.HasExplicitEmptySection,
+            HasExplicitEmptySection = timelineMetadata.HasExplicitEmptySection,
             Jump = jump,
             Target = target,
-            DirectionProperties = timelineBar.DirectionProperties,
+            DirectionProperties = timelineMetadata.DirectionProperties,
             DirectionsXml = timelineMetadata.DirectionsXml,
             KeyAccidentalCount = timelineBar.KeyAccidentalCount,
             KeyMode = timelineBar.KeyMode,
-            KeyTransposeAs = timelineBar.KeyTransposeAs,
+            KeyTransposeAs = timelineMetadata.KeyTransposeAs,
             Fermatas = timelineBar.Fermatas.Select(f => new GpifFermata
             {
                 Type = f.Type,
@@ -1190,22 +1190,22 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
 
     private static bool BrushDurationXPropertiesMatch(Beat beat, IReadOnlyDictionary<string, int> beatXProperties)
     {
-        if (!beat.BrushDurationTicks.HasValue)
+        var beatMetadata = GetBeatMetadata(beat);
+        if (!beatMetadata.BrushDurationTicks.HasValue)
         {
             return !beatXProperties.ContainsKey("687931393")
                 && !beatXProperties.ContainsKey("687935489");
         }
 
-        var beatMetadata = GetBeatMetadata(beat);
         if (!string.IsNullOrWhiteSpace(beatMetadata.BrushDurationXPropertyId))
         {
             return beatXProperties.TryGetValue(beatMetadata.BrushDurationXPropertyId, out var value)
-                && value == beat.BrushDurationTicks.Value;
+                && value == beatMetadata.BrushDurationTicks.Value;
         }
 
         return beatXProperties.Any(kv =>
             (kv.Key == "687931393" || kv.Key == "687935489")
-            && kv.Value == beat.BrushDurationTicks.Value);
+            && kv.Value == beatMetadata.BrushDurationTicks.Value);
     }
 
     private static TrackMetadata GetTrackMetadata(Track track)
@@ -1498,8 +1498,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
     private static TrackTransposition ResolveTrackTransposition(Track track)
     {
         var metadata = GetTrackMetadata(track);
-        var useCoreTransposition = track.Transposition.IsSpecified
-            || track.Transposition.Chromatic != 0
+        var useCoreTransposition = track.Transposition.Chromatic != 0
             || track.Transposition.Octave != 0;
 
         if (useCoreTransposition)
@@ -1509,7 +1508,6 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
 
         return new TrackTransposition
         {
-            IsSpecified = metadata.Transpose.Chromatic.HasValue || metadata.Transpose.Octave.HasValue,
             Chromatic = metadata.Transpose.Chromatic ?? 0,
             Octave = metadata.Transpose.Octave ?? 0
         };

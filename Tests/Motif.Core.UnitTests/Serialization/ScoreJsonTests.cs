@@ -74,10 +74,7 @@ public class ScoreJsonTests
                     RepeatEnd = true,
                     RepeatCount = 2,
                     Jump = "DaCapoAlFine",
-                    DirectionProperties = new Dictionary<string, string>
-                    {
-                        ["Fine"] = "1"
-                    }
+                    Target = "Fine"
                 }
             ],
             Tracks =
@@ -144,7 +141,7 @@ public class ScoreJsonTests
         roundTripped.PlaybackMasterBarSequence.Should().Equal(0, 1, 0, 1, 2);
         roundTripped.TimelineBars.Should().HaveCount(2);
         roundTripped.TimelineBars[0].SectionText.Should().Be("Verse");
-        roundTripped.TimelineBars[1].DirectionProperties["Fine"].Should().Be("1");
+        roundTripped.TimelineBars[1].Target.Should().Be("Fine");
         roundTripped.Tracks.Should().ContainSingle();
         roundTripped.Tracks[0].Instrument.Family.Should().Be(InstrumentFamilyKind.Guitar);
         roundTripped.Tracks[0].Instrument.Kind.Should().Be(InstrumentKind.SteelStringGuitar);
