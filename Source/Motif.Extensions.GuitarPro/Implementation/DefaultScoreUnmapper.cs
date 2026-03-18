@@ -434,7 +434,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                             }
 
                             var rhythmCandidate = preservedSourceRhythm
-                                ?? ToRhythm(beat.Duration, id: 0, diagnostics);
+                                ?? ToRhythm(beat.Rhythm, beat.Duration, id: 0, diagnostics);
                             var rhythmSignature = new RhythmSignature(
                                 rhythmCandidate.NoteValue,
                                 rhythmCandidate.AugmentationDots,
@@ -2265,7 +2265,7 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
             SecondaryTuplet = ToRawTuplet(beatMetadata.SourceRhythm.SecondaryTuplet)
         };
 
-        return NearlyEqual(ResolveRhythmDuration(sourceRhythm), beat.Duration)
+        return ResolveRhythmDuration(sourceRhythm) == beat.Duration
             ? sourceRhythm
             : null;
     }
@@ -2290,48 +2290,14 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         int[] TuningPitches,
         int? CapoFret);
 
-    private static decimal ResolveRhythmDuration(GpifRhythm rhythm)
-    {
-        var baseDuration = rhythm.NoteValue switch
+    private static ScoreTime ResolveRhythmDuration(GpifRhythm rhythm)
+        => RhythmValue.ResolveDuration(new RhythmValue
         {
-            "Whole" => 1m,
-            "Half" => 1m / 2m,
-            "Quarter" => 1m / 4m,
-            "Eighth" => 1m / 8m,
-            "16th" => 1m / 16m,
-            "32nd" => 1m / 32m,
-            "64th" => 1m / 64m,
-            _ => 0m
-        };
-
-        if (baseDuration <= 0m)
-        {
-            return 0m;
-        }
-
-        var dotFactor = 1m;
-        var add = 1m;
-        for (var i = 0; i < rhythm.AugmentationDots; i++)
-        {
-            add /= 2m;
-            dotFactor += add;
-        }
-
-        var duration = baseDuration * dotFactor;
-        duration *= TupletFactor(rhythm.PrimaryTuplet);
-        duration *= TupletFactor(rhythm.SecondaryTuplet);
-        return duration;
-    }
-
-    private static decimal TupletFactor(RawTupletRatio? tuplet)
-    {
-        if (tuplet is null || tuplet.Numerator <= 0 || tuplet.Denominator <= 0)
-        {
-            return 1m;
-        }
-
-        return (decimal)tuplet.Denominator / tuplet.Numerator;
-    }
+            BaseValue = ToNoteValueKind(rhythm.NoteValue),
+            AugmentationDots = rhythm.AugmentationDots,
+            PrimaryTuplet = ToTupletModel(rhythm.PrimaryTuplet),
+            SecondaryTuplet = ToTupletModel(rhythm.SecondaryTuplet)
+        });
 
     private readonly record struct RhythmSignature(
         string NoteValue,
@@ -2343,33 +2309,65 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         int? SecondaryNumerator,
         int? SecondaryDenominator);
 
-    private static GpifRhythm ToRhythm(decimal duration, int id, WriteDiagnostics diagnostics)
+    private static GpifRhythm ToRhythm(RhythmValue? rhythm, ScoreTime duration, int id, WriteDiagnostics diagnostics)
+    {
+        if (rhythm is not null)
+        {
+            var noteValue = ToNoteValueName(rhythm.BaseValue);
+            if (!string.IsNullOrWhiteSpace(noteValue))
+            {
+                var candidate = new GpifRhythm
+                {
+                    Id = id,
+                    NoteValue = noteValue,
+                    AugmentationDots = rhythm.AugmentationDots,
+                    PrimaryTuplet = ToRawTuplet(rhythm.PrimaryTuplet),
+                    SecondaryTuplet = ToRawTuplet(rhythm.SecondaryTuplet)
+                };
+
+                if (RhythmValue.ResolveDuration(rhythm) == duration)
+                {
+                    return candidate;
+                }
+
+                diagnostics.Warn(
+                    code: "RHYTHM_SHAPE_DURATION_MISMATCH",
+                    category: "Rhythm",
+                    message: $"Beat rhythm shape did not match beat duration {duration}; writer derived a rhythm from duration instead.");
+            }
+        }
+
+        return ToRhythm(duration, id, diagnostics);
+    }
+
+    private static GpifRhythm ToRhythm(ScoreTime duration, int id, WriteDiagnostics diagnostics)
     {
         var candidates = new[]
         {
-            new { Name = "Whole", Base = 1m },
-            new { Name = "Half", Base = 1m / 2m },
-            new { Name = "Quarter", Base = 1m / 4m },
-            new { Name = "Eighth", Base = 1m / 8m },
-            new { Name = "16th", Base = 1m / 16m },
-            new { Name = "32nd", Base = 1m / 32m },
-            new { Name = "64th", Base = 1m / 64m }
+            new { Name = "Whole", Base = new ScoreTime(1, 1) },
+            new { Name = "Half", Base = new ScoreTime(1, 2) },
+            new { Name = "Quarter", Base = new ScoreTime(1, 4) },
+            new { Name = "Eighth", Base = new ScoreTime(1, 8) },
+            new { Name = "16th", Base = new ScoreTime(1, 16) },
+            new { Name = "32nd", Base = new ScoreTime(1, 32) },
+            new { Name = "64th", Base = new ScoreTime(1, 64) },
+            new { Name = "128th", Base = new ScoreTime(1, 128) },
+            new { Name = "256th", Base = new ScoreTime(1, 256) }
         };
 
         foreach (var c in candidates)
         {
             for (var dots = 0; dots <= 2; dots++)
             {
-                var dotFactor = 1m;
-                var add = 1m;
+                var plain = c.Base;
+                var add = c.Base;
                 for (var i = 0; i < dots; i++)
                 {
-                    add /= 2m;
-                    dotFactor += add;
+                    add = add.Multiply(1, 2);
+                    plain += add;
                 }
 
-                var plain = c.Base * dotFactor;
-                if (NearlyEqual(plain, duration))
+                if (plain == duration)
                 {
                     return new GpifRhythm { Id = id, NoteValue = c.Name, AugmentationDots = dots };
                 }
@@ -2377,8 +2375,8 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
                 // common tuplet ratios
                 foreach (var tr in new[] { (3, 2), (5, 4), (6, 4), (7, 4), (9, 8) })
                 {
-                    var tupled = plain * ((decimal)tr.Item2 / tr.Item1);
-                    if (NearlyEqual(tupled, duration))
+                    var tupled = plain.Multiply(tr.Item2, tr.Item1);
+                    if (tupled == duration)
                     {
                         return new GpifRhythm
                         {
@@ -2399,6 +2397,42 @@ internal sealed class DefaultScoreUnmapper : IScoreUnmapper
         return new GpifRhythm { Id = id, NoteValue = "Quarter" };
     }
 
-    private static bool NearlyEqual(decimal a, decimal b)
-        => Math.Abs(a - b) <= 0.00001m;
+    private static CoreTupletRatio? ToTupletModel(RawTupletRatio? tuplet)
+        => tuplet is null
+            ? null
+            : new CoreTupletRatio
+            {
+                Numerator = tuplet.Numerator,
+                Denominator = tuplet.Denominator
+            };
+
+    private static NoteValueKind ToNoteValueKind(string noteValue)
+        => noteValue switch
+        {
+            "Whole" => NoteValueKind.Whole,
+            "Half" => NoteValueKind.Half,
+            "Quarter" => NoteValueKind.Quarter,
+            "Eighth" => NoteValueKind.Eighth,
+            "16th" => NoteValueKind.Sixteenth,
+            "32nd" => NoteValueKind.ThirtySecond,
+            "64th" => NoteValueKind.SixtyFourth,
+            "128th" => NoteValueKind.OneHundredTwentyEighth,
+            "256th" => NoteValueKind.TwoHundredFiftySixth,
+            _ => NoteValueKind.Unknown
+        };
+
+    private static string ToNoteValueName(NoteValueKind noteValue)
+        => noteValue switch
+        {
+            NoteValueKind.Whole => "Whole",
+            NoteValueKind.Half => "Half",
+            NoteValueKind.Quarter => "Quarter",
+            NoteValueKind.Eighth => "Eighth",
+            NoteValueKind.Sixteenth => "16th",
+            NoteValueKind.ThirtySecond => "32nd",
+            NoteValueKind.SixtyFourth => "64th",
+            NoteValueKind.OneHundredTwentyEighth => "128th",
+            NoteValueKind.TwoHundredFiftySixth => "256th",
+            _ => string.Empty
+        };
 }

@@ -106,7 +106,7 @@ public class WriterNotePropertyFidelityTests
                                         new Beat
                                         {
                                             Id = 1,
-                                            Duration = 0.5m,
+                                            Duration = new ScoreTime(1, 2),
                                             Notes =
                                             [
                                                 new Note
@@ -216,7 +216,7 @@ public class WriterNotePropertyFidelityTests
                             new Beat
                             {
                                 Id = 1,
-                                Duration = 0.25m,
+                                Duration = new ScoreTime(1, 4),
                                 Notes =
                                 [
                                     new Note

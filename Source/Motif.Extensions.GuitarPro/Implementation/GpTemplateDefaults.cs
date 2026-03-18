@@ -180,7 +180,7 @@ internal static class GpTemplateDefaults
             Type = source.Type,
             Linear = source.Linear,
             Bar = source.Bar,
-            Position = source.Position,
+            Offset = source.Offset,
             Visible = source.Visible,
             Value = source.Value,
             NumericValue = source.NumericValue,
@@ -204,7 +204,7 @@ internal static class GpTemplateDefaults
         => new()
         {
             Bar = source.Bar,
-            Position = source.Position,
+            Offset = source.Offset,
             Bpm = source.Bpm,
             DenominatorHint = source.DenominatorHint
         };

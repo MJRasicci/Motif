@@ -34,7 +34,7 @@ public sealed class Note : ExtensibleModel
     /// Gets or sets the effective sounding duration of the note.
     /// Tied destinations may extend an earlier note without starting a new sound.
     /// </summary>
-    public decimal Duration { get; set; }
+    public ScoreTime Duration { get; set; } = ScoreTime.Zero;
 
     /// <summary>
     /// Gets or sets a value indicating whether this note only extends a tie from a previous note.

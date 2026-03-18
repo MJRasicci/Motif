@@ -1,5 +1,7 @@
 namespace Motif.Extensions.GuitarPro.Models;
 
+using Motif.Models;
+
 public sealed class ScoreMetadata
 {
     public string ScoreXml { get; set; } = string.Empty;
@@ -343,7 +345,7 @@ public sealed class AutomationMetadata
 
     public int? Bar { get; set; }
 
-    public int? Position { get; set; }
+    public ScoreTime? Position { get; set; }
 
     public bool? Visible { get; set; }
 
@@ -388,7 +390,7 @@ public sealed class TempoEventMetadata
 {
     public int? Bar { get; set; }
 
-    public int? Position { get; set; }
+    public ScoreTime? Offset { get; set; }
 
     public decimal? Bpm { get; set; }
 
@@ -407,7 +409,7 @@ public sealed class AutomationTimelineEventMetadata
 
     public int? Bar { get; set; }
 
-    public int? Position { get; set; }
+    public ScoreTime? Offset { get; set; }
 
     public bool? Visible { get; set; }
 
@@ -446,7 +448,7 @@ public sealed class DynamicEventMetadata
 
     public int BeatId { get; set; }
 
-    public decimal BeatOffset { get; set; }
+    public ScoreTime BeatOffset { get; set; } = ScoreTime.Zero;
 
     public string Dynamic { get; set; } = string.Empty;
 

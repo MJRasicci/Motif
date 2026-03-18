@@ -236,7 +236,7 @@ public class WriterRoundTripTests
                             new Beat
                             {
                                 Id = 1,
-                                Duration = 0.25m,
+                                Duration = new ScoreTime(1, 4),
                                 Notes =
                                 [
                                     new Note

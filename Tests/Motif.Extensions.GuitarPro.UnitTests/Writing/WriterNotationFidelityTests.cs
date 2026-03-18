@@ -232,7 +232,7 @@ public class WriterNotationFidelityTests
                             new Beat
                             {
                                 Id = beat.Id,
-                                Duration = 0.25m,
+                                Duration = new ScoreTime(1, 4),
                                 BrushDurationTicks = 120,
                                 Notes =
                                 [

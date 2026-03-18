@@ -541,7 +541,7 @@ internal sealed class XmlGpifSerializer : IGpifSerializer
             AddTextElement(el, "Type", a.Type);
             if (a.Linear.HasValue) el.Add(new XElement("Linear", a.Linear.Value.ToString().ToLowerInvariant()));
             if (a.Bar.HasValue) el.Add(new XElement("Bar", a.Bar.Value));
-            if (a.Position.HasValue) el.Add(new XElement("Position", a.Position.Value));
+            if (a.Position.HasValue) el.Add(new XElement("Position", a.Position.Value.ToDecimalString()));
             if (a.Visible.HasValue) el.Add(new XElement("Visible", a.Visible.Value.ToString().ToLowerInvariant()));
             AddTextElement(el, "Value", a.Value);
             root.Add(el);

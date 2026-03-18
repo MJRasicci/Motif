@@ -60,7 +60,7 @@ public class MutableDomainModelTests
 
         note.Id = 20;
         note.Pitch = Pitch.FromMidiNumber(64);
-        note.Duration = 1m;
+        note.Duration = new ScoreTime(1, 1);
         note.Articulation = new NoteArticulation
         {
             LetRing = true

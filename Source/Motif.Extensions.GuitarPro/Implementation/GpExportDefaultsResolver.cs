@@ -38,7 +38,7 @@ internal static class GpExportDefaultsResolver
             .Select(automation => new TempoEventMetadata
             {
                 Bar = automation.Bar,
-                Position = automation.Position,
+                Offset = automation.Position,
                 Bpm = ParseBpm(automation.Value),
                 DenominatorHint = 2
             })
@@ -173,13 +173,13 @@ internal static class GpExportDefaultsResolver
         {
             var tempoAutomations = score.TempoChanges
                 .OrderBy(change => change.BarIndex)
-                .ThenBy(change => change.Position)
+                .ThenBy(change => change.Offset)
                 .Select(change => new AutomationMetadata
                 {
                     Type = "Tempo",
                     Linear = false,
                     Bar = change.BarIndex,
-                    Position = change.Position,
+                    Position = change.Offset,
                     Visible = true,
                     Value = $"{change.BeatsPerMinute.ToString(CultureInfo.InvariantCulture)} 2"
                 });
@@ -210,7 +210,7 @@ internal static class GpExportDefaultsResolver
             Type = "Tempo",
             Linear = false,
             Bar = 0,
-            Position = 0,
+            Position = ScoreTime.Zero,
             Visible = true,
             Value = "120 2"
         });
@@ -221,13 +221,14 @@ internal static class GpExportDefaultsResolver
     {
         var coreTempos = score.TempoChanges
             .OrderBy(change => change.BarIndex)
-            .ThenBy(change => change.Position)
-            .Select(change => $"{change.BarIndex}|{change.Position}|{change.BeatsPerMinute.ToString(CultureInfo.InvariantCulture)}")
+            .ThenBy(change => change.Offset)
+            .Select(change => $"{change.BarIndex}|{change.Offset}|{change.BeatsPerMinute.ToString(CultureInfo.InvariantCulture)}")
             .ToArray();
         var sourceTempos = resolved.TempoMap
             .OrderBy(change => change.Bar ?? 0)
-            .ThenBy(change => change.Position ?? 0)
-            .Select(change => $"{change.Bar ?? 0}|{change.Position ?? 0}|{(change.Bpm ?? 0m).ToString(CultureInfo.InvariantCulture)}")
+            .ThenBy(change => change.Offset.HasValue ? 0 : 1)
+            .ThenBy(change => change.Offset ?? ScoreTime.Zero)
+            .Select(change => $"{change.Bar ?? 0}|{change.Offset ?? ScoreTime.Zero}|{(change.Bpm ?? 0m).ToString(CultureInfo.InvariantCulture)}")
             .ToArray();
 
         return !coreTempos.SequenceEqual(sourceTempos, StringComparer.Ordinal);
@@ -443,7 +444,7 @@ internal static class GpExportDefaultsResolver
             Type = "Sound",
             Linear = false,
             Bar = 0,
-            Position = 0,
+            Position = ScoreTime.Zero,
             Visible = true,
             Value = $"{profile.SoundPath};{profile.SoundLabel};Factory"
         };
@@ -745,7 +746,7 @@ internal static class GpExportDefaultsResolver
             TempoMap = source.TempoMap.Select(tempo => new TempoEventMetadata
             {
                 Bar = tempo.Bar,
-                Position = tempo.Position,
+                Offset = tempo.Offset,
                 Bpm = tempo.Bpm,
                 DenominatorHint = tempo.DenominatorHint
             }).ToArray()
@@ -858,7 +859,7 @@ internal static class GpExportDefaultsResolver
             Type = source.Type,
             Linear = source.Linear,
             Bar = source.Bar,
-            Position = source.Position,
+            Offset = source.Offset,
             Visible = source.Visible,
             Value = source.Value,
             NumericValue = source.NumericValue,
@@ -868,7 +869,7 @@ internal static class GpExportDefaultsResolver
                 : new TempoEventMetadata
                 {
                     Bar = source.Tempo.Bar,
-                    Position = source.Tempo.Position,
+                    Offset = source.Tempo.Offset,
                     Bpm = source.Tempo.Bpm,
                     DenominatorHint = source.Tempo.DenominatorHint
                 }

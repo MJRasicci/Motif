@@ -1,5 +1,7 @@
 namespace Motif.Extensions.GuitarPro.Models.Raw;
 
+using Motif.Models;
+
 internal sealed class GpifPlaybackState
 {
     public string Value { get; init; } = string.Empty;
@@ -50,7 +52,7 @@ internal sealed class GpifAutomation
 
     public int? Bar { get; init; }
 
-    public int? Position { get; init; }
+    public ScoreTime? Position { get; init; }
 
     public bool? Visible { get; init; }
 

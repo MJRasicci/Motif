@@ -295,7 +295,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 .Select(tempo => new TempoChange
                 {
                     BarIndex = tempo.Bar ?? 0,
-                    Position = tempo.Position ?? 0,
+                    Offset = tempo.Offset ?? ScoreTime.Zero,
                     BeatsPerMinute = tempo.Bpm!.Value
                 })
                 .ToArray(),
@@ -566,7 +566,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         var beatRefs = ReferenceListParser.SplitRefs(voice.BeatsReferenceList);
         var beats = new List<Beat>(beatRefs.Count);
 
-        decimal offset = 0;
+        var offset = ScoreTime.Zero;
         for (var beatIndex = 0; beatIndex < beatRefs.Count; beatIndex++)
         {
             var beatId = beatRefs[beatIndex];
@@ -684,6 +684,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 WhammyBar = ArticulationDecoders.DecodeWhammyBar(beat),
                 Offset = offset,
                 Duration = duration,
+                Rhythm = MapRhythmValue(source, beat.RhythmRef),
                 Notes = notes
             };
             mappedBeat.SetExtension(new GpBeatExtension
@@ -734,6 +735,22 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             AugmentationDots = rhythm.AugmentationDots,
             AugmentationDotUsesCountAttribute = rhythm.AugmentationDotUsesCountAttribute,
             AugmentationDotCounts = rhythm.AugmentationDotCounts,
+            PrimaryTuplet = ToTupletModel(rhythm.PrimaryTuplet),
+            SecondaryTuplet = ToTupletModel(rhythm.SecondaryTuplet)
+        };
+    }
+
+    private static RhythmValue? MapRhythmValue(GpifDocument source, int rhythmRef)
+    {
+        if (!source.RhythmsById.TryGetValue(rhythmRef, out var rhythm))
+        {
+            return null;
+        }
+
+        return new RhythmValue
+        {
+            BaseValue = ToNoteValueKind(rhythm.NoteValue),
+            AugmentationDots = rhythm.AugmentationDots,
             PrimaryTuplet = ToTupletModel(rhythm.PrimaryTuplet),
             SecondaryTuplet = ToTupletModel(rhythm.SecondaryTuplet)
         };
@@ -851,53 +868,8 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return HopoTypeKind.Legato;
     }
 
-    private static decimal ResolveDuration(GpifDocument source, int rhythmRef)
-    {
-        if (!source.RhythmsById.TryGetValue(rhythmRef, out var rhythm))
-        {
-            return 0m;
-        }
-
-        var baseDuration = rhythm.NoteValue switch
-        {
-            "Whole" => 1m,
-            "Half" => 1m / 2m,
-            "Quarter" => 1m / 4m,
-            "Eighth" => 1m / 8m,
-            "16th" => 1m / 16m,
-            "32nd" => 1m / 32m,
-            "64th" => 1m / 64m,
-            _ => 0m
-        };
-
-        if (baseDuration <= 0m)
-        {
-            return 0m;
-        }
-
-        var dotFactor = 1m;
-        var add = 1m;
-        for (var i = 0; i < rhythm.AugmentationDots; i++)
-        {
-            add /= 2m;
-            dotFactor += add;
-        }
-
-        var duration = baseDuration * dotFactor;
-        duration *= TupletFactor(rhythm.PrimaryTuplet);
-        duration *= TupletFactor(rhythm.SecondaryTuplet);
-        return duration;
-    }
-
-    private static decimal TupletFactor(RawTupletRatio? tuplet)
-    {
-        if (tuplet is null || tuplet.Numerator <= 0 || tuplet.Denominator <= 0)
-        {
-            return 1m;
-        }
-
-        return ((decimal)tuplet.Denominator) / tuplet.Numerator;
-    }
+    private static ScoreTime ResolveDuration(GpifDocument source, int rhythmRef)
+        => RhythmValue.ResolveDuration(MapRhythmValue(source, rhythmRef));
 
     private static TempoEventMetadata ParseTempo(GpifAutomation a)
     {
@@ -906,7 +878,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
         return new TempoEventMetadata
         {
             Bar = a.Bar,
-            Position = a.Position,
+            Offset = a.Position,
             Bpm = bpm,
             DenominatorHint = den
         };
@@ -931,7 +903,8 @@ internal sealed class DefaultScoreMapper : IScoreMapper
 
         return timeline
             .OrderBy(e => e.Bar ?? int.MaxValue)
-            .ThenBy(e => e.Position ?? int.MaxValue)
+            .ThenBy(e => e.Offset.HasValue ? 0 : 1)
+            .ThenBy(e => e.Offset ?? ScoreTime.Zero)
             .ThenBy(e => e.Scope)
             .ThenBy(e => e.TrackId ?? int.MaxValue)
             .ThenBy(e => e.Type, StringComparer.OrdinalIgnoreCase)
@@ -1062,7 +1035,7 @@ internal sealed class DefaultScoreMapper : IScoreMapper
             Type = automation.Type,
             Linear = automation.Linear,
             Bar = automation.Bar,
-            Position = automation.Position,
+            Offset = automation.Position,
             Visible = automation.Visible,
             Value = automation.Value,
             NumericValue = numericValue,
@@ -1072,6 +1045,21 @@ internal sealed class DefaultScoreMapper : IScoreMapper
                 : null
         };
     }
+
+    private static NoteValueKind ToNoteValueKind(string noteValue)
+        => noteValue switch
+        {
+            "Whole" => NoteValueKind.Whole,
+            "Half" => NoteValueKind.Half,
+            "Quarter" => NoteValueKind.Quarter,
+            "Eighth" => NoteValueKind.Eighth,
+            "16th" => NoteValueKind.Sixteenth,
+            "32nd" => NoteValueKind.ThirtySecond,
+            "64th" => NoteValueKind.SixtyFourth,
+            "128th" => NoteValueKind.OneHundredTwentyEighth,
+            "256th" => NoteValueKind.TwoHundredFiftySixth,
+            _ => NoteValueKind.Unknown
+        };
 
     private static (decimal? NumericValue, int? ReferenceHint) ParseAutomationValueTokens(string? rawValue)
     {

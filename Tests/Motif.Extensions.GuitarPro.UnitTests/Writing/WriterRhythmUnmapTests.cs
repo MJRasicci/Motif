@@ -25,8 +25,8 @@ public class WriterRhythmUnmapTests
                         StaffIndex = 0,
                         Beats =
                         [
-                            new Beat { Id = 1, Duration = 0.375m },
-                            new Beat { Id = 2, Duration = 1m / 12m }
+                            new Beat { Id = 1, Duration = new ScoreTime(3, 8) },
+                            new Beat { Id = 2, Duration = new ScoreTime(1, 12) }
                         ]
                     })
             ]
@@ -64,8 +64,8 @@ public class WriterRhythmUnmapTests
                         StaffIndex = 0,
                         Beats =
                         [
-                            new Beat { Id = 1, Duration = 0.25m },
-                            new Beat { Id = 2, Duration = 0.25m }
+                            new Beat { Id = 1, Duration = new ScoreTime(1, 4) },
+                            new Beat { Id = 2, Duration = new ScoreTime(1, 4) }
                         ]
                     })
             ]
@@ -101,7 +101,7 @@ public class WriterRhythmUnmapTests
                             new Beat
                             {
                                 Id = 1,
-                                Duration = 1m / 48m
+                                Duration = new ScoreTime(1, 48)
                             }
                         ]
                     })
@@ -148,7 +148,7 @@ public class WriterRhythmUnmapTests
                             new Beat
                             {
                                 Id = 1,
-                                Duration = 0.375m
+                                Duration = new ScoreTime(3, 8)
                             }
                         ]
                     })
@@ -197,7 +197,7 @@ public class WriterRhythmUnmapTests
                             new Beat
                             {
                                 Id = 1,
-                                Duration = 0.4375m
+                                Duration = new ScoreTime(7, 16)
                             }
                         ]
                     })

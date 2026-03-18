@@ -28,7 +28,7 @@ public class WriterDiagnosticsTests
                     {
                         Index = 0,
                         StaffIndex = 0,
-                        Beats = [ new Beat { Id = 1, Duration = 0.17m } ]
+                        Beats = [ new Beat { Id = 1, Duration = ScoreTime.FromDecimal(0.17m) } ]
                     })
             ]
         };
@@ -338,7 +338,7 @@ public class WriterDiagnosticsTests
     public async Task Unmapper_warns_when_source_rhythm_shape_is_regenerated()
     {
         var score = await DeserializeAndMapAsync(BuildSingleNoteGpif());
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].Duration = 0.5m;
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].Duration = new ScoreTime(1, 2);
 
         var result = await new DefaultScoreUnmapper().UnmapAsync(score, TestContext.Current.CancellationToken);
 

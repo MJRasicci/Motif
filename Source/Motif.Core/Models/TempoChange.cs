@@ -13,7 +13,7 @@ public sealed class TempoChange
     /// <summary>
     /// Gets or sets the source-relative position within the bar when one is available.
     /// </summary>
-    public int Position { get; set; }
+    public ScoreTime Offset { get; set; } = ScoreTime.Zero;
 
     /// <summary>
     /// Gets or sets the target tempo in beats per minute.

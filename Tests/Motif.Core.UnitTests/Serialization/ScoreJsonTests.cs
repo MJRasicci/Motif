@@ -20,15 +20,19 @@ public class ScoreJsonTests
             Id = 100,
             Dynamic = "mf",
             FreeText = "push",
-            Offset = 0m,
-            Duration = 0.25m,
+            Offset = ScoreTime.Zero,
+            Duration = new ScoreTime(1, 4),
+            Rhythm = new RhythmValue
+            {
+                BaseValue = NoteValueKind.Quarter
+            },
             Notes =
             [
                 new Note
                 {
                     Id = 200,
                     Pitch = Pitch.FromMidiNumber(64),
-                    Duration = 0.25m,
+                    Duration = new ScoreTime(1, 4),
                     Articulation = new NoteArticulation
                     {
                         LetRing = true
@@ -48,7 +52,7 @@ public class ScoreJsonTests
                 new TempoChange
                 {
                     BarIndex = 0,
-                    Position = 0,
+                    Offset = ScoreTime.Zero,
                     BeatsPerMinute = 120m
                 }
             ],

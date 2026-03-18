@@ -14,6 +14,9 @@ using System.Text.Json.Serialization;
 [JsonSerializable(typeof(TrackTransposition))]
 [JsonSerializable(typeof(StaffTuning))]
 [JsonSerializable(typeof(Pitch))]
+[JsonSerializable(typeof(ScoreTime))]
+[JsonSerializable(typeof(RhythmValue))]
+[JsonSerializable(typeof(NoteValueKind))]
 [JsonSerializable(typeof(TupletRatio))]
 internal sealed partial class MotifJsonContext : JsonSerializerContext
 {

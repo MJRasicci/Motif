@@ -688,7 +688,7 @@ internal static class GpTrackProfileCatalog
                 Type = "DSPParam_11",
                 Linear = false,
                 Bar = 0,
-                Position = 0,
+                Position = ScoreTime.Zero,
                 Visible = true,
                 Value = "0.5"
             },
@@ -697,7 +697,7 @@ internal static class GpTrackProfileCatalog
                 Type = "DSPParam_12",
                 Linear = false,
                 Bar = 0,
-                Position = 0,
+                Position = ScoreTime.Zero,
                 Visible = true,
                 Value = "0.795"
             }

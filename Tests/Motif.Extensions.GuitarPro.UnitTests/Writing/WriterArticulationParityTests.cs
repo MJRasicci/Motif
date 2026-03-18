@@ -36,7 +36,7 @@ public class WriterArticulationParityTests
                                 PalmMuted = true,
                                 Brush = true,
                                 BrushIsUp = true,
-                                Duration = 0.25m,
+                                Duration = new ScoreTime(1, 4),
                                 Notes =
                                 [
                                     new Note
@@ -84,7 +84,7 @@ public class WriterArticulationParityTests
                             new Beat
                             {
                                 Id = 2,
-                                Duration = 0.25m,
+                                Duration = new ScoreTime(1, 4),
                                 Notes =
                                 [
                                     new Note
@@ -101,7 +101,7 @@ public class WriterArticulationParityTests
                             new Beat
                             {
                                 Id = 3,
-                                Duration = 0.25m,
+                                Duration = new ScoreTime(1, 4),
                                 Notes =
                                 [
                                     new Note
@@ -118,7 +118,7 @@ public class WriterArticulationParityTests
                             new Beat
                             {
                                 Id = 4,
-                                Duration = 0.25m,
+                                Duration = new ScoreTime(1, 4),
                                 Notes =
                                 [
                                     new Note

@@ -94,7 +94,7 @@ public class MetadataMappingTests
         var beat = new Beat
         {
             Id = 1,
-            Duration = 0.25m
+            Duration = new ScoreTime(1, 4)
         };
         var voice = new Voice
         {
@@ -159,7 +159,7 @@ public class MetadataMappingTests
                     Type = "Tempo",
                     Linear = false,
                     Bar = 0,
-                    Position = 0,
+                    Position = ScoreTime.Zero,
                     Visible = true,
                     Value = "120 2"
                 }
@@ -267,7 +267,7 @@ public class MetadataMappingTests
                         Type = "DSPParam_12",
                         Linear = false,
                         Bar = 0,
-                        Position = 0,
+                        Position = ScoreTime.Zero,
                         Visible = true,
                         Value = "0.72"
                     }
@@ -309,7 +309,7 @@ public class MetadataMappingTests
                     Type = "Sound",
                     Linear = false,
                     Bar = 0,
-                    Position = 0,
+                    Position = ScoreTime.Zero,
                     Visible = true,
                     Value = "Stringed/Acoustic Guitars/Steel Guitar;Steel Mart;Factory"
                 }
@@ -436,7 +436,7 @@ public class MetadataMappingTests
                     {
                         Index = 0,
                         StaffIndex = 0,
-                        Beats = [ new Beat { Id = 1, Duration = 0.25m } ]
+                        Beats = [ new Beat { Id = 1, Duration = new ScoreTime(1, 4) } ]
                     })
             ]
         };
@@ -501,7 +501,7 @@ public class MetadataMappingTests
                     {
                         Type = "Tempo",
                         Bar = 1,
-                        Position = 0,
+                        Position = ScoreTime.Zero,
                         Value = "132 2",
                         Linear = true,
                         Visible = true
@@ -510,7 +510,7 @@ public class MetadataMappingTests
                     {
                         Type = "MasterVolume",
                         Bar = 0,
-                        Position = 5,
+                        Position = new ScoreTime(5, 1),
                         Value = "0.8",
                         Linear = false,
                         Visible = true
@@ -529,7 +529,7 @@ public class MetadataMappingTests
                         {
                             Type = "Sound",
                             Bar = 0,
-                            Position = 5,
+                            Position = new ScoreTime(5, 1),
                             Value = "Stringed/Acoustic Guitars/Steel Guitar;Steel Mart;Factory",
                             Visible = true
                         }
@@ -545,7 +545,7 @@ public class MetadataMappingTests
                         {
                             Type = "DSPParam_12",
                             Bar = 0,
-                            Position = 3,
+                            Position = new ScoreTime(3, 1),
                             Value = "0.72",
                             Linear = false,
                             Visible = true
@@ -677,7 +677,7 @@ public class MetadataMappingTests
         dynamicMap[0].MeasureIndex.Should().Be(0);
         dynamicMap[0].VoiceIndex.Should().Be(0);
         dynamicMap[0].BeatId.Should().Be(100);
-        dynamicMap[0].BeatOffset.Should().Be(0m);
+        dynamicMap[0].BeatOffset.Should().Be(ScoreTime.Zero);
         dynamicMap[0].Dynamic.Should().Be("MF");
         dynamicMap[0].Kind.Should().Be(DynamicKind.MF);
 
@@ -685,7 +685,7 @@ public class MetadataMappingTests
         dynamicMap[1].MeasureIndex.Should().Be(0);
         dynamicMap[1].VoiceIndex.Should().Be(0);
         dynamicMap[1].BeatId.Should().Be(102);
-        dynamicMap[1].BeatOffset.Should().Be(0.5m);
+        dynamicMap[1].BeatOffset.Should().Be(new ScoreTime(1, 2));
         dynamicMap[1].Dynamic.Should().Be("FF");
         dynamicMap[1].Kind.Should().Be(DynamicKind.FF);
     }

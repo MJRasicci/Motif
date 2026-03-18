@@ -724,6 +724,9 @@ internal sealed class XmlGpifDeserializer : IGpifDeserializer
     private static int? TryParseNullableInt(string? value)
         => int.TryParse(value, out var parsed) ? parsed : null;
 
+    private static Motif.Models.ScoreTime? TryParseNullableScoreTime(string? value)
+        => Motif.Models.ScoreTime.TryParse(value, out var parsed) ? parsed : null;
+
     private static decimal? TryParseNullableDecimal(string? value)
         => decimal.TryParse(value, out var parsed) ? parsed : null;
 
@@ -875,7 +878,7 @@ internal sealed class XmlGpifDeserializer : IGpifDeserializer
                 Type = a.Element("Type")?.Value ?? string.Empty,
                 Linear = TryParseNullableBool(a.Element("Linear")?.Value),
                 Bar = TryParseNullableInt(a.Element("Bar")?.Value),
-                Position = TryParseNullableInt(a.Element("Position")?.Value),
+                Position = TryParseNullableScoreTime(a.Element("Position")?.Value),
                 Visible = TryParseNullableBool(a.Element("Visible")?.Value),
                 Value = a.Element("Value")?.Value ?? string.Empty
             })

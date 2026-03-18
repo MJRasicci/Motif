@@ -128,12 +128,17 @@ public sealed class Beat : ExtensibleModel
     /// <summary>
     /// Gets or sets the beat offset within its containing measure.
     /// </summary>
-    public decimal Offset { get; set; }
+    public ScoreTime Offset { get; set; } = ScoreTime.Zero;
 
     /// <summary>
     /// Gets or sets the notated beat duration expressed as a score fraction.
     /// </summary>
-    public decimal Duration { get; set; }
+    public ScoreTime Duration { get; set; } = ScoreTime.Zero;
+
+    /// <summary>
+    /// Gets or sets the semantic written rhythm shape for the beat.
+    /// </summary>
+    public RhythmValue? Rhythm { get; set; }
 
     /// <summary>
     /// Gets or sets the notes sounded by the beat.

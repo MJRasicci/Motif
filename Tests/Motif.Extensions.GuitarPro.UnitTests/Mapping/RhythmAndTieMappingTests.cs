@@ -49,8 +49,8 @@ public class RhythmAndTieMappingTests
         var score = await mapper.MapAsync(raw, TestContext.Current.CancellationToken);
 
         var beats = score.Tracks[0].PrimaryMeasure(0).Beats;
-        beats[0].Duration.Should().Be(0.375m); // dotted quarter
-        beats[1].Duration.Should().BeApproximately(1m / 12m, 0.00001m); // triplet eighth
+        beats[0].Duration.Should().Be(new ScoreTime(3, 8)); // dotted quarter
+        beats[1].Duration.Should().Be(new ScoreTime(1, 12)); // triplet eighth
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class RhythmAndTieMappingTests
         raw.RhythmsById[1000].AugmentationDotCounts.Should().Equal(2);
         SourceRhythmOf(score.Tracks[0].PrimaryMeasure(0).Beats[0]).AugmentationDots.Should().Be(2);
         SourceRhythmOf(score.Tracks[0].PrimaryMeasure(0).Beats[0]).AugmentationDotCounts.Should().Equal(2);
-        score.Tracks[0].PrimaryMeasure(0).Beats[0].Duration.Should().Be(0.4375m);
+        score.Tracks[0].PrimaryMeasure(0).Beats[0].Duration.Should().Be(new ScoreTime(7, 16));
     }
 
     [Fact]
@@ -128,7 +128,7 @@ public class RhythmAndTieMappingTests
         var score = await mapper.MapAsync(raw, TestContext.Current.CancellationToken);
 
         var notes = score.Tracks[0].PrimaryMeasure(0).Beats.SelectMany(b => b.Notes).ToArray();
-        notes[0].Duration.Should().Be(0.5m);
+        notes[0].Duration.Should().Be(new ScoreTime(1, 2));
         notes[1].TieExtendedFromPrevious.Should().BeTrue();
     }
 }

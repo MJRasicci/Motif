@@ -441,15 +441,19 @@ public class MotifScoreTests
                                                 new Beat
                                                 {
                                                     Id = 1,
-                                                    Offset = 0m,
-                                                    Duration = 0.25m,
+                                                    Offset = ScoreTime.Zero,
+                                                    Duration = new ScoreTime(1, 4),
+                                                    Rhythm = new RhythmValue
+                                                    {
+                                                        BaseValue = NoteValueKind.Quarter
+                                                    },
                                                     Notes =
                                                     [
                                                         new Note
                                                         {
                                                             Id = 1,
                                                             Pitch = Pitch.FromMidiNumber(64),
-                                                            Duration = 0.25m
+                                                            Duration = new ScoreTime(1, 4)
                                                         }
                                                     ]
                                                 }

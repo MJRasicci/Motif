@@ -218,7 +218,7 @@ public class BeatEffectMappingTests
                             new Beat
                             {
                                 Id = 1,
-                                Duration = 0.25m,
+                                Duration = new ScoreTime(1, 4),
                                 WhammyBar = new WhammyBar
                                 {
                                     Enabled = true,
@@ -485,7 +485,7 @@ public class BeatEffectMappingTests
                             new Beat
                             {
                                 Id = 1,
-                                Duration = 0.25m,
+                                Duration = new ScoreTime(1, 4),
                                 Notes =
                                 [
                                     new Note
@@ -610,7 +610,7 @@ public class BeatEffectMappingTests
                             new Beat
                             {
                                 Id = 1,
-                                Duration = 0.25m,
+                                Duration = new ScoreTime(1, 4),
                                 Dynamic = "PP",
                                 Notes =
                                 [
@@ -685,7 +685,7 @@ public class BeatEffectMappingTests
                                     MiddleOffset2 = 0.5m,
                                     DestinationOffset = 1m
                                 },
-                                Duration = 0.25m,
+                                Duration = new ScoreTime(1, 4),
                                 Notes =
                                 [
                                     new Note
@@ -775,7 +775,7 @@ public class BeatEffectMappingTests
                             new Beat
                             {
                                 Id = 1,
-                                Duration = 0.25m,
+                                Duration = new ScoreTime(1, 4),
                                 WhammyBar = new WhammyBar
                                 {
                                     Enabled = true,

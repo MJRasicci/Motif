@@ -450,7 +450,7 @@ public class WriterReferenceReuseTests
         => new()
         {
             Id = id,
-            Duration = 0.25m,
+            Duration = new ScoreTime(1, 4),
             Notes = notes
         };
 
@@ -459,7 +459,7 @@ public class WriterReferenceReuseTests
         {
             Id = id,
             PalmMuted = palmMuted,
-            Duration = 0.25m,
+            Duration = new ScoreTime(1, 4),
             Notes = notes
         };
 
@@ -699,7 +699,7 @@ public class WriterReferenceReuseTests
                             new Beat
                             {
                                 Id = 1,
-                                Duration = 1m / 48m,
+                                Duration = new ScoreTime(1, 48),
                                 Notes =
                                 [
                                     new Note

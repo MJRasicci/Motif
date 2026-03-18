@@ -597,7 +597,7 @@ public class WriterRemainingFidelityTests
                                     new Beat
                                     {
                                         Id = 100,
-                                        Duration = 0.25m
+                                        Duration = new ScoreTime(1, 4)
                                     }
                                 ]
                             },
@@ -609,7 +609,7 @@ public class WriterRemainingFidelityTests
                                     new Beat
                                     {
                                         Id = 101,
-                                        Duration = 0.25m
+                                        Duration = new ScoreTime(1, 4)
                                     }
                                 ]
                             }

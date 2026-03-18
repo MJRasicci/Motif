@@ -92,7 +92,7 @@ public class WriterSourceFreeDefaultsTests
                 new TempoChange
                 {
                     BarIndex = 0,
-                    Position = 0,
+                    Offset = ScoreTime.Zero,
                     BeatsPerMinute = 96m
                 }
             ],
@@ -137,7 +137,7 @@ public class WriterSourceFreeDefaultsTests
                                         new Beat
                                         {
                                             Id = 1,
-                                            Duration = 0.25m,
+                                            Duration = new ScoreTime(1, 4),
                                             Notes =
                                             [
                                                 new Note
